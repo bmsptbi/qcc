@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Models;
+
+use Database\Factories\CircleMemberFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+#[Fillable(['circle_id', 'user_id', 'nik', 'name', 'role', 'department', 'email', 'phone'])]
+class CircleMember extends Model
+{
+    /** @use HasFactory<CircleMemberFactory> */
+    use HasFactory;
+
+    public function circle(): BelongsTo
+    {
+        return $this->belongsTo(Circle::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+}
