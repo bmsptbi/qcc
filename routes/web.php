@@ -21,6 +21,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::delete('/judges/assignment/{assignment}', [AdminController::class, 'destroyAssignment'])->name('judges.assignment.destroy');
     Route::get('/criteria', [AdminController::class, 'criteriaIndex'])->name('criteria.index');
     Route::post('/criteria/categories', [AdminController::class, 'storeCategory'])->name('criteria.categories.store');
+    Route::put('/criteria/categories/{category}', [AdminController::class, 'updateCategory'])->name('criteria.categories.update');
+    Route::delete('/criteria/categories/{category}', [AdminController::class, 'destroyCategory'])->name('criteria.categories.destroy');
     Route::post('/criteria', [AdminController::class, 'storeCriterion'])->name('criteria.store');
+    Route::put('/criteria/{criterion}', [AdminController::class, 'updateCriterion'])->name('criteria.update');
     Route::delete('/criteria/{criterion}', [AdminController::class, 'destroyCriterion'])->name('criteria.destroy');
 });

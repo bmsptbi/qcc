@@ -222,6 +222,52 @@ class AdminController extends Controller
     }
 
     /**
+     * Update kategori / tahap yang sudah ada
+     */
+    public function updateCategory(Request $request, \App\Models\CriteriaCategory $category): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'stage' => ['required', 'string', 'max:50'],
+            'weight_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        $category->update($validated);
+
+        return back()->with('success', "Tahap {$category->name} berhasil diperbarui!");
+    }
+
+    /**
+     * Hapus kategori / tahap beserta kriteria di dalamnya
+     */
+    public function destroyCategory(\App\Models\CriteriaCategory $category): RedirectResponse
+    {
+        $name = $category->name;
+        $category->delete();
+
+        return back()->with('success', "Tahap '{$name}' beserta seluruh kriteria di dalamnya telah dihapus.");
+    }
+
+    /**
+     * Update butir kriteria yang sudah ada
+     */
+    public function updateCriterion(Request $request, \App\Models\AssessmentCriterion $criterion): RedirectResponse
+    {
+        $validated = $request->validate([
+            'criteria_category_id' => ['required', 'exists:criteria_categories,id'],
+            'code' => ['required', 'string', 'max:50'],
+            'title' => ['required', 'string', 'max:255'],
+            'guidelines' => ['nullable', 'string'],
+            'weight' => ['required', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        $criterion->update($validated);
+
+        return back()->with('success', "Butir kriteria [{$criterion->code}] {$criterion->title} berhasil diperbarui!");
+    }
+
+    /**
      * Hapus butir kriteria
      */
     public function destroyCriterion(\App\Models\AssessmentCriterion $criterion): RedirectResponse
