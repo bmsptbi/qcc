@@ -88,6 +88,9 @@
                     <a href="{{ route('admin.judges.index') }}" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('admin.judges.*') ? 'text-indigo-700 bg-indigo-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                         Kelola Juri
                     </a>
+                    <a href="{{ route('admin.criteria.index') }}" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('admin.criteria.*') ? 'text-amber-700 bg-amber-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        Kriteria Nilai
+                    </a>
                     <a href="{{ route('admin.circles.create') }}" class="ml-2 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition border border-blue-200">
                         + Circle Baru
                     </a>

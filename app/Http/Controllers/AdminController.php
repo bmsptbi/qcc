@@ -166,4 +166,69 @@ class AdminController extends Controller
 
         return back()->with('success', 'Penugasan juri telah dihapus.');
     }
+
+    /**
+     * Halaman kelola kategori & butir kriteria penilaian
+     */
+    public function criteriaIndex(): View
+    {
+        $categories = \App\Models\CriteriaCategory::with(['criteria' => function ($q) {
+            $q->orderBy('display_order', 'asc');
+        }])->orderBy('display_order', 'asc')->get();
+
+        $totalWeight = $categories->sum('weight_percentage');
+        $totalCriteria = \App\Models\AssessmentCriterion::count();
+
+        return view('admin.criteria.index', compact('categories', 'totalWeight', 'totalCriteria'));
+    }
+
+    /**
+     * Simpan kategori kriteria baru
+     */
+    public function storeCategory(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'stage' => ['required', 'string', 'max:50'],
+            'weight_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
+            'display_order' => ['nullable', 'integer'],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        \App\Models\CriteriaCategory::create($validated);
+
+        return back()->with('success', "Kategori {$validated['name']} berhasil ditambahkan!");
+    }
+
+    /**
+     * Simpan butir kriteria baru
+     */
+    public function storeCriterion(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'criteria_category_id' => ['required', 'exists:criteria_categories,id'],
+            'code' => ['required', 'string', 'max:50'],
+            'title' => ['required', 'string', 'max:255'],
+            'guidelines' => ['nullable', 'string'],
+            'weight' => ['required', 'numeric', 'min:0', 'max:100'],
+            'min_score' => ['nullable', 'numeric', 'min:0'],
+            'max_score' => ['nullable', 'numeric', 'min:0'],
+            'display_order' => ['nullable', 'integer'],
+        ]);
+
+        \App\Models\AssessmentCriterion::create($validated);
+
+        return back()->with('success', "Butir kriteria [{$validated['code']}] {$validated['title']} berhasil ditambahkan!");
+    }
+
+    /**
+     * Hapus butir kriteria
+     */
+    public function destroyCriterion(\App\Models\AssessmentCriterion $criterion): RedirectResponse
+    {
+        $code = $criterion->code;
+        $criterion->delete();
+
+        return back()->with('success', "Kriteria {$code} berhasil dihapus.");
+    }
 }

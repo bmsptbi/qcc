@@ -11,7 +11,7 @@ Route::post('/circles/{circle}/assess', [QccAssessmentController::class, 'storeA
 Route::get('/leaderboard', [QccAssessmentController::class, 'leaderboard'])->name('qcc.leaderboard');
 Route::post('/switch-judge', [QccAssessmentController::class, 'switchJudge'])->name('qcc.switch-judge');
 
-// Admin Routes (Pendaftaran Circle & Manajemen Juri)
+// Admin Routes (Pendaftaran Circle, Manajemen Juri, & Kriteria Penilaian)
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/circles/create', [AdminController::class, 'createCircle'])->name('circles.create');
     Route::post('/circles', [AdminController::class, 'storeCircle'])->name('circles.store');
@@ -19,4 +19,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/judges', [AdminController::class, 'storeJudge'])->name('judges.store');
     Route::post('/judges/assign', [AdminController::class, 'assignJudge'])->name('judges.assign');
     Route::delete('/judges/assignment/{assignment}', [AdminController::class, 'destroyAssignment'])->name('judges.assignment.destroy');
+    Route::get('/criteria', [AdminController::class, 'criteriaIndex'])->name('criteria.index');
+    Route::post('/criteria/categories', [AdminController::class, 'storeCategory'])->name('criteria.categories.store');
+    Route::post('/criteria', [AdminController::class, 'storeCriterion'])->name('criteria.store');
+    Route::delete('/criteria/{criterion}', [AdminController::class, 'destroyCriterion'])->name('criteria.destroy');
 });
