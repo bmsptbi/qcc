@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AssessmentCriterion;
 use App\Models\AssessmentPeriod;
 use App\Models\Circle;
 use App\Models\CircleCategory;
 use App\Models\CircleMember;
+use App\Models\CriteriaCategory;
 use App\Models\Department;
 use App\Models\JudgeAssignment;
 use App\Models\User;
@@ -172,12 +174,18 @@ class AdminController extends Controller
      */
     public function criteriaIndex(): View
     {
-        $categories = \App\Models\CriteriaCategory::with(['criteria' => function ($q) {
+        $categories = CriteriaCategory::with(['criteria' => function ($q) {
             $q->orderBy('display_order', 'asc');
         }])->orderBy('display_order', 'asc')->get();
 
+        foreach ($categories as $cat) {
+            foreach ($cat->criteria as $crit) {
+                $crit->setRelation('category', $cat);
+            }
+        }
+
         $totalWeight = $categories->sum('weight_percentage');
-        $totalCriteria = \App\Models\AssessmentCriterion::count();
+        $totalCriteria = AssessmentCriterion::count();
 
         return view('admin.criteria.index', compact('categories', 'totalWeight', 'totalCriteria'));
     }
@@ -195,28 +203,52 @@ class AdminController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        \App\Models\CriteriaCategory::create($validated);
+        CriteriaCategory::create($validated);
 
         return back()->with('success', "Kategori {$validated['name']} berhasil ditambahkan!");
     }
 
     /**
-     * Simpan butir kriteria baru
+     * Simpan butir kriteria baru (Kode otomatis jika kosong, bobot proporsional jika blank)
      */
     public function storeCriterion(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'criteria_category_id' => ['required', 'exists:criteria_categories,id'],
-            'code' => ['required', 'string', 'max:50'],
+            'code' => ['nullable', 'string', 'max:50'],
             'title' => ['required', 'string', 'max:255'],
             'guidelines' => ['nullable', 'string'],
-            'weight' => ['required', 'numeric', 'min:0', 'max:100'],
+            'weight' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'min_score' => ['nullable', 'numeric', 'min:0'],
             'max_score' => ['nullable', 'numeric', 'min:0'],
             'display_order' => ['nullable', 'integer'],
         ]);
 
-        \App\Models\AssessmentCriterion::create($validated);
+        $category = CriteriaCategory::findOrFail($validated['criteria_category_id']);
+
+        // Generate kode otomatis jika kosong
+        if (empty($validated['code'])) {
+            $cleanName = trim(preg_replace('/^[0-9\.\s]+/', '', $category->name));
+            $words = preg_split('/\s+/', $cleanName);
+            $prefix = '';
+            if (count($words) >= 2) {
+                $prefix = strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
+            } else {
+                $prefix = strtoupper(substr($words[0] ?? 'K', 0, 2));
+            }
+
+            $count = AssessmentCriterion::where('criteria_category_id', $category->id)->count() + 1;
+            $validated['code'] = sprintf('%s%02d', $prefix, $count);
+        } else {
+            $validated['code'] = strtoupper($validated['code']);
+        }
+
+        // Bobot: jika dikosongkan simpan null (menandakan proporsional otomatis)
+        if ($request->input('weight') === '' || $request->input('weight') === null) {
+            $validated['weight'] = null;
+        }
+
+        AssessmentCriterion::create($validated);
 
         return back()->with('success', "Butir kriteria [{$validated['code']}] {$validated['title']} berhasil ditambahkan!");
     }
@@ -224,7 +256,7 @@ class AdminController extends Controller
     /**
      * Update kategori / tahap yang sudah ada
      */
-    public function updateCategory(Request $request, \App\Models\CriteriaCategory $category): RedirectResponse
+    public function updateCategory(Request $request, CriteriaCategory $category): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
@@ -241,7 +273,7 @@ class AdminController extends Controller
     /**
      * Hapus kategori / tahap beserta kriteria di dalamnya
      */
-    public function destroyCategory(\App\Models\CriteriaCategory $category): RedirectResponse
+    public function destroyCategory(CriteriaCategory $category): RedirectResponse
     {
         $name = $category->name;
         $category->delete();
@@ -252,15 +284,26 @@ class AdminController extends Controller
     /**
      * Update butir kriteria yang sudah ada
      */
-    public function updateCriterion(Request $request, \App\Models\AssessmentCriterion $criterion): RedirectResponse
+    public function updateCriterion(Request $request, AssessmentCriterion $criterion): RedirectResponse
     {
         $validated = $request->validate([
             'criteria_category_id' => ['required', 'exists:criteria_categories,id'],
-            'code' => ['required', 'string', 'max:50'],
+            'code' => ['nullable', 'string', 'max:50'],
             'title' => ['required', 'string', 'max:255'],
             'guidelines' => ['nullable', 'string'],
-            'weight' => ['required', 'numeric', 'min:0', 'max:100'],
+            'weight' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
+
+        if (empty($validated['code'])) {
+            $validated['code'] = $criterion->code;
+        } else {
+            $validated['code'] = strtoupper($validated['code']);
+        }
+
+        // Bobot: jika dikosongkan simpan null (proporsional otomatis)
+        if ($request->input('weight') === '' || $request->input('weight') === null) {
+            $validated['weight'] = null;
+        }
 
         $criterion->update($validated);
 
@@ -270,7 +313,7 @@ class AdminController extends Controller
     /**
      * Hapus butir kriteria
      */
-    public function destroyCriterion(\App\Models\AssessmentCriterion $criterion): RedirectResponse
+    public function destroyCriterion(AssessmentCriterion $criterion): RedirectResponse
     {
         $code = $criterion->code;
         $criterion->delete();

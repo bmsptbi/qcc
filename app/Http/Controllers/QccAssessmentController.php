@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assessment;
+use App\Models\AssessmentCriterion;
 use App\Models\AssessmentPeriod;
 use App\Models\AssessmentScore;
 use App\Models\Circle;
@@ -121,6 +122,12 @@ class QccAssessmentController extends Controller
             $q->where('is_active', true)->orderBy('display_order', 'asc');
         }])->orderBy('display_order', 'asc')->get();
 
+        foreach ($categoriesWithCriteria as $cat) {
+            foreach ($cat->criteria as $crit) {
+                $crit->setRelation('category', $cat);
+            }
+        }
+
         // Check if judge has an existing draft/submission
         $existingAssessment = Assessment::with('scores')
             ->where('circle_id', $circle->id)
@@ -160,7 +167,7 @@ class QccAssessmentController extends Controller
         $isSubmit = $request->input('action') === 'submit';
 
         // Calculate total score and weighted score
-        $criteria = \App\Models\AssessmentCriterion::whereIn('id', array_keys($scoresInput))->get()->keyBy('id');
+        $criteria = AssessmentCriterion::with('category.criteria')->whereIn('id', array_keys($scoresInput))->get()->keyBy('id');
 
         $totalScoreRaw = 0;
         $totalWeightedScore = 0;
@@ -169,7 +176,7 @@ class QccAssessmentController extends Controller
         foreach ($scoresInput as $criterionId => $scoreVal) {
             $score = max(0, min(100, (float) $scoreVal));
             $crit = $criteria->get($criterionId);
-            $weight = $crit ? (float) $crit->weight : 1.0;
+            $weight = $crit ? (float) $crit->effective_weight : 1.0;
 
             $totalScoreRaw += $score;
             // Weighted score: (score * weight) / 100
@@ -199,7 +206,7 @@ class QccAssessmentController extends Controller
         foreach ($scoresInput as $criterionId => $scoreVal) {
             $score = max(0, min(100, (float) $scoreVal));
             $crit = $criteria->get($criterionId);
-            $weight = $crit ? (float) $crit->weight : 1.0;
+            $weight = $crit ? (float) $crit->effective_weight : 1.0;
             $weighted = ($score * $weight) / 100;
 
             AssessmentScore::updateOrCreate(

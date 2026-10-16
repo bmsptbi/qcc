@@ -86,16 +86,19 @@
 
                     <div class="grid grid-cols-3 gap-2">
                         <div class="col-span-1">
-                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kode <span class="text-rose-500">*</span></label>
-                            <input type="text" name="code" placeholder="P5, D2, S1" required
-                                class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold uppercase focus:outline-none focus:border-blue-500">
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kode <span class="text-slate-400 font-normal">(Auto)</span></label>
+                            <input type="text" name="code" placeholder="Otomatis"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold uppercase focus:outline-none focus:border-blue-500 bg-slate-50/50">
                         </div>
                         <div class="col-span-2">
-                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bobot Butir (%) <span class="text-rose-500">*</span></label>
-                            <input type="number" name="weight" step="0.5" min="0.5" max="100" placeholder="Contoh: 10" required
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bobot (%) <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                            <input type="number" name="weight" step="0.1" min="0.1" max="100" placeholder="Kosongkan = Auto"
                                 class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold focus:outline-none focus:border-blue-500">
                         </div>
                     </div>
+                    <p class="text-[10px] text-slate-500 leading-tight">
+                        💡 <em>Kode dibuat otomatis. Jika bobot dikosongkan, nilai akan dibagi rata (proporsional) dari bobot tahap.</em>
+                    </p>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Judul Kriteria <span class="text-rose-500">*</span></label>
@@ -228,9 +231,15 @@
                                         <h4 class="text-sm font-bold text-slate-900">
                                             {{ $crit->title }}
                                         </h4>
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
-                                            Bobot: {{ number_format($crit->weight, 0) }}%
-                                        </span>
+                                        @if($crit->weight !== null)
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60" title="Bobot diatur manual">
+                                                Bobot: {{ number_format($crit->effective_weight, 1) }}% (Manual)
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60" title="Bobot dihitung proporsional dari sisa bobot kategori">
+                                                Bobot: {{ number_format($crit->effective_weight, 1) }}% (Auto)
+                                            </span>
+                                        @endif
                                     </div>
 
                                     @if($crit->guidelines)
@@ -242,7 +251,7 @@
 
                                 <!-- Action Buttons: Edit & Delete Criterion -->
                                 <div class="flex items-center gap-1.5 flex-shrink-0">
-                                    <button type="button" onclick="openEditCriterionModal({{ $crit->id }}, {{ $category->id }}, '{{ addslashes($crit->code) }}', '{{ addslashes($crit->title) }}', {{ $crit->weight }}, '{{ addslashes($crit->guidelines ?? '') }}')" 
+                                    <button type="button" onclick="openEditCriterionModal({{ $crit->id }}, {{ $category->id }}, '{{ addslashes($crit->code) }}', '{{ addslashes($crit->title) }}', {{ $crit->weight !== null ? $crit->weight : 'null' }}, '{{ addslashes($crit->guidelines ?? '') }}')" 
                                         class="p-1.5 text-slate-400 hover:text-blue-600 transition" title="Ubah Butir Kriteria">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -351,14 +360,17 @@
 
             <div class="grid grid-cols-3 gap-2">
                 <div class="col-span-1">
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kode</label>
-                    <input type="text" id="edit_crit_code" name="code" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold uppercase">
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kode <span class="text-slate-400 font-normal">(Auto)</span></label>
+                    <input type="text" id="edit_crit_code" name="code" placeholder="Otomatis" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold uppercase bg-slate-50/50">
                 </div>
                 <div class="col-span-2">
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bobot Butir (%)</label>
-                    <input type="number" id="edit_crit_weight" name="weight" step="0.5" min="0.5" max="100" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold">
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bobot (%) <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                    <input type="number" id="edit_crit_weight" name="weight" step="0.1" min="0.1" max="100" placeholder="Kosongkan = Auto" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold">
                 </div>
             </div>
+            <p class="text-[10px] text-slate-500 leading-tight">
+                💡 <em>Jika bobot dikosongkan, bobot butir ini akan dibagi rata (proporsional) dari sisa bobot tahap.</em>
+            </p>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Judul Kriteria</label>
@@ -400,10 +412,10 @@
 
     function openEditCriterionModal(id, categoryId, code, title, weight, guidelines) {
         document.getElementById('edit_crit_category_id').value = categoryId;
-        document.getElementById('edit_crit_code').value = code;
+        document.getElementById('edit_crit_code').value = code || '';
         document.getElementById('edit_crit_title').value = title;
-        document.getElementById('edit_crit_weight').value = weight;
-        document.getElementById('edit_crit_guidelines').value = guidelines;
+        document.getElementById('edit_crit_weight').value = (weight !== null && weight !== 'null' && weight !== undefined) ? weight : '';
+        document.getElementById('edit_crit_guidelines').value = guidelines || '';
         document.getElementById('editCriterionForm').action = '/admin/criteria/' + id;
         document.getElementById('editCriterionModal').classList.remove('hidden');
     }

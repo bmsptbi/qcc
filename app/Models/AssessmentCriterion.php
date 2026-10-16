@@ -45,4 +45,21 @@ class AssessmentCriterion extends Model
     {
         return $this->hasMany(AssessmentScore::class);
     }
+
+    /**
+     * Dapatkan bobot efektif: jika diisi manual gunakan nilai tersebut,
+     * jika blank/null hitung proporsional dari kategori
+     */
+    public function getEffectiveWeightAttribute(): float
+    {
+        if ($this->weight !== null && (float) $this->weight > 0) {
+            return (float) $this->weight;
+        }
+
+        if ($this->category) {
+            return $this->category->getProportionalWeightForNulls();
+        }
+
+        return 1.0;
+    }
 }

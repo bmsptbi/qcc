@@ -144,7 +144,7 @@
                                 $currentNote = old('notes.' . $criterion->id, $existingScore?->notes ?? '');
                             @endphp
 
-                            <div class="pt-6 first:pt-0 criterion-row" data-criterion-id="{{ $criterion->id }}" data-weight="{{ $criterion->weight }}">
+                            <div class="pt-6 first:pt-0 criterion-row" data-criterion-id="{{ $criterion->id }}" data-weight="{{ $criterion->effective_weight }}">
                                 
                                 <!-- Top Row: Code, Title & Weight -->
                                 <div class="flex items-start justify-between gap-3 mb-2">
@@ -161,8 +161,8 @@
 
                                     <!-- Weight & Weighted Score Preview -->
                                     <div class="text-right flex-shrink-0">
-                                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 block mb-0.5">
-                                            Bobot: {{ number_format($criterion->weight, 0) }}%
+                                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded {{ $criterion->weight !== null ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/60' : 'bg-slate-100 text-slate-600' }} block mb-0.5">
+                                            Bobot: {{ number_format($criterion->effective_weight, 1) }}% {{ $criterion->weight === null ? '(Auto)' : '' }}
                                         </span>
                                         <span class="text-[11px] font-bold text-blue-600 weighted-subtotal-text" id="subtotal_{{ $criterion->id }}">
                                             Sub: 0.00

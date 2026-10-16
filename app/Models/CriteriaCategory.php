@@ -26,4 +26,27 @@ class CriteriaCategory extends Model
     {
         return $this->hasMany(AssessmentCriterion::class);
     }
+
+    /**
+     * Hitung bobot proporsional untuk butir yang bobotnya dikosongkan (blank / null)
+     */
+    public function getProportionalWeightForNulls(): float
+    {
+        $criteria = $this->criteria;
+        $count = $criteria->count();
+        if ($count === 0) {
+            return 0.0;
+        }
+
+        $explicitSum = $criteria->whereNotNull('weight')->sum(fn ($c) => (float) $c->weight);
+        $nullCount = $criteria->whereNull('weight')->count();
+
+        if ($nullCount === 0) {
+            return 0.0;
+        }
+
+        $remainingWeight = max(0, (float) $this->weight_percentage - $explicitSum);
+
+        return round($remainingWeight / $nullCount, 2);
+    }
 }
