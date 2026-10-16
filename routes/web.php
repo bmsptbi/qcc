@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\QccAssessmentController;
 use Illuminate\Support\Facades\Route;
 
@@ -9,3 +10,13 @@ Route::get('/circles/{circle}/assess', [QccAssessmentController::class, 'assess'
 Route::post('/circles/{circle}/assess', [QccAssessmentController::class, 'storeAssessment'])->name('qcc.circles.assess.store');
 Route::get('/leaderboard', [QccAssessmentController::class, 'leaderboard'])->name('qcc.leaderboard');
 Route::post('/switch-judge', [QccAssessmentController::class, 'switchJudge'])->name('qcc.switch-judge');
+
+// Admin Routes (Pendaftaran Circle & Manajemen Juri)
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/circles/create', [AdminController::class, 'createCircle'])->name('circles.create');
+    Route::post('/circles', [AdminController::class, 'storeCircle'])->name('circles.store');
+    Route::get('/judges', [AdminController::class, 'judgesIndex'])->name('judges.index');
+    Route::post('/judges', [AdminController::class, 'storeJudge'])->name('judges.store');
+    Route::post('/judges/assign', [AdminController::class, 'assignJudge'])->name('judges.assign');
+    Route::delete('/judges/assignment/{assignment}', [AdminController::class, 'destroyAssignment'])->name('judges.assignment.destroy');
+});
