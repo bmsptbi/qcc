@@ -47,8 +47,8 @@ class AssessmentCriterion extends Model
     }
 
     /**
-     * Dapatkan bobot efektif: jika diisi manual gunakan nilai tersebut,
-     * jika blank/null hitung proporsional dari kategori
+     * Dapatkan bobot efektif kriteria terhadap parent-nya (berbasis 100% per kategori/tahap).
+     * Jika diisi manual gunakan nilai tersebut, jika blank/null hitung proporsional dari kategori.
      */
     public function getEffectiveWeightAttribute(): float
     {
@@ -61,5 +61,15 @@ class AssessmentCriterion extends Model
         }
 
         return 1.0;
+    }
+
+    /**
+     * Dapatkan bobot efektif kriteria secara keseluruhan (global) terhadap total nilai akhir 100%
+     */
+    public function getEffectiveGlobalWeightAttribute(): float
+    {
+        $categoryWeight = $this->category ? (float) $this->category->weight_percentage : 100.0;
+
+        return round(($this->effective_weight * $categoryWeight) / 100, 2);
     }
 }

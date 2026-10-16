@@ -176,11 +176,13 @@ class QccAssessmentController extends Controller
         foreach ($scoresInput as $criterionId => $scoreVal) {
             $score = max(0, min(100, (float) $scoreVal));
             $crit = $criteria->get($criterionId);
-            $weight = $crit ? (float) $crit->effective_weight : 1.0;
+            $weightInParent = $crit ? (float) $crit->effective_weight : 1.0;
+            $catWeight = $crit?->category ? (float) $crit->category->weight_percentage : 100.0;
 
             $totalScoreRaw += $score;
-            // Weighted score: (score * weight) / 100
-            $totalWeightedScore += ($score * $weight) / 100;
+            // Kontribusi skor terhadap nilai akhir (bobot parent * bobot kategori)
+            $globalContribution = ($score * $weightInParent / 100) * ($catWeight / 100);
+            $totalWeightedScore += $globalContribution;
         }
 
         $averageRawScore = $criteriaCount > 0 ? ($totalScoreRaw / $criteriaCount) : 0;
@@ -206,8 +208,9 @@ class QccAssessmentController extends Controller
         foreach ($scoresInput as $criterionId => $scoreVal) {
             $score = max(0, min(100, (float) $scoreVal));
             $crit = $criteria->get($criterionId);
-            $weight = $crit ? (float) $crit->effective_weight : 1.0;
-            $weighted = ($score * $weight) / 100;
+            $weightInParent = $crit ? (float) $crit->effective_weight : 1.0;
+            // Subtotal skor di dalam kategori / tahap
+            $subtotalInParent = ($score * $weightInParent) / 100;
 
             AssessmentScore::updateOrCreate(
                 [
@@ -216,7 +219,7 @@ class QccAssessmentController extends Controller
                 ],
                 [
                     'score' => round($score, 2),
-                    'weighted_score' => round($weighted, 2),
+                    'weighted_score' => round($subtotalInParent, 2),
                     'notes' => $notesInput[$criterionId] ?? null,
                 ]
             );

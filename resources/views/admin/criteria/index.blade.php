@@ -91,13 +91,13 @@
                                 class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold uppercase focus:outline-none focus:border-blue-500 bg-slate-50/50">
                         </div>
                         <div class="col-span-2">
-                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bobot (%) <span class="text-slate-400 font-normal">(Opsional)</span></label>
-                            <input type="number" name="weight" step="0.1" min="0.1" max="100" placeholder="Kosongkan = Auto"
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bobot di Tahap (%) <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                            <input type="number" name="weight" step="0.1" min="0.1" max="100" placeholder="Kosongkan = Auto Proporsional"
                                 class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold focus:outline-none focus:border-blue-500">
                         </div>
                     </div>
                     <p class="text-[10px] text-slate-500 leading-tight">
-                        💡 <em>Kode dibuat otomatis. Jika bobot dikosongkan, nilai akan dibagi rata (proporsional) dari bobot tahap.</em>
+                        💡 <em>Kode dibuat otomatis. Bobot adalah porsi terhadap tahap ini (total 100%). Jika dikosongkan, nilai akan dibagi rata secara proporsional.</em>
                     </p>
 
                     <div>
@@ -364,12 +364,12 @@
                     <input type="text" id="edit_crit_code" name="code" placeholder="Otomatis" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold uppercase bg-slate-50/50">
                 </div>
                 <div class="col-span-2">
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bobot (%) <span class="text-slate-400 font-normal">(Opsional)</span></label>
-                    <input type="number" id="edit_crit_weight" name="weight" step="0.1" min="0.1" max="100" placeholder="Kosongkan = Auto" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold">
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bobot di Tahap (%) <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                    <input type="number" id="edit_crit_weight" name="weight" step="0.1" min="0.1" max="100" placeholder="Kosongkan = Auto Proporsional" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold">
                 </div>
             </div>
             <p class="text-[10px] text-slate-500 leading-tight">
-                💡 <em>Jika bobot dikosongkan, bobot butir ini akan dibagi rata (proporsional) dari sisa bobot tahap.</em>
+                💡 <em>Bobot adalah porsi dalam tahap ini (total 100%). Jika dikosongkan, bobot butir ini akan dibagi rata secara proporsional.</em>
             </p>
 
             <div>

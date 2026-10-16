@@ -29,6 +29,7 @@ class CriteriaCategory extends Model
 
     /**
      * Hitung bobot proporsional untuk butir yang bobotnya dikosongkan (blank / null)
+     * Bobot ini adalah bobot terhadap parent (kategori/tahap) dengan basis 100%
      */
     public function getProportionalWeightForNulls(): float
     {
@@ -45,7 +46,7 @@ class CriteriaCategory extends Model
             return 0.0;
         }
 
-        $remainingWeight = max(0, (float) $this->weight_percentage - $explicitSum);
+        $remainingWeight = max(0, 100.0 - $explicitSum);
 
         return round($remainingWeight / $nullCount, 2);
     }

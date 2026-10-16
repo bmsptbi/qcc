@@ -126,12 +126,18 @@
                             @endif
                         </div>
 
-                        <!-- Category Weight Badge -->
-                        <div class="text-right flex-shrink-0">
-                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Bobot Tahap</span>
-                            <span class="px-2.5 py-1 rounded-lg bg-white/10 text-emerald-300 text-xs sm:text-sm font-extrabold border border-white/10">
-                                {{ number_format($cat->weight_percentage, 0) }}%
-                            </span>
+                        <!-- Category Weight & Stage Score Badge -->
+                        <div class="flex items-center gap-3 text-right flex-shrink-0">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">Skor Tahap</span>
+                                <span class="text-xs sm:text-sm font-black text-amber-400" id="cat_score_{{ $cat->id }}">0.00</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">Bobot Tahap</span>
+                                <span class="px-2.5 py-1 rounded-lg bg-white/10 text-emerald-300 text-xs sm:text-sm font-extrabold border border-white/10">
+                                    {{ number_format($cat->weight_percentage, 0) }}%
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -144,7 +150,7 @@
                                 $currentNote = old('notes.' . $criterion->id, $existingScore?->notes ?? '');
                             @endphp
 
-                            <div class="pt-6 first:pt-0 criterion-row" data-criterion-id="{{ $criterion->id }}" data-weight="{{ $criterion->effective_weight }}">
+                            <div class="pt-6 first:pt-0 criterion-row" data-criterion-id="{{ $criterion->id }}" data-category-id="{{ $cat->id }}" data-weight="{{ $criterion->effective_weight }}" data-cat-weight="{{ $cat->weight_percentage }}">
                                 
                                 <!-- Top Row: Code, Title & Weight -->
                                 <div class="flex items-start justify-between gap-3 mb-2">
@@ -374,67 +380,88 @@
     // Real-time Score Calculation Script
     function recalculateScores() {
         const rows = document.querySelectorAll('.criterion-row');
-        let totalWeighted = 0;
         let filledCount = 0;
         const totalCount = rows.length;
 
+        // Group subtotals by category
+        const catSubtotals = {};
+        const catWeights = {};
+
         rows.forEach(row => {
             const id = row.getAttribute('data-criterion-id');
+            const catId = row.getAttribute('data-category-id');
             const weight = parseFloat(row.getAttribute('data-weight')) || 1.0;
+            const catWeight = parseFloat(row.getAttribute('data-cat-weight')) || 100.0;
             const input = document.getElementById('score_input_' + id);
             
+            if (catSubtotals[catId] === undefined) {
+                catSubtotals[catId] = 0;
+                catWeights[catId] = catWeight;
+            }
+
             if (input) {
                 const val = parseFloat(input.value) || 0;
                 if (val > 0) filledCount++;
                 
-                // Weighted score: (val * weight) / 100
-                const weighted = (val * weight) / 100;
-                totalWeighted += weighted;
+                // Subtotal poin butir dalam kategori (skor * bobot ke parent / 100)
+                const subInCat = (val * weight) / 100;
+                catSubtotals[catId] += subInCat;
 
                 // Update subtotal text
                 const subEl = document.getElementById('subtotal_' + id);
                 if (subEl) {
-                    subEl.innerText = 'Sub: ' + weighted.toFixed(2);
+                    subEl.innerText = 'Sub: ' + subInCat.toFixed(2);
                 }
             }
         });
 
+        // Calculate Grand Total Weighted Score: sum of (catSubtotal * catWeight / 100)
+        let grandTotalWeighted = 0;
+        for (const [catId, scoreInCat] of Object.entries(catSubtotals)) {
+            const catEl = document.getElementById('cat_score_' + catId);
+            if (catEl) {
+                catEl.innerText = scoreInCat.toFixed(2);
+            }
+            const catWeight = catWeights[catId] || 100.0;
+            grandTotalWeighted += (scoreInCat * catWeight) / 100;
+        }
+
         // Update Floating Score
         const floatingEl = document.getElementById('floatingTotalScore');
         if (floatingEl) {
-            floatingEl.innerText = totalWeighted.toFixed(2);
+            floatingEl.innerText = grandTotalWeighted.toFixed(2);
         }
 
         const modalScoreEl = document.getElementById('modalFinalScore');
         if (modalScoreEl) {
-            modalScoreEl.innerText = totalWeighted.toFixed(2);
+            modalScoreEl.innerText = grandTotalWeighted.toFixed(2);
         }
 
         // Update Progress Bar
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
-        const pct = Math.round((filledCount / totalCount) * 100);
+        const pct = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
         if (progressBar) progressBar.style.width = pct + '%';
         if (progressText) progressText.innerText = filledCount + ' / ' + totalCount + ' Kriteria Terisi (' + pct + '%)';
 
         // Update Medal Preview
         const medalBadge = document.getElementById('medalBadge');
         if (medalBadge) {
-            if (totalWeighted >= 90) {
+            if (grandTotalWeighted >= 90) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-cyan-500 to-blue-600 text-white';
-                medalBadge.innerText = '★ Diamond (' + totalWeighted.toFixed(1) + ')';
-            } else if (totalWeighted >= 85) {
+                medalBadge.innerText = '★ Diamond (' + grandTotalWeighted.toFixed(1) + ')';
+            } else if (grandTotalWeighted >= 85) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-slate-300 to-slate-500 text-white';
-                medalBadge.innerText = '★ Platinum (' + totalWeighted.toFixed(1) + ')';
-            } else if (totalWeighted >= 80) {
+                medalBadge.innerText = '★ Platinum (' + grandTotalWeighted.toFixed(1) + ')';
+            } else if (grandTotalWeighted >= 80) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-amber-400 to-amber-600 text-white';
-                medalBadge.innerText = '★ Gold (' + totalWeighted.toFixed(1) + ')';
-            } else if (totalWeighted >= 75) {
+                medalBadge.innerText = '★ Gold (' + grandTotalWeighted.toFixed(1) + ')';
+            } else if (grandTotalWeighted >= 75) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-slate-200 to-slate-400 text-slate-800';
-                medalBadge.innerText = '★ Silver (' + totalWeighted.toFixed(1) + ')';
+                medalBadge.innerText = '★ Silver (' + grandTotalWeighted.toFixed(1) + ')';
             } else {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-amber-700 to-amber-900 text-amber-100';
-                medalBadge.innerText = '★ Bronze (' + totalWeighted.toFixed(1) + ')';
+                medalBadge.innerText = '★ Bronze (' + grandTotalWeighted.toFixed(1) + ')';
             }
         }
     }
