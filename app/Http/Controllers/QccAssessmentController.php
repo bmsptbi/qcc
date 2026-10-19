@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\Assessment;
 use App\Models\AssessmentCriterion;
 use App\Models\AssessmentPeriod;
@@ -135,6 +136,11 @@ class QccAssessmentController extends Controller
         $stagesMatrix = $matrixData['stages'];
         $allEvaluatingJudges = $matrixData['all_evaluating_judges'];
         $calculatedFinalScore = $matrixData['final_score'];
+
+        if ((float) $circle->final_score !== (float) $calculatedFinalScore) {
+            $circle->final_score = $calculatedFinalScore;
+            $circle->saveQuietly();
+        }
 
         return view('qcc.show', compact(
             'circle',
@@ -598,9 +604,97 @@ class QccAssessmentController extends Controller
                 'deviasi' => $stageDeviasi,
             ];
 
+            // 4b. Auto-Adjustment jika deviasi > batas maksimum (default: 15%)
+            $adjustments = [];
+            $maxDeviationThreshold = (float) AppSetting::getValue('max_deviation_percentage', 15.0);
+
+            if ($stageStats['deviasi'] !== null && $stageStats['deviasi'] > $maxDeviationThreshold && $stageScoresCount > 1) {
+                $currScores = $judgeStageScores;
+                $currStats = $stageStats;
+                $iteration = 1;
+                $maxIterations = 10;
+
+                while ($currStats['deviasi'] !== null && $currStats['deviasi'] > $maxDeviationThreshold && $iteration <= $maxIterations) {
+                    $prevAvg = $currStats['average'];
+                    $devMax = $currStats['deviasi_max'] ?? 0;
+                    $devMin = $currStats['deviasi_min'] ?? 0;
+
+                    $targetJudgeId = null;
+                    $actionType = '';
+
+                    if ($devMax >= $devMin) {
+                        // Deviasi max lebih besar dari deviasi min: nilai juri terbesar diganti dengan average kalkulasi sebelumnya
+                        $highestScore = max($currScores);
+                        foreach ($currScores as $jId => $val) {
+                            if (abs($val - $highestScore) < 0.0001) {
+                                $targetJudgeId = $jId;
+                                $actionType = 'max';
+                                break;
+                            }
+                        }
+                    } else {
+                        // Deviasi min lebih besar dari deviasi max: nilai juri terkecil diganti dengan average kalkulasi sebelumnya
+                        $lowestScore = min($currScores);
+                        foreach ($currScores as $jId => $val) {
+                            if (abs($val - $lowestScore) < 0.0001) {
+                                $targetJudgeId = $jId;
+                                $actionType = 'min';
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($targetJudgeId === null) {
+                        break;
+                    }
+
+                    $oldScore = $currScores[$targetJudgeId];
+                    $currScores[$targetJudgeId] = round($prevAvg, 2);
+
+                    $adjList = array_values($currScores);
+                    $adjCount = count($adjList);
+                    $adjMax = max($adjList);
+                    $adjMin = min($adjList);
+                    $adjRange = round($adjMax - $adjMin, 2);
+                    $adjAvg = round(array_sum($adjList) / $adjCount, 2);
+                    $adjDevMax = round($adjMax - $adjAvg, 2);
+                    $adjDevMin = round($adjAvg - $adjMin, 2);
+                    $adjDeviasi = ($adjAvg > 0) ? round(($adjRange / $adjAvg) * 100, 2) : 0.0;
+
+                    $currStats = [
+                        'max' => $adjMax,
+                        'min' => $adjMin,
+                        'range' => $adjRange,
+                        'average' => $adjAvg,
+                        'deviasi_max' => $adjDevMax,
+                        'deviasi_min' => $adjDevMin,
+                        'deviasi' => $adjDeviasi,
+                    ];
+
+                    $isFinal = ($adjDeviasi <= $maxDeviationThreshold || $iteration === $maxIterations);
+
+                    $adjustments[] = [
+                        'iteration' => $iteration,
+                        'name' => "Adjustment {$iteration}",
+                        'judge_scores' => $currScores,
+                        'target_judge_id' => $targetJudgeId,
+                        'replaced_score' => $oldScore,
+                        'new_score' => round($prevAvg, 2),
+                        'action_type' => $actionType,
+                        'stats' => $currStats,
+                        'is_final' => $isFinal,
+                    ];
+
+                    $iteration++;
+                }
+            }
+
+            $isAdjusted = ! empty($adjustments);
+            $finalStats = $isAdjusted ? end($adjustments)['stats'] : $stageStats;
+
             $stageContribution = 0.0;
-            if ($stageStats['average'] !== null) {
-                $stageContribution = ($stageStats['average'] * $catWeight) / 100;
+            if ($finalStats['average'] !== null) {
+                $stageContribution = ($finalStats['average'] * $catWeight) / 100;
                 $overallWeightedSum += $stageContribution;
             }
 
@@ -651,7 +745,11 @@ class QccAssessmentController extends Controller
                 'judges' => $stageJudges,
                 'judge_stage_scores' => $judgeStageScores,
                 'judge_feedback' => $judgeFeedback,
-                'stage_stats' => $stageStats,
+                'raw_stage_stats' => $stageStats,
+                'stage_stats' => $finalStats,
+                'adjustments' => $adjustments,
+                'is_adjusted' => $isAdjusted,
+                'max_deviation_threshold' => $maxDeviationThreshold,
                 'stage_contribution' => round($stageContribution, 2),
                 'criteria_rows' => $criteriaRows,
             ];
@@ -734,20 +832,6 @@ class QccAssessmentController extends Controller
                     continue;
                 }
 
-                // Nilai Tertimbang Row
-                $tertimbangRow = ['Nilai Tertimbang'];
-                foreach ($stageJudges as $judge) {
-                    $tertimbangRow[] = $stageData['judge_stage_scores'][$judge->id] ?? '-';
-                }
-                $tertimbangRow[] = $stageData['stage_stats']['max'] !== null ? number_format($stageData['stage_stats']['max'], 2) : '-';
-                $tertimbangRow[] = $stageData['stage_stats']['min'] !== null ? number_format($stageData['stage_stats']['min'], 2) : '-';
-                $tertimbangRow[] = $stageData['stage_stats']['range'] !== null ? number_format($stageData['stage_stats']['range'], 2) : '-';
-                $tertimbangRow[] = $stageData['stage_stats']['average'] !== null ? number_format($stageData['stage_stats']['average'], 2) : '-';
-                $tertimbangRow[] = $stageData['stage_stats']['deviasi_max'] !== null ? number_format($stageData['stage_stats']['deviasi_max'], 2) : '-';
-                $tertimbangRow[] = $stageData['stage_stats']['deviasi_min'] !== null ? number_format($stageData['stage_stats']['deviasi_min'], 2) : '-';
-                $tertimbangRow[] = $stageData['stage_stats']['deviasi'] !== null ? number_format($stageData['stage_stats']['deviasi'], 2).'%' : '-';
-                fputcsv($handle, $tertimbangRow);
-
                 // Table Column Header Row: Item | Judges | Max | Min | Range | Average | Deviasi Max | Deviasi Min | Deviasi (%)
                 $itemHeader = ['Item'];
                 foreach ($stageJudges as $judge) {
@@ -755,6 +839,39 @@ class QccAssessmentController extends Controller
                 }
                 $itemHeader = array_merge($itemHeader, ['Max', 'Min', 'Range', 'Average', 'Deviasi Max', 'Deviasi Min', 'Deviasi (%)']);
                 fputcsv($handle, $itemHeader);
+
+                // Jika ada adjustment, tulis baris Adjustment di atas Nilai Tertimbang
+                if (! empty($stageData['adjustments'])) {
+                    foreach ($stageData['adjustments'] as $adj) {
+                        $adjRow = [$adj['name'].($adj['is_final'] ? ' (Final)' : '')];
+                        foreach ($stageJudges as $judge) {
+                            $adjRow[] = $adj['judge_scores'][$judge->id] ?? '-';
+                        }
+                        $adjRow[] = $adj['stats']['max'] !== null ? number_format($adj['stats']['max'], 2) : '-';
+                        $adjRow[] = $adj['stats']['min'] !== null ? number_format($adj['stats']['min'], 2) : '-';
+                        $adjRow[] = $adj['stats']['range'] !== null ? number_format($adj['stats']['range'], 2) : '-';
+                        $adjRow[] = $adj['stats']['average'] !== null ? number_format($adj['stats']['average'], 2) : '-';
+                        $adjRow[] = $adj['stats']['deviasi_max'] !== null ? number_format($adj['stats']['deviasi_max'], 2) : '-';
+                        $adjRow[] = $adj['stats']['deviasi_min'] !== null ? number_format($adj['stats']['deviasi_min'], 2) : '-';
+                        $adjRow[] = $adj['stats']['deviasi'] !== null ? number_format($adj['stats']['deviasi'], 2).'%' : '-';
+                        fputcsv($handle, $adjRow);
+                    }
+                }
+
+                // Nilai Tertimbang Row (Awal)
+                $rawStats = $stageData['raw_stage_stats'] ?? $stageData['stage_stats'];
+                $tertimbangRow = ['Nilai Tertimbang'.(! empty($stageData['adjustments']) ? ' (Awal)' : '')];
+                foreach ($stageJudges as $judge) {
+                    $tertimbangRow[] = $stageData['judge_stage_scores'][$judge->id] ?? '-';
+                }
+                $tertimbangRow[] = $rawStats['max'] !== null ? number_format($rawStats['max'], 2) : '-';
+                $tertimbangRow[] = $rawStats['min'] !== null ? number_format($rawStats['min'], 2) : '-';
+                $tertimbangRow[] = $rawStats['range'] !== null ? number_format($rawStats['range'], 2) : '-';
+                $tertimbangRow[] = $rawStats['average'] !== null ? number_format($rawStats['average'], 2) : '-';
+                $tertimbangRow[] = $rawStats['deviasi_max'] !== null ? number_format($rawStats['deviasi_max'], 2) : '-';
+                $tertimbangRow[] = $rawStats['deviasi_min'] !== null ? number_format($rawStats['deviasi_min'], 2) : '-';
+                $tertimbangRow[] = $rawStats['deviasi'] !== null ? number_format($rawStats['deviasi'], 2).'%' : '-';
+                fputcsv($handle, $tertimbangRow);
 
                 // Criteria Rows
                 foreach ($stageData['criteria_rows'] as $row) {

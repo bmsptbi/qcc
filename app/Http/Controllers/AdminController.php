@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\AssessmentCriterion;
 use App\Models\AssessmentPeriod;
 use App\Models\Circle;
@@ -712,5 +713,40 @@ class AdminController extends Controller
         $user->delete();
 
         return back()->with('success', "Akun pengguna [{$name}] telah berhasil dihapus.");
+    }
+
+    /**
+     * Halaman pengaturan konfigurasi sistem (Batas Deviasi Maksimum, dll.)
+     */
+    public function settingsIndex(): View
+    {
+        $maxDeviation = (float) AppSetting::getValue('max_deviation_percentage', 15.0);
+
+        return view('admin.settings.index', compact('maxDeviation'));
+    }
+
+    /**
+     * Simpan pembaruan pengaturan sistem
+     */
+    public function settingsUpdate(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'max_deviation_percentage' => 'required|numeric|min:1|max:100',
+        ], [
+            'max_deviation_percentage.required' => 'Nilai batas deviasi maksimum wajib diisi.',
+            'max_deviation_percentage.numeric' => 'Nilai batas deviasi harus berupa angka numerik.',
+            'max_deviation_percentage.min' => 'Batas deviasi minimal adalah 1%.',
+            'max_deviation_percentage.max' => 'Batas deviasi maksimal adalah 100%.',
+        ]);
+
+        $newVal = round((float) $validated['max_deviation_percentage'], 2);
+
+        AppSetting::setValue(
+            'max_deviation_percentage',
+            (string) $newVal,
+            'Batas toleransi maksimum deviasi nilai dewan juri per tahap (persen)'
+        );
+
+        return back()->with('success', "Pengaturan berhasil disimpan! Batas toleransi deviasi juri kini diatur ke {$newVal}%.");
     }
 }

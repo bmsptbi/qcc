@@ -50,4 +50,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     Route::post('/criteria', [AdminController::class, 'storeCriterion'])->name('criteria.store');
     Route::put('/criteria/{criterion}', [AdminController::class, 'updateCriterion'])->name('criteria.update');
     Route::delete('/criteria/{criterion}', [AdminController::class, 'destroyCriterion'])->name('criteria.destroy');
+
+    // System Settings Routes (Admin only)
+    Route::get('/settings', [AdminController::class, 'settingsIndex'])->name('settings.index');
+    Route::post('/settings', [AdminController::class, 'settingsUpdate'])->name('settings.update');
 });

@@ -415,6 +415,11 @@
                                 <span class="px-3.5 py-1.5 bg-yellow-300 border border-yellow-400 font-mono font-black text-slate-950 text-base sm:text-lg rounded-md shadow-2xs tracking-wide" title="Nilai Rata-rata Tertimbang Tahap Ini (Skala 0 - 10)">
                                     {{ $stageData['stage_stats']['average'] !== null ? number_format($stageData['stage_stats']['average'], 2) : '-' }}
                                 </span>
+                                @if(!empty($stageData['adjustments']))
+                                    <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300" title="Nilai tahap ini menggunakan hasil {{ end($stageData['adjustments'])['name'] }} karena deviasi awal melebihi {{ number_format($stageData['max_deviation_threshold'], 0) }}%">
+                                        {{ end($stageData['adjustments'])['name'] }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -443,39 +448,107 @@
                                         <th class="p-3 text-center bg-purple-100/80 text-purple-900">Deviasi (%)</th>
                                     </tr>
 
+                                    <!-- Row(s): Adjustment jika Deviasi > Batas Maksimum (Diletakkan di atas Nilai Tertimbang) -->
+                                    @if(!empty($stageData['adjustments']))
+                                        @foreach($stageData['adjustments'] as $adj)
+                                            <tr class="{{ $adj['is_final'] ? 'bg-emerald-50/70 border-b-2 border-emerald-200 text-slate-900' : 'bg-amber-50/50 border-b border-slate-200 text-slate-800' }} font-bold">
+                                                <th class="p-3 font-black text-xs text-slate-900 sticky left-0 {{ $adj['is_final'] ? 'bg-emerald-50/95' : 'bg-amber-50/95' }} z-10 border-r border-slate-200">
+                                                    <div class="flex items-center justify-between gap-1.5">
+                                                        <span class="{{ $adj['is_final'] ? 'text-emerald-950' : 'text-slate-900' }}">{{ $adj['name'] }}</span>
+                                                        @if($adj['is_final'])
+                                                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-600 text-white font-extrabold uppercase tracking-wider shadow-2xs">FINAL</span>
+                                                        @else
+                                                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-bold uppercase tracking-wider">&gt; {{ number_format($stageData['max_deviation_threshold'], 0) }}%</span>
+                                                        @endif
+                                                    </div>
+                                                </th>
+                                                @foreach($stageJudges as $judge)
+                                                    @php
+                                                        $isTarget = ($adj['target_judge_id'] == $judge->id);
+                                                    @endphp
+                                                    <th class="p-2.5 text-center font-black text-sm border-r border-slate-200/80">
+                                                        @if($isTarget)
+                                                            <div class="inline-flex flex-col items-center justify-center">
+                                                                <span class="px-2 py-0.5 bg-amber-200/90 border border-amber-400 text-amber-950 rounded shadow-2xs font-mono font-black" title="Skor juri ini dikalibrasi dari {{ number_format($adj['replaced_score'], 2) }} ke {{ number_format($adj['new_score'], 2) }} (Average sebelumnya)">
+                                                                    {{ number_format($adj['judge_scores'][$judge->id], 2) }}
+                                                                </span>
+                                                                <span class="text-[9px] text-slate-400 font-semibold line-through">
+                                                                    {{ number_format($adj['replaced_score'], 2) }}
+                                                                </span>
+                                                            </div>
+                                                        @else
+                                                            <span class="text-blue-800">
+                                                                {{ isset($adj['judge_scores'][$judge->id]) ? number_format($adj['judge_scores'][$judge->id], 2) : '-' }}
+                                                            </span>
+                                                        @endif
+                                                    </th>
+                                                @endforeach
+                                                <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                                    {{ $adj['stats']['max'] !== null ? number_format($adj['stats']['max'], 2) : '-' }}
+                                                </th>
+                                                <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                                    {{ $adj['stats']['min'] !== null ? number_format($adj['stats']['min'], 2) : '-' }}
+                                                </th>
+                                                <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                                    {{ $adj['stats']['range'] !== null ? number_format($adj['stats']['range'], 2) : '-' }}
+                                                </th>
+                                                <th class="p-3 text-center font-black text-sm {{ $adj['is_final'] ? 'text-emerald-950 bg-emerald-200/70' : 'text-blue-900 bg-blue-100/70' }} border-r border-slate-200/80">
+                                                    {{ $adj['stats']['average'] !== null ? number_format($adj['stats']['average'], 2) : '-' }}
+                                                </th>
+                                                <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                                    {{ $adj['stats']['deviasi_max'] !== null ? number_format($adj['stats']['deviasi_max'], 2) : '-' }}
+                                                </th>
+                                                <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                                    {{ $adj['stats']['deviasi_min'] !== null ? number_format($adj['stats']['deviasi_min'], 2) : '-' }}
+                                                </th>
+                                                <th class="p-3 text-center font-black {{ $adj['stats']['deviasi'] > $stageData['max_deviation_threshold'] ? 'text-rose-700 bg-rose-100/80' : 'text-emerald-800 bg-emerald-100/80' }}">
+                                                    {{ $adj['stats']['deviasi'] !== null ? number_format($adj['stats']['deviasi'], 2) . '%' : '-' }}
+                                                </th>
+                                            </tr>
+                                        @endforeach
+                                    @endif
+
                                     <!-- Row: Nilai Tertimbang (Summary Row Tahap Ini) -->
-                                    <tr class="bg-amber-50/80 border-b-2 border-slate-200 text-slate-900 font-bold">
-                                        <th class="p-3 font-black text-xs text-slate-900 sticky left-0 bg-amber-50/95 z-10 border-r border-slate-200">
+                                    @php
+                                        $rawStats = $stageData['raw_stage_stats'] ?? $stageData['stage_stats'];
+                                        $hasAdj = !empty($stageData['adjustments']);
+                                    @endphp
+                                    <tr class="{{ $hasAdj ? 'bg-slate-50/80 border-b-2 border-slate-200 text-slate-600' : 'bg-amber-50/80 border-b-2 border-slate-200 text-slate-900' }} font-bold">
+                                        <th class="p-3 font-black text-xs text-slate-900 sticky left-0 {{ $hasAdj ? 'bg-slate-50/95' : 'bg-amber-50/95' }} z-10 border-r border-slate-200">
                                             <div class="flex items-center justify-between gap-1.5">
                                                 <span>Nilai Tertimbang</span>
-                                                <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-200/70 text-amber-900 font-semibold uppercase">Summary</span>
+                                                @if($hasAdj)
+                                                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold uppercase">Awal</span>
+                                                @else
+                                                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-200/70 text-amber-900 font-semibold uppercase">Summary</span>
+                                                @endif
                                             </div>
                                         </th>
                                         @foreach($stageJudges as $judge)
-                                            <th class="p-3 text-center font-black text-sm text-blue-800 border-r border-slate-200/80">
+                                            <th class="p-3 text-center font-black text-sm {{ $hasAdj ? 'text-slate-600' : 'text-blue-800' }} border-r border-slate-200/80">
                                                 {{ $stageData['judge_stage_scores'][$judge->id] ?? '-' }}
                                             </th>
                                         @endforeach
                                         <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
-                                            {{ $stageData['stage_stats']['max'] !== null ? number_format($stageData['stage_stats']['max'], 2) : '-' }}
+                                            {{ $rawStats['max'] !== null ? number_format($rawStats['max'], 2) : '-' }}
                                         </th>
                                         <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
-                                            {{ $stageData['stage_stats']['min'] !== null ? number_format($stageData['stage_stats']['min'], 2) : '-' }}
+                                            {{ $rawStats['min'] !== null ? number_format($rawStats['min'], 2) : '-' }}
                                         </th>
                                         <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
-                                            {{ $stageData['stage_stats']['range'] !== null ? number_format($stageData['stage_stats']['range'], 2) : '-' }}
+                                            {{ $rawStats['range'] !== null ? number_format($rawStats['range'], 2) : '-' }}
                                         </th>
-                                        <th class="p-3 text-center font-black text-sm text-blue-900 bg-blue-100/70 border-r border-slate-200/80">
-                                            {{ $stageData['stage_stats']['average'] !== null ? number_format($stageData['stage_stats']['average'], 2) : '-' }}
-                                        </th>
-                                        <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
-                                            {{ $stageData['stage_stats']['deviasi_max'] !== null ? number_format($stageData['stage_stats']['deviasi_max'], 2) : '-' }}
+                                        <th class="p-3 text-center font-black text-sm {{ $hasAdj ? 'text-slate-700 bg-slate-100/80' : 'text-blue-900 bg-blue-100/70' }} border-r border-slate-200/80">
+                                            {{ $rawStats['average'] !== null ? number_format($rawStats['average'], 2) : '-' }}
                                         </th>
                                         <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
-                                            {{ $stageData['stage_stats']['deviasi_min'] !== null ? number_format($stageData['stage_stats']['deviasi_min'], 2) : '-' }}
+                                            {{ $rawStats['deviasi_max'] !== null ? number_format($rawStats['deviasi_max'], 2) : '-' }}
                                         </th>
-                                        <th class="p-3 text-center font-black text-purple-900 bg-purple-100/70">
-                                            {{ $stageData['stage_stats']['deviasi'] !== null ? number_format($stageData['stage_stats']['deviasi'], 2) . '%' : '-' }}
+                                        <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                            {{ $rawStats['deviasi_min'] !== null ? number_format($rawStats['deviasi_min'], 2) : '-' }}
+                                        </th>
+                                        <th class="p-3 text-center font-black {{ ($rawStats['deviasi'] !== null && $rawStats['deviasi'] > $stageData['max_deviation_threshold']) ? 'text-rose-700 bg-rose-100/80' : 'text-purple-900 bg-purple-100/70' }}" title="{{ ($rawStats['deviasi'] !== null && $rawStats['deviasi'] > $stageData['max_deviation_threshold']) ? 'Deviasi melebihi batas ' . number_format($stageData['max_deviation_threshold'], 0) . '%' : '' }}">
+                                            {{ $rawStats['deviasi'] !== null ? number_format($rawStats['deviasi'], 2) . '%' : '-' }}
                                         </th>
                                     </tr>
                                 </thead>
