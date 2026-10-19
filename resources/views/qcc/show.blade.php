@@ -419,7 +419,7 @@
                                             {{ $stageData['stage_stats']['deviasi_min'] !== null ? number_format($stageData['stage_stats']['deviasi_min'], 2) : '-' }}
                                         </th>
                                         <th class="p-3 text-center font-black text-purple-900 bg-purple-100/70">
-                                            {{ $stageData['stage_stats']['deviasi'] !== null ? number_format($stageData['stage_stats']['deviasi'], 2) : '-' }}
+                                            {{ $stageData['stage_stats']['deviasi'] !== null ? number_format($stageData['stage_stats']['deviasi'], 2) . '%' : '-' }}
                                         </th>
                                     </tr>
 
@@ -439,7 +439,7 @@
                                         <th class="p-3 text-center bg-blue-100/80 text-blue-900 border-r border-slate-200">Average</th>
                                         <th class="p-3 text-center border-r border-slate-200">Deviasi Max</th>
                                         <th class="p-3 text-center border-r border-slate-200">Deviasi Min</th>
-                                        <th class="p-3 text-center bg-purple-100/80 text-purple-900">Deviasi</th>
+                                        <th class="p-3 text-center bg-purple-100/80 text-purple-900">Deviasi (%)</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -486,7 +486,7 @@
                                                 {{ $stats['deviasi_min'] !== null ? number_format($stats['deviasi_min'], 2) : '-' }}
                                             </td>
                                             <td class="p-3 text-center font-semibold text-purple-900 bg-purple-50/60">
-                                                {{ $stats['deviasi'] !== null ? number_format($stats['deviasi'], 2) : '-' }}
+                                                {{ $stats['deviasi'] !== null ? number_format($stats['deviasi'], 2) . '%' : '-' }}
                                             </td>
                                         </tr>
                                     @endforeach

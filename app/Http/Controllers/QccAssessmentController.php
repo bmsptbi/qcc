@@ -578,19 +578,25 @@ class QccAssessmentController extends Controller
             // 4. Hitung statistik tahap untuk baris "Nilai Tertimbang"
             $stageScoresList = array_values($judgeStageScores);
             $stageScoresCount = count($stageScoresList);
+            $stageMax = $stageScoresCount > 0 ? max($stageScoresList) : null;
+            $stageMin = $stageScoresCount > 0 ? min($stageScoresList) : null;
+            $stageRange = ($stageMax !== null && $stageMin !== null) ? round($stageMax - $stageMin, 2) : null;
+            $stageAverage = $stageScoresCount > 0 ? round(array_sum($stageScoresList) / $stageScoresCount, 2) : null;
+
+            // Deviasi = (Range / Average) dalam percentage (%)
+            $stageDeviasi = ($stageAverage !== null && $stageAverage > 0 && $stageRange !== null)
+                ? round(($stageRange / $stageAverage) * 100, 2)
+                : ($stageScoresCount === 1 ? 0.0 : null);
+
             $stageStats = [
-                'max' => $stageScoresCount > 0 ? max($stageScoresList) : null,
-                'min' => $stageScoresCount > 0 ? min($stageScoresList) : null,
-                'range' => $stageScoresCount > 0 ? round(max($stageScoresList) - min($stageScoresList), 2) : null,
-                'average' => $stageScoresCount > 0 ? round(array_sum($stageScoresList) / $stageScoresCount, 2) : null,
+                'max' => $stageMax,
+                'min' => $stageMin,
+                'range' => $stageRange,
+                'average' => $stageAverage,
+                'deviasi_max' => ($stageMax !== null && $stageAverage !== null) ? round($stageMax - $stageAverage, 2) : null,
+                'deviasi_min' => ($stageMin !== null && $stageAverage !== null) ? round($stageAverage - $stageMin, 2) : null,
+                'deviasi' => $stageDeviasi,
             ];
-            $stageStats['deviasi_max'] = ($stageStats['max'] !== null && $stageStats['average'] !== null)
-                ? round($stageStats['max'] - $stageStats['average'], 2)
-                : null;
-            $stageStats['deviasi_min'] = ($stageStats['min'] !== null && $stageStats['average'] !== null)
-                ? round($stageStats['average'] - $stageStats['min'], 2)
-                : null;
-            $stageStats['deviasi'] = $this->calculateStandardDeviation($stageScoresList);
 
             $stageContribution = 0.0;
             if ($stageStats['average'] !== null) {
@@ -611,19 +617,25 @@ class QccAssessmentController extends Controller
                 $validCritScores = array_values(array_filter($critScoresByJudge, fn ($v) => $v !== null));
                 $vCount = count($validCritScores);
 
+                $critMax = $vCount > 0 ? max($validCritScores) : null;
+                $critMin = $vCount > 0 ? min($validCritScores) : null;
+                $critRange = ($critMax !== null && $critMin !== null) ? round($critMax - $critMin, 2) : null;
+                $critAverage = $vCount > 0 ? round(array_sum($validCritScores) / $vCount, 2) : null;
+
+                // Deviasi = (Range / Average) dalam percentage (%)
+                $critDeviasi = ($critAverage !== null && $critAverage > 0 && $critRange !== null)
+                    ? round(($critRange / $critAverage) * 100, 2)
+                    : ($vCount === 1 ? 0.0 : null);
+
                 $critStats = [
-                    'max' => $vCount > 0 ? max($validCritScores) : null,
-                    'min' => $vCount > 0 ? min($validCritScores) : null,
-                    'range' => $vCount > 0 ? round(max($validCritScores) - min($validCritScores), 2) : null,
-                    'average' => $vCount > 0 ? round(array_sum($validCritScores) / $vCount, 2) : null,
+                    'max' => $critMax,
+                    'min' => $critMin,
+                    'range' => $critRange,
+                    'average' => $critAverage,
+                    'deviasi_max' => ($critMax !== null && $critAverage !== null) ? round($critMax - $critAverage, 2) : null,
+                    'deviasi_min' => ($critMin !== null && $critAverage !== null) ? round($critAverage - $critMin, 2) : null,
+                    'deviasi' => $critDeviasi,
                 ];
-                $critStats['deviasi_max'] = ($critStats['max'] !== null && $critStats['average'] !== null)
-                    ? round($critStats['max'] - $critStats['average'], 2)
-                    : null;
-                $critStats['deviasi_min'] = ($critStats['min'] !== null && $critStats['average'] !== null)
-                    ? round($critStats['average'] - $critStats['min'], 2)
-                    : null;
-                $critStats['deviasi'] = $this->calculateStandardDeviation($validCritScores);
 
                 $criteriaRows[] = [
                     'criterion' => $crit,
@@ -733,15 +745,15 @@ class QccAssessmentController extends Controller
                 $tertimbangRow[] = $stageData['stage_stats']['average'] !== null ? number_format($stageData['stage_stats']['average'], 2) : '-';
                 $tertimbangRow[] = $stageData['stage_stats']['deviasi_max'] !== null ? number_format($stageData['stage_stats']['deviasi_max'], 2) : '-';
                 $tertimbangRow[] = $stageData['stage_stats']['deviasi_min'] !== null ? number_format($stageData['stage_stats']['deviasi_min'], 2) : '-';
-                $tertimbangRow[] = $stageData['stage_stats']['deviasi'] !== null ? number_format($stageData['stage_stats']['deviasi'], 2) : '-';
+                $tertimbangRow[] = $stageData['stage_stats']['deviasi'] !== null ? number_format($stageData['stage_stats']['deviasi'], 2).'%' : '-';
                 fputcsv($handle, $tertimbangRow);
 
-                // Table Column Header Row: Item | Judges | Max | Min | Range | Average | Deviasi Max | Deviasi Min | Deviasi
+                // Table Column Header Row: Item | Judges | Max | Min | Range | Average | Deviasi Max | Deviasi Min | Deviasi (%)
                 $itemHeader = ['Item'];
                 foreach ($stageJudges as $judge) {
                     $itemHeader[] = $judge->name;
                 }
-                $itemHeader = array_merge($itemHeader, ['Max', 'Min', 'Range', 'Average', 'Deviasi Max', 'Deviasi Min', 'Deviasi']);
+                $itemHeader = array_merge($itemHeader, ['Max', 'Min', 'Range', 'Average', 'Deviasi Max', 'Deviasi Min', 'Deviasi (%)']);
                 fputcsv($handle, $itemHeader);
 
                 // Criteria Rows
@@ -761,7 +773,7 @@ class QccAssessmentController extends Controller
                     $critRow[] = $stats['average'] !== null ? number_format($stats['average'], 2) : '-';
                     $critRow[] = $stats['deviasi_max'] !== null ? number_format($stats['deviasi_max'], 2) : '-';
                     $critRow[] = $stats['deviasi_min'] !== null ? number_format($stats['deviasi_min'], 2) : '-';
-                    $critRow[] = $stats['deviasi'] !== null ? number_format($stats['deviasi'], 2) : '-';
+                    $critRow[] = $stats['deviasi'] !== null ? number_format($stats['deviasi'], 2).'%' : '-';
 
                     fputcsv($handle, $critRow);
                 }
