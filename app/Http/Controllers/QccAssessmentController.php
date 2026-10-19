@@ -103,19 +103,39 @@ class QccAssessmentController extends Controller
         $currentJudge = User::find($currentJudgeId);
 
         $myAssessment = $circle->assessments->firstWhere('judge_id', $currentJudgeId);
+        $categories = CriteriaCategory::orderBy('display_order', 'asc')->get();
+        $allJudges = User::whereIn('role', ['judge', 'admin'])->get();
 
-        return view('qcc.show', compact('circle', 'currentJudge', 'myAssessment'));
+        return view('qcc.show', compact('circle', 'currentJudge', 'myAssessment', 'categories', 'allJudges'));
     }
 
     /**
      * Mobile-Optimized Assessment Form for Judges
      */
-    public function assess(Circle $circle): View
+    public function assess(Request $request, Circle $circle): View
     {
         $circle->load(['period', 'category', 'department', 'leader', 'facilitator', 'members']);
 
-        $currentJudgeId = session('active_judge_id', User::where('role', 'judge')->first()?->id);
+        // Check if judge_id is passed in query (e.g. from shared link)
+        if ($request->filled('judge_id')) {
+            $sharedJudge = User::whereIn('role', ['judge', 'admin'])->find($request->query('judge_id'));
+            if ($sharedJudge) {
+                session(['active_judge_id' => $sharedJudge->id]);
+            }
+        }
+
+        $currentJudgeId = session('active_judge_id', Auth::check() ? Auth::id() : User::where('role', 'judge')->first()?->id);
         $currentJudge = User::find($currentJudgeId) ?? User::where('role', 'judge')->first();
+
+        // Check if category_id or stage_id is passed in query (share stage setup)
+        $activeCategoryId = $request->query('category_id') ?? $request->query('stage_id');
+        if (! $activeCategoryId && $request->filled('stage')) {
+            $stageName = $request->query('stage');
+            $matched = CriteriaCategory::where('stage', $stageName)->orWhere('name', 'like', "%{$stageName}%")->first();
+            if ($matched) {
+                $activeCategoryId = $matched->id;
+            }
+        }
 
         // Get all criteria grouped by category
         $categoriesWithCriteria = CriteriaCategory::with(['criteria' => function ($q) {
@@ -146,7 +166,8 @@ class QccAssessmentController extends Controller
             'categoriesWithCriteria',
             'existingAssessment',
             'existingScores',
-            'allJudges'
+            'allJudges',
+            'activeCategoryId'
         ));
     }
 
@@ -155,61 +176,47 @@ class QccAssessmentController extends Controller
      */
     public function storeAssessment(Request $request, Circle $circle): RedirectResponse
     {
-        $currentJudgeId = session('active_judge_id', User::where('role', 'judge')->first()?->id);
-        $judge = User::find($currentJudgeId) ?? User::where('role', 'judge')->first();
+        $judgeId = $request->input('judge_id') ?? session('active_judge_id', Auth::id());
+        $judge = User::find($judgeId) ?? User::where('role', 'judge')->first();
 
         if (! $judge) {
-            return back()->with('error', 'Juri aktif tidak ditemukan.');
+            return back()->with('error', 'Juri penilai tidak ditemukan.');
         }
+
+        session(['active_judge_id' => $judge->id]);
 
         $scoresInput = $request->input('scores', []);
         $notesInput = $request->input('notes', []);
         $isSubmit = $request->input('action') === 'submit';
 
-        // Calculate total score and weighted score
-        $criteria = AssessmentCriterion::with('category.criteria')->whereIn('id', array_keys($scoresInput))->get()->keyBy('id');
-
-        $totalScoreRaw = 0;
-        $totalWeightedScore = 0;
-        $criteriaCount = $criteria->count();
-
+        // Filter valid scores (hanya yang diisi; nilai default adalah null / belum dinilai)
+        $validScores = [];
         foreach ($scoresInput as $criterionId => $scoreVal) {
-            $score = max(0, min(100, (float) $scoreVal));
-            $crit = $criteria->get($criterionId);
-            $weightInParent = $crit ? (float) $crit->effective_weight : 1.0;
-            $catWeight = $crit?->category ? (float) $crit->category->weight_percentage : 100.0;
-
-            $totalScoreRaw += $score;
-            // Kontribusi skor terhadap nilai akhir (bobot parent * bobot kategori)
-            $globalContribution = ($score * $weightInParent / 100) * ($catWeight / 100);
-            $totalWeightedScore += $globalContribution;
+            if ($scoreVal !== null && $scoreVal !== '' && is_numeric($scoreVal)) {
+                $validScores[$criterionId] = max(0, min(100, (float) $scoreVal));
+            }
         }
 
-        $averageRawScore = $criteriaCount > 0 ? ($totalScoreRaw / $criteriaCount) : 0;
-
-        // Upsert Assessment
-        $assessment = Assessment::updateOrCreate(
+        // Get or create Assessment record
+        $assessment = Assessment::firstOrCreate(
             [
                 'circle_id' => $circle->id,
                 'judge_id' => $judge->id,
             ],
             [
                 'assessment_period_id' => $circle->assessment_period_id,
-                'total_score' => round($averageRawScore, 2),
-                'weighted_score' => round($totalWeightedScore, 2),
-                'feedback_strengths' => $request->input('feedback_strengths'),
-                'feedback_improvements' => $request->input('feedback_improvements'),
-                'status' => $isSubmit ? 'submitted' : 'draft',
-                'submitted_at' => $isSubmit ? now() : null,
+                'total_score' => 0,
+                'weighted_score' => 0,
+                'status' => 'draft',
             ]
         );
 
-        // Save Detail Scores
-        foreach ($scoresInput as $criterionId => $scoreVal) {
-            $score = max(0, min(100, (float) $scoreVal));
+        // Save Detail Scores untuk butir-butir yang telah dinilai
+        $criteria = AssessmentCriterion::with('category.criteria')->whereIn('id', array_keys($validScores))->get()->keyBy('id');
+
+        foreach ($validScores as $criterionId => $score) {
             $crit = $criteria->get($criterionId);
             $weightInParent = $crit ? (float) $crit->effective_weight : 1.0;
-            // Subtotal skor di dalam kategori / tahap
             $subtotalInParent = ($score * $weightInParent) / 100;
 
             AssessmentScore::updateOrCreate(
@@ -224,6 +231,37 @@ class QccAssessmentController extends Controller
                 ]
             );
         }
+
+        // Hitung akumulasi total skor dan weighted score berdasarkan seluruh butir yang tersimpan pada assessment ini
+        $allAssessmentScores = AssessmentScore::with('criterion.category.criteria')
+            ->where('assessment_id', $assessment->id)
+            ->get();
+
+        $totalScoreRaw = 0;
+        $totalWeightedScore = 0;
+        $countScored = $allAssessmentScores->count();
+
+        foreach ($allAssessmentScores as $item) {
+            $crit = $item->criterion;
+            $score = (float) $item->score;
+            $weightInParent = $crit ? (float) $crit->effective_weight : 1.0;
+            $catWeight = $crit?->category ? (float) $crit->category->weight_percentage : 100.0;
+
+            $totalScoreRaw += $score;
+            $globalContribution = ($score * $weightInParent / 100) * ($catWeight / 100);
+            $totalWeightedScore += $globalContribution;
+        }
+
+        $averageRawScore = $countScored > 0 ? ($totalScoreRaw / $countScored) : 0;
+
+        $assessment->update([
+            'total_score' => round($averageRawScore, 2),
+            'weighted_score' => round($totalWeightedScore, 2),
+            'feedback_strengths' => $request->input('feedback_strengths', $assessment->feedback_strengths),
+            'feedback_improvements' => $request->input('feedback_improvements', $assessment->feedback_improvements),
+            'status' => $isSubmit ? 'submitted' : 'draft',
+            'submitted_at' => $isSubmit ? now() : $assessment->submitted_at,
+        ]);
 
         // Recalculate Circle Final Score and Award if all submitted
         $submittedAssessments = Assessment::where('circle_id', $circle->id)

@@ -99,34 +99,8 @@
                     @endif
                 </nav>
 
-                <!-- Top Right: Active Judge Switcher & Admin Sign In / Profile -->
+                <!-- Top Right: Admin Sign In / Profile -->
                 <div class="flex items-center space-x-2 sm:space-x-3">
-                    @php
-                        $currentJudgeId = session('active_judge_id', 2);
-                        $currentJudge = \App\Models\User::find($currentJudgeId) ?? \App\Models\User::where('role', 'judge')->first();
-                        $allJudges = \App\Models\User::whereIn('role', ['judge', 'admin'])->get();
-                    @endphp
-
-                    <!-- Judge Switch Dropdown Form -->
-                    <form action="{{ route('qcc.switch-judge') }}" method="POST" class="flex items-center">
-                        @csrf
-                        <div class="relative inline-flex items-center bg-slate-100/90 rounded-xl p-1 border border-slate-200/80">
-                            <span class="pl-2 pr-1 text-slate-500 text-xs font-medium hidden sm:inline-flex items-center gap-1">
-                                <svg class="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                </svg>
-                                Juri:
-                            </span>
-                            <select name="judge_id" onchange="this.form.submit()" class="bg-transparent text-xs sm:text-sm font-semibold text-slate-800 pr-7 py-1 pl-1 focus:outline-none cursor-pointer">
-                                @foreach($allJudges as $j)
-                                    <option value="{{ $j->id }}" {{ $currentJudge?->id == $j->id ? 'selected' : '' }}>
-                                        {{ Str::limit($j->name, 20) }} ({{ ucfirst($j->role) }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </form>
-
                     <!-- Admin Auth Button in Top Right Corner -->
                     @if(Auth::check() && Auth::user()->role === 'admin')
                         <div class="flex items-center gap-1.5 pl-1 sm:pl-2 border-l border-slate-200">

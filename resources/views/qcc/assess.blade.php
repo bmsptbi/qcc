@@ -15,27 +15,72 @@
         </a>
 
         <!-- Status Penilaian Saat Ini -->
-        @if($existingAssessment)
-            @if($existingAssessment->status === 'submitted')
-                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    Sudah Disubmit Final
-                </span>
+        <div class="flex items-center gap-2">
+            @if($existingAssessment)
+                @if($existingAssessment->status === 'submitted')
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        Sudah Disubmit Final
+                    </span>
+                @else
+                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                        Mode Draft Tersimpan
+                    </span>
+                @endif
             @else
-                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                    Mode Draft Tersimpan
+                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                    Penilaian Baru
                 </span>
             @endif
-        @else
-            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                Penilaian Baru
-            </span>
-        @endif
+        </div>
     </div>
 
-    <!-- Circle Header Card (Sticky Summary on Mobile) -->
+    <!-- Judge Identity Banner (Muncul saat buka form) -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-800 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 shadow-inner">
+                ⚖️
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                        Juri Penilai Aktif
+                    </span>
+                    @if($currentJudge?->nik)
+                        <span class="text-[11px] text-slate-300 font-mono">NIK: {{ $currentJudge->nik }}</span>
+                    @endif
+                </div>
+                <h2 class="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
+                    {{ $currentJudge?->name ?? 'Juri Penilai' }}
+                </h2>
+                <p class="text-[11px] sm:text-xs text-slate-300">
+                    {{ $currentJudge?->department->name ?? 'Dewan Juri Konvensi Mutu QCC' }}
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Button Ganti Juri -->
+            <button type="button" onclick="openJudgeModal()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs">
+                <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                </svg>
+                <span>Ganti Juri</span>
+            </button>
+
+            <!-- Button Share Link Penilaian -->
+            <button type="button" onclick="openShareModal()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-950/20">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                </svg>
+                <span>Bagikan Link Form</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Circle Summary Card -->
     <div class="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm mb-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
@@ -56,14 +101,6 @@
                 <p class="text-xs sm:text-sm text-slate-600 font-medium mt-1 leading-snug">
                     "{{ $circle->theme_title }}"
                 </p>
-            </div>
-
-            <!-- Juri Info & Action -->
-            <div class="flex items-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
-                <div class="text-left md:text-right">
-                    <span class="text-[11px] font-semibold text-slate-400 block uppercase">Penilai / Juri</span>
-                    <span class="text-xs sm:text-sm font-bold text-slate-900">{{ $currentJudge?->name ?? 'Juri' }}</span>
-                </div>
             </div>
         </div>
 
@@ -94,11 +131,47 @@
     <form id="assessmentForm" method="POST" action="{{ route('qcc.circles.assess.store', $circle) }}">
         @csrf
 
+        <!-- Hidden input for active judge id -->
+        <input type="hidden" name="judge_id" value="{{ $currentJudge?->id }}">
+
+        <!-- Stage Filter Navigation Tabs (Setup Tahap Yang Tampil) -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between gap-2 mb-2.5">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                    Pilihan Tahap Penilaian:
+                </span>
+                <span class="text-[11px] text-slate-500 font-medium hidden sm:inline">Klik tahap di bawah untuk fokus menilai tahap tertentu</span>
+            </div>
+
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <button type="button" onclick="selectStageTab('all')" id="tab_btn_all" 
+                    class="stage-tab-btn px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 {{ ($activeCategoryId == 'all' || !$activeCategoryId) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                    <span>Semua Tahap</span>
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($activeCategoryId == 'all' || !$activeCategoryId) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
+                        100%
+                    </span>
+                </button>
+
+                @foreach($categoriesWithCriteria as $cat)
+                    <button type="button" onclick="selectStageTab({{ $cat->id }})" id="tab_btn_{{ $cat->id }}" 
+                        class="stage-tab-btn px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 {{ ($activeCategoryId == $cat->id) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                        <span>{{ $cat->name }}</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($activeCategoryId == $cat->id) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
+                            {{ number_format($cat->weight_percentage, 0) }}%
+                        </span>
+                    </button>
+                @endforeach
+            </div>
+        </div>
+
         <!-- Progress Indicator -->
         <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs mb-6">
             <div class="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
                 <span>Kelengkapan Penilaian:</span>
-                <span id="progressText">0 / 10 Kriteria Terisi</span>
+                <span id="progressText">0 / 0 Kriteria Dinilai (0%)</span>
             </div>
             <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
                 <div id="progressBar" class="bg-gradient-to-r from-blue-600 to-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -108,7 +181,8 @@
         <!-- Loop PDCA Categories -->
         <div class="space-y-6">
             @foreach($categoriesWithCriteria as $categoryIndex => $cat)
-                <div class="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div id="stage_card_{{ $cat->id }}" data-category-id="{{ $cat->id }}" 
+                    class="category-stage-card bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden {{ ($activeCategoryId && $activeCategoryId != 'all' && $activeCategoryId != $cat->id) ? 'hidden' : '' }}">
                     
                     <!-- Category Header -->
                     <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-800 text-white p-4 sm:p-5 flex items-center justify-between">
@@ -130,7 +204,7 @@
                         <div class="flex items-center gap-3 text-right flex-shrink-0">
                             <div>
                                 <span class="text-[10px] uppercase font-bold text-slate-400 block">Skor Tahap</span>
-                                <span class="text-xs sm:text-sm font-black text-amber-400" id="cat_score_{{ $cat->id }}">0.00</span>
+                                <span class="text-xs sm:text-sm font-black text-amber-400" id="cat_score_{{ $cat->id }}">-</span>
                             </div>
                             <div>
                                 <span class="text-[10px] uppercase font-bold text-slate-400 block">Bobot Tahap</span>
@@ -146,11 +220,16 @@
                         @foreach($cat->criteria as $criterion)
                             @php
                                 $existingScore = $existingScores->get($criterion->id);
-                                $currentVal = old('scores.' . $criterion->id, $existingScore?->score ?? 80);
+                                $currentVal = old('scores.' . $criterion->id, $existingScore ? $existingScore->score : null);
                                 $currentNote = old('notes.' . $criterion->id, $existingScore?->notes ?? '');
+                                $isRated = ($currentVal !== null && $currentVal !== '');
                             @endphp
 
-                            <div class="pt-6 first:pt-0 criterion-row" data-criterion-id="{{ $criterion->id }}" data-category-id="{{ $cat->id }}" data-weight="{{ $criterion->effective_weight }}" data-cat-weight="{{ $cat->weight_percentage }}">
+                            <div class="pt-6 first:pt-0 criterion-row" 
+                                data-criterion-id="{{ $criterion->id }}" 
+                                data-category-id="{{ $cat->id }}" 
+                                data-weight="{{ $criterion->effective_weight }}" 
+                                data-cat-weight="{{ $cat->weight_percentage }}">
                                 
                                 <!-- Top Row: Code, Title & Weight -->
                                 <div class="flex items-start justify-between gap-3 mb-2">
@@ -167,11 +246,11 @@
 
                                     <!-- Weight & Weighted Score Preview -->
                                     <div class="text-right flex-shrink-0">
-                                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded {{ $criterion->weight !== null ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/60' : 'bg-slate-100 text-slate-600' }} block mb-0.5">
+                                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded {{ $criterion->weight !== null ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/60' : 'bg-slate-100 text-slate-600' }} block mb-0.5" title="Bobot butir di tahap ini">
                                             Bobot: {{ number_format($criterion->effective_weight, 1) }}% {{ $criterion->weight === null ? '(Auto)' : '' }}
                                         </span>
-                                        <span class="text-[11px] font-bold text-blue-600 weighted-subtotal-text" id="subtotal_{{ $criterion->id }}">
-                                            Sub: 0.00
+                                        <span class="text-[11px] font-bold {{ $isRated ? 'text-blue-600' : 'text-slate-400' }} weighted-subtotal-text" id="subtotal_{{ $criterion->id }}">
+                                            {{ $isRated ? 'Sub: ' . number_format(((float)$currentVal * $criterion->effective_weight) / 100, 2) : 'Sub: - (Belum)' }}
                                         </span>
                                     </div>
                                 </div>
@@ -194,47 +273,61 @@
                                     </details>
                                 @endif
 
-                                <!-- Touch-Friendly Interactive Score Input Controls -->
+                                <!-- Touch-Friendly Interactive Score Input Controls (Default Blank / Null) -->
                                 <div class="bg-slate-50/80 rounded-2xl p-3.5 sm:p-4 border border-slate-200/70 space-y-3">
                                     
                                     <!-- Stepper & Direct Value Display -->
                                     <div class="flex items-center justify-between gap-3">
-                                        <div class="text-xs font-semibold text-slate-500">Skor (0 - 100):</div>
+                                        <div class="text-xs font-semibold text-slate-500">
+                                            Skor (0 - 100):
+                                            <span id="score_status_{{ $criterion->id }}" class="ml-1 text-[11px] {{ $isRated ? 'text-emerald-600 font-bold' : 'text-slate-400' }}">
+                                                {{ $isRated ? '✓ Terisi' : '(Kosong)' }}
+                                            </span>
+                                        </div>
 
-                                        <div class="flex items-center gap-2">
-                                            <!-- Step Minus Button (Large thumb target) -->
+                                        <div class="flex items-center gap-1.5 sm:gap-2">
+                                            <!-- Step Minus Button -->
                                             <button type="button" onclick="adjustScore({{ $criterion->id }}, -5)" 
                                                 class="w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 active:scale-95 flex items-center justify-center font-black text-lg transition touch-action-manipulation shadow-xs">
                                                 -
                                             </button>
 
-                                            <!-- Direct Number Input -->
-                                            <div class="relative w-20">
+                                            <!-- Direct Number Input (Default Null / Blank) -->
+                                            <div class="relative w-24">
                                                 <input type="number" 
                                                     id="score_input_{{ $criterion->id }}" 
                                                     name="scores[{{ $criterion->id }}]" 
-                                                    value="{{ $currentVal }}" 
+                                                    value="{{ $isRated ? (float)$currentVal : '' }}" 
                                                     min="0" max="100" step="1"
+                                                    placeholder="-"
                                                     oninput="syncFromInput({{ $criterion->id }})"
-                                                    class="score-input w-full text-center py-1.5 px-1 bg-white rounded-xl border border-blue-500 font-black text-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs">
+                                                    class="score-input w-full text-center py-1.5 px-1 bg-white rounded-xl border {{ $isRated ? 'border-blue-500 font-black text-slate-900' : 'border-slate-300 font-normal text-slate-400' }} text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs">
                                             </div>
 
-                                            <!-- Step Plus Button (Large thumb target) -->
+                                            <!-- Step Plus Button -->
                                             <button type="button" onclick="adjustScore({{ $criterion->id }}, 5)" 
                                                 class="w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 active:scale-95 flex items-center justify-center font-black text-lg transition touch-action-manipulation shadow-xs">
                                                 +
                                             </button>
+
+                                            <!-- Clear / Reset to Null Button -->
+                                            <button type="button" onclick="clearScore({{ $criterion->id }})" 
+                                                class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Kosongkan nilai butir ini">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
                                         </div>
                                     </div>
 
-                                    <!-- Range Slider (Smooth Scrubbing) -->
+                                    <!-- Range Slider -->
                                     <div class="pt-1">
                                         <input type="range" 
                                             id="score_slider_{{ $criterion->id }}" 
-                                            value="{{ $currentVal }}" 
+                                            value="{{ $isRated ? (float)$currentVal : 0 }}" 
                                             min="0" max="100" step="1"
                                             oninput="syncFromSlider({{ $criterion->id }})"
-                                            class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer touch-action-manipulation">
+                                            class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer touch-action-manipulation {{ $isRated ? 'accent-blue-600' : 'opacity-50' }}">
                                         <div class="flex justify-between text-[10px] text-slate-400 font-bold px-0.5 mt-1">
                                             <span>0 (Kurang)</span>
                                             <span>60 (Cukup)</span>
@@ -243,12 +336,12 @@
                                         </div>
                                     </div>
 
-                                    <!-- Fast Preset Pills for Easy One-Tap Scoring on Mobile -->
+                                    <!-- Fast Preset Pills for Easy One-Tap Scoring -->
                                     <div class="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1">
                                         <span class="text-[10px] font-semibold text-slate-400 mr-1 hidden sm:inline">Pilihan Cepat:</span>
                                         @foreach([65, 75, 80, 85, 90, 95] as $presetVal)
                                             <button type="button" onclick="setPresetScore({{ $criterion->id }}, {{ $presetVal }})"
-                                                class="px-2.5 py-1 rounded-lg text-xs font-bold transition touch-action-manipulation {{ $currentVal == $presetVal ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' }}">
+                                                class="px-2.5 py-1 rounded-lg text-xs font-bold transition touch-action-manipulation {{ ($isRated && (float)$currentVal == $presetVal) ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' }}">
                                                 {{ $presetVal }}
                                             </button>
                                         @endforeach
@@ -259,7 +352,7 @@
                                         <input type="text" 
                                             name="notes[{{ $criterion->id }}]" 
                                             value="{{ $currentNote }}" 
-                                            placeholder="Catatan khusus kriteria ini (opsional)..."
+                                            placeholder="Catatan khusus butir ini (opsional)..."
                                             class="w-full px-3 py-1.5 text-xs bg-white rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
                                     </div>
 
@@ -301,14 +394,14 @@
             </div>
         </div>
 
-        <!-- Sticky Floating Bottom Bar (Desktop & Mobile) -->
+        <!-- Sticky Floating Bottom Bar -->
         <div class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl px-4 py-3 sm:py-4">
             <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
                 
                 <!-- Live Total Score Display -->
                 <div class="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
                     <div>
-                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Nilai Tertimbang</span>
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Nilai Tertimbang (Grand Score)</span>
                         <div class="flex items-baseline gap-1.5">
                             <span id="floatingTotalScore" class="text-2xl sm:text-3xl font-black text-slate-900 leading-none">0.00</span>
                             <span class="text-xs font-semibold text-slate-400">/ 100</span>
@@ -317,7 +410,7 @@
 
                     <!-- Medal Preview Badge -->
                     <div id="medalBadge" class="px-3 py-1 rounded-full text-xs font-black shadow-xs bg-slate-100 text-slate-600">
-                        Calculating...
+                        Belum Dinilai
                     </div>
                 </div>
 
@@ -346,6 +439,131 @@
 
 </div>
 
+<!-- Modal Ganti Juri Penilai -->
+<div id="judgeModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+                <span class="text-lg">⚖️</span>
+                <h3 class="text-base font-bold text-slate-900">Pilih Identitas Juri Penilai</h3>
+            </div>
+            <button type="button" onclick="closeJudgeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        </div>
+
+        <p class="text-xs text-slate-500">
+            Pilih nama Anda dari daftar juri yang ditugaskan untuk gugus ini:
+        </p>
+
+        <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+            @foreach($allJudges as $j)
+                <button type="button" onclick="selectJudge({{ $j->id }})" 
+                    class="w-full text-left p-3 rounded-2xl border transition flex items-center justify-between gap-3 {{ $currentJudge?->id == $j->id ? 'bg-blue-50/80 border-blue-400 text-blue-950 font-bold shadow-xs' : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100' }}">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                            {{ substr($j->name, 0, 1) }}
+                        </div>
+                        <div>
+                            <span class="text-xs sm:text-sm font-bold block">{{ $j->name }}</span>
+                            <span class="text-[10px] text-slate-400">{{ $j->nik ?? 'NIK: -' }} • {{ $j->department->name ?? 'Dewan Juri' }}</span>
+                        </div>
+                    </div>
+                    @if($currentJudge?->id == $j->id)
+                        <span class="text-xs font-black text-blue-600">Aktif</span>
+                    @endif
+                </button>
+            @endforeach
+        </div>
+
+        <div class="pt-2 border-t border-slate-100 text-right">
+            <button type="button" onclick="closeJudgeModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Bagikan Link Penilaian (Share Modal dengan Setup Tahap) -->
+<div id="shareModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold">
+                    🔗
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Bagikan Link Penilaian</h3>
+                    <p class="text-[11px] text-slate-500">Atur tahap apa yang ingin dibagikan ke juri</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeShareModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        </div>
+
+        <!-- Setup Form: Tahap & Juri -->
+        <div class="space-y-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
+            <!-- 1. Setup Tahap yang Ditampilkan -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Tahap yang Ditampilkan:
+                </label>
+                <select id="share_stage_select" onchange="updateGeneratedShareUrl()" 
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold text-slate-800 focus:outline-none focus:border-blue-500">
+                    <option value="all">Semua Tahap Penilaian (Lengkap)</option>
+                    @foreach($categoriesWithCriteria as $cat)
+                        <option value="{{ $cat->id }}" {{ $activeCategoryId == $cat->id ? 'selected' : '' }}>
+                            Tahap: {{ $cat->name }} (Bobot: {{ number_format($cat->weight_percentage, 0) }}%)
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- 2. Setup Juri Penerima (Opsional) -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Ditujukan Khusus Untuk Juri (Opsional):
+                </label>
+                <select id="share_judge_select" onchange="updateGeneratedShareUrl()" 
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold text-slate-800 focus:outline-none focus:border-blue-500">
+                    <option value="">Umum (Juri Memilih Sendiri di Form)</option>
+                    @foreach($allJudges as $j)
+                        <option value="{{ $j->id }}" {{ $currentJudge?->id == $j->id ? 'selected' : '' }}>
+                            {{ $j->name }} ({{ ucfirst($j->role) }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <!-- Link Preview Box -->
+        <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Link Penilaian Siap Dibagikan:</label>
+            <div class="flex items-center gap-2">
+                <input type="text" id="share_url_display" readonly 
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs font-mono text-slate-800 select-all focus:outline-none">
+                <button type="button" onclick="copyShareUrl()" id="copy_btn" 
+                    class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex-shrink-0 shadow-sm flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                    </svg>
+                    <span id="copy_btn_text">Salin Link</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Share to WhatsApp -->
+        <div class="pt-2 flex items-center gap-2">
+            <button type="button" onclick="shareToWhatsApp()" 
+                class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-14.416c-6.627 0-12 5.373-12 12 0 2.152.569 4.174 1.564 5.922l-1.564 5.706 5.86-1.538c1.705.932 3.659 1.472 5.74 1.472 6.627 0 12-5.373 12-12s-5.373-12-12-12z"/>
+                </svg>
+                <span>Bagikan ke WhatsApp</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+
 <!-- Confirmation Modal for Final Submit -->
 <div id="submitModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
@@ -358,8 +576,8 @@
         <div>
             <h3 class="text-lg font-bold text-slate-900">Konfirmasi Kirim Penilaian</h3>
             <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                Anda akan mengirimkan nilai akhir untuk <strong class="text-slate-800">{{ $circle->circle_name }}</strong>.
-                Total nilai tertimbang adalah <strong id="modalFinalScore" class="text-emerald-700 font-black">0.00</strong>.
+                Anda akan mengirimkan nilai akhir untuk <strong class="text-slate-800">{{ $circle->circle_name }}</strong> sebagai <strong class="text-slate-800">{{ $currentJudge?->name }}</strong>.
+                Total nilai tertimbang saat ini adalah <strong id="modalFinalScore" class="text-emerald-700 font-black">0.00</strong>.
             </p>
         </div>
 
@@ -368,7 +586,7 @@
                 Periksa Lagi
             </button>
             <button type="button" onclick="submitFinalForm()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/30">
-                Ya, Kirim Sekarang
+                Ya, Kirim Final
             </button>
         </div>
     </div>
@@ -377,15 +595,48 @@
 
 @push('scripts')
 <script>
-    // Real-time Score Calculation Script
+    const baseUrl = "{{ url('/circles/' . $circle->id . '/assess') }}";
+    let activeStageTab = "{{ $activeCategoryId ?? 'all' }}";
+
+    // Tab Stage Switcher
+    function selectStageTab(stageId) {
+        activeStageTab = stageId;
+        const cards = document.querySelectorAll('.category-stage-card');
+        const tabBtns = document.querySelectorAll('.stage-tab-btn');
+
+        tabBtns.forEach(btn => {
+            btn.className = 'stage-tab-btn px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50';
+            const badge = btn.querySelector('span:last-child');
+            if (badge) badge.className = 'px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-600';
+        });
+
+        const activeBtn = document.getElementById('tab_btn_' + stageId);
+        if (activeBtn) {
+            activeBtn.className = 'stage-tab-btn px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20';
+            const badge = activeBtn.querySelector('span:last-child');
+            if (badge) badge.className = 'px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 text-white';
+        }
+
+        cards.forEach(card => {
+            const cardCatId = card.getAttribute('data-category-id');
+            if (stageId === 'all' || cardCatId == stageId) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+    }
+
+    // Real-time Score Calculation Script (Default NULL aware)
     function recalculateScores() {
         const rows = document.querySelectorAll('.criterion-row');
         let filledCount = 0;
         const totalCount = rows.length;
 
-        // Group subtotals by category
+        // Group subtotals & counts by category
         const catSubtotals = {};
         const catWeights = {};
+        const catRatedCounts = {};
 
         rows.forEach(row => {
             const id = row.getAttribute('data-criterion-id');
@@ -393,24 +644,58 @@
             const weight = parseFloat(row.getAttribute('data-weight')) || 1.0;
             const catWeight = parseFloat(row.getAttribute('data-cat-weight')) || 100.0;
             const input = document.getElementById('score_input_' + id);
-            
+            const slider = document.getElementById('score_slider_' + id);
+            const subEl = document.getElementById('subtotal_' + id);
+            const statusEl = document.getElementById('score_status_' + id);
+
             if (catSubtotals[catId] === undefined) {
                 catSubtotals[catId] = 0;
                 catWeights[catId] = catWeight;
+                catRatedCounts[catId] = 0;
             }
 
             if (input) {
-                const val = parseFloat(input.value) || 0;
-                if (val > 0) filledCount++;
-                
-                // Subtotal poin butir dalam kategori (skor * bobot ke parent / 100)
-                const subInCat = (val * weight) / 100;
-                catSubtotals[catId] += subInCat;
+                const rawVal = input.value.trim();
 
-                // Update subtotal text
-                const subEl = document.getElementById('subtotal_' + id);
-                if (subEl) {
-                    subEl.innerText = 'Sub: ' + subInCat.toFixed(2);
+                if (rawVal !== '' && !isNaN(rawVal)) {
+                    let val = parseFloat(rawVal);
+                    if (val < 0) val = 0;
+                    if (val > 100) val = 100;
+
+                    filledCount++;
+                    catRatedCounts[catId]++;
+
+                    // Subtotal point in category
+                    const subInCat = (val * weight) / 100;
+                    catSubtotals[catId] += subInCat;
+
+                    if (subEl) {
+                        subEl.innerText = 'Sub: ' + subInCat.toFixed(2);
+                        subEl.className = 'text-[11px] font-bold text-blue-600 weighted-subtotal-text';
+                    }
+                    if (statusEl) {
+                        statusEl.innerText = '✓ ' + val;
+                        statusEl.className = 'ml-1 text-[11px] text-emerald-600 font-bold';
+                    }
+                    if (slider) {
+                        slider.classList.remove('opacity-50');
+                        slider.classList.add('accent-blue-600');
+                    }
+                    input.className = 'score-input w-full text-center py-1.5 px-1 bg-white rounded-xl border border-blue-500 font-black text-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs';
+                } else {
+                    if (subEl) {
+                        subEl.innerText = 'Sub: - (Belum)';
+                        subEl.className = 'text-[11px] font-semibold text-slate-400 weighted-subtotal-text';
+                    }
+                    if (statusEl) {
+                        statusEl.innerText = '(Kosong)';
+                        statusEl.className = 'ml-1 text-[11px] text-slate-400';
+                    }
+                    if (slider) {
+                        slider.classList.add('opacity-50');
+                        slider.classList.remove('accent-blue-600');
+                    }
+                    input.className = 'score-input w-full text-center py-1.5 px-1 bg-white rounded-xl border border-slate-300 font-normal text-lg text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs';
                 }
             }
         });
@@ -419,8 +704,9 @@
         let grandTotalWeighted = 0;
         for (const [catId, scoreInCat] of Object.entries(catSubtotals)) {
             const catEl = document.getElementById('cat_score_' + catId);
+            const ratedCount = catRatedCounts[catId] || 0;
             if (catEl) {
-                catEl.innerText = scoreInCat.toFixed(2);
+                catEl.innerText = ratedCount > 0 ? scoreInCat.toFixed(2) : '-';
             }
             const catWeight = catWeights[catId] || 100.0;
             grandTotalWeighted += (scoreInCat * catWeight) / 100;
@@ -442,12 +728,15 @@
         const progressText = document.getElementById('progressText');
         const pct = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
         if (progressBar) progressBar.style.width = pct + '%';
-        if (progressText) progressText.innerText = filledCount + ' / ' + totalCount + ' Kriteria Terisi (' + pct + '%)';
+        if (progressText) progressText.innerText = filledCount + ' / ' + totalCount + ' Kriteria Dinilai (' + pct + '%)';
 
         // Update Medal Preview
         const medalBadge = document.getElementById('medalBadge');
         if (medalBadge) {
-            if (grandTotalWeighted >= 90) {
+            if (filledCount === 0) {
+                medalBadge.className = 'px-3 py-1 rounded-full text-xs font-semibold shadow-xs bg-slate-100 text-slate-500';
+                medalBadge.innerText = 'Belum Dinilai';
+            } else if (grandTotalWeighted >= 90) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-cyan-500 to-blue-600 text-white';
                 medalBadge.innerText = '★ Diamond (' + grandTotalWeighted.toFixed(1) + ')';
             } else if (grandTotalWeighted >= 85) {
@@ -469,11 +758,16 @@
     function syncFromInput(id) {
         const input = document.getElementById('score_input_' + id);
         const slider = document.getElementById('score_slider_' + id);
-        let val = parseInt(input.value);
-        if (isNaN(val)) val = 0;
-        if (val < 0) val = 0;
-        if (val > 100) val = 100;
-        if (slider) slider.value = val;
+        if (input) {
+            const raw = input.value.trim();
+            if (raw !== '') {
+                let val = parseInt(raw);
+                if (isNaN(val)) val = 0;
+                if (val < 0) val = 0;
+                if (val > 100) val = 100;
+                if (slider) slider.value = val;
+            }
+        }
         recalculateScores();
     }
 
@@ -489,7 +783,8 @@
     function adjustScore(id, delta) {
         const input = document.getElementById('score_input_' + id);
         if (input) {
-            let current = parseInt(input.value) || 0;
+            let current = parseInt(input.value);
+            if (isNaN(current)) current = 75; // Starting point if adjusting from blank
             let next = Math.max(0, Math.min(100, current + delta));
             input.value = next;
             syncFromInput(id);
@@ -504,6 +799,15 @@
         }
     }
 
+    function clearScore(id) {
+        const input = document.getElementById('score_input_' + id);
+        const slider = document.getElementById('score_slider_' + id);
+        if (input) input.value = '';
+        if (slider) slider.value = 0;
+        recalculateScores();
+    }
+
+    // Modal Handlers
     function confirmSubmit() {
         document.getElementById('submitModal').classList.remove('hidden');
     }
@@ -514,7 +818,6 @@
 
     function submitFinalForm() {
         const form = document.getElementById('assessmentForm');
-        // create hidden input action=submit
         const actionInput = document.createElement('input');
         actionInput.type = 'hidden';
         actionInput.name = 'action';
@@ -523,8 +826,86 @@
         form.submit();
     }
 
+    // Judge Switcher Modal Handlers
+    function openJudgeModal() {
+        document.getElementById('judgeModal').classList.remove('hidden');
+    }
+
+    function closeJudgeModal() {
+        document.getElementById('judgeModal').classList.add('hidden');
+    }
+
+    function selectJudge(judgeId) {
+        // Reload current page with judge_id parameter and preserve stage tab
+        let url = new URL(window.location.href);
+        url.searchParams.set('judge_id', judgeId);
+        if (activeStageTab && activeStageTab !== 'all') {
+            url.searchParams.set('category_id', activeStageTab);
+        }
+        window.location.href = url.toString();
+    }
+
+    // Share Modal Handlers
+    function openShareModal() {
+        updateGeneratedShareUrl();
+        document.getElementById('shareModal').classList.remove('hidden');
+    }
+
+    function closeShareModal() {
+        document.getElementById('shareModal').classList.add('hidden');
+    }
+
+    function updateGeneratedShareUrl() {
+        const stageVal = document.getElementById('share_stage_select').value;
+        const judgeVal = document.getElementById('share_judge_select').value;
+        
+        let url = new URL(baseUrl);
+        if (stageVal && stageVal !== 'all') {
+            url.searchParams.set('category_id', stageVal);
+        }
+        if (judgeVal) {
+            url.searchParams.set('judge_id', judgeVal);
+        }
+
+        document.getElementById('share_url_display').value = url.toString();
+        document.getElementById('copy_btn_text').innerText = 'Salin Link';
+    }
+
+    function copyShareUrl() {
+        const input = document.getElementById('share_url_display');
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value).then(() => {
+            document.getElementById('copy_btn_text').innerText = '✓ Tersalin!';
+            setTimeout(() => {
+                document.getElementById('copy_btn_text').innerText = 'Salin Link';
+            }, 2500);
+        });
+    }
+
+    function shareToWhatsApp() {
+        const url = document.getElementById('share_url_display').value;
+        const stageSelect = document.getElementById('share_stage_select');
+        const stageName = stageSelect.options[stageSelect.selectedIndex].text;
+        const judgeSelect = document.getElementById('share_judge_select');
+        const judgeName = judgeSelect.value ? judgeSelect.options[judgeSelect.selectedIndex].text : 'Bapak/Ibu Juri';
+
+        const text = `*FORM PENILAIAN QCC 2026*\n` +
+            `Halo ${judgeName},\n` +
+            `Berikut link penilaian untuk:\n` +
+            `• *Gugus:* {{ $circle->circle_name }} ({{ $circle->circle_code }})\n` +
+            `• *Tema:* "{{ $circle->theme_title }}"\n` +
+            `• *Tahap:* ${stageName}\n\n` +
+            `Silakan akses link penilaian di bawah ini:\n${url}`;
+
+        window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
+    }
+
     // Initialize on load
     document.addEventListener('DOMContentLoaded', function() {
+        if (activeStageTab) {
+            selectStageTab(activeStageTab);
+        }
         recalculateScores();
     });
 </script>
