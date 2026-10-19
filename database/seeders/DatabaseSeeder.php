@@ -85,6 +85,9 @@ class DatabaseSeeder extends Seeder
             'phone' => '081234567895',
         ]);
 
+        // 2b. Dewan Juri & Fasilitator Resmi Bekaert
+        $this->call(BekaertUsersSeeder::class);
+
         // 3. Assessment Period
         $period = AssessmentPeriod::firstOrCreate(['name' => 'Konvensi Mutu & QCC 2026'], [
             'year' => 2026,

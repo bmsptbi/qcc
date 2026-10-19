@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\AssessmentPeriod;
 use App\Models\Circle;
+use App\Models\User;
+use Database\Seeders\BekaertUsersSeeder;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +25,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Auto-seed Bekaert Users jika belum ada di database
+        try {
+            if (Schema::hasTable('users') && ! User::where('nik', '971205')->exists()) {
+                (new BekaertUsersSeeder)->run();
+            }
+        } catch (\Throwable $e) {
+            // Abaikan jika database belum siap / koneksi offline
+        }
+
         View::composer('*', function ($view) {
             $sessionYear = session('active_year');
             if (request()->filled('year')) {
