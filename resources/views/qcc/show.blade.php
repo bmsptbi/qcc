@@ -3,10 +3,10 @@
 @section('title', 'Detail Risalah - ' . $circle->circle_name)
 
 @section('content')
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
 
-    <!-- Breadcrumb -->
-    <div class="flex items-center justify-between mb-4">
+    <!-- Breadcrumb & Top Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <a href="{{ route('qcc.index') }}" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-600 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -14,11 +14,19 @@
             Kembali ke Daftar
         </a>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Unduh Format Excel (CSV) Button -->
+            <a href="{{ route('qcc.circles.export', $circle) }}" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs sm:text-sm border border-emerald-200 transition inline-flex items-center gap-1.5 shadow-2xs" title="Unduh Summary Matrix Penilaian Format Excel / CSV">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span>Unduh Excel (CSV)</span>
+            </a>
+
             <!-- Share Assessment Link & QR Code Button (Only for Admin) -->
             @if(Auth::check() && Auth::user()->role === 'admin')
-                <button type="button" onclick="openShareModal()" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs sm:text-sm border border-emerald-200 transition inline-flex items-center gap-1.5 shadow-2xs" title="Buat Link & QR Code Penilaian">
-                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button type="button" onclick="openShareModal()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs" title="Buat Link & QR Code Penilaian">
+                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
                     </svg>
                     <span>Bagikan Link & QR</span>
@@ -65,17 +73,15 @@
             </div>
 
             <!-- Score Summary Card -->
-            @if($circle->final_score)
-                <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white text-center min-w-[140px] shadow-lg">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-300 block">Rata-rata Skor</span>
-                    <span class="text-3xl sm:text-4xl font-black text-amber-400 block my-1">
-                        {{ number_format($circle->final_score, 2) }}
-                    </span>
-                    <span class="text-[11px] font-semibold text-slate-300">
-                        Dari {{ $circle->assessments->count() }} Juri
-                    </span>
-                </div>
-            @endif
+            <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white text-center min-w-[150px] shadow-lg flex-shrink-0">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-300 block">Rata-rata Skor</span>
+                <span class="text-3xl sm:text-4xl font-black text-amber-400 block my-1">
+                    {{ number_format($circle->final_score ?? $calculatedFinalScore, 2) }}
+                </span>
+                <span class="text-[11px] font-semibold text-slate-300">
+                    {{ count($allEvaluatingJudges) > 0 ? count($allEvaluatingJudges) . ' Juri Terlibat' : 'Belum Ada Penilaian' }}
+                </span>
+            </div>
         </div>
 
         <!-- Schedule & Room Bar -->
@@ -124,42 +130,110 @@
                 </div>
             </div>
 
-            <!-- Assessments Summary from Judges -->
-            <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs">
-                <h2 class="text-base font-bold text-slate-900 tracking-tight mb-4 flex items-center justify-between">
-                    <span>Rekap Lembar Penilaian Juri</span>
-                    <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                        {{ $circle->assessments->count() }} Penilaian Masuk
+            <!-- Rekap Penilaian per Tahapan (Per Stage Per Judge) -->
+            <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 tracking-tight">Rekap Penilaian per Tahapan</h2>
+                        <p class="text-xs text-slate-500">Penilaian dewan juri dipetakan secara khusus pada masing-masing tahapan</p>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 self-start sm:self-auto">
+                        {{ collect($stagesMatrix)->filter(fn($s) => count($s['judges']) > 0)->count() }} dari {{ count($stagesMatrix) }} Tahap Dinilai
                     </span>
-                </h2>
+                </div>
 
-                <div class="space-y-3">
-                    @forelse($circle->assessments as $ass)
-                        <div class="p-4 rounded-2xl border border-slate-100 bg-slate-50/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
+                <div class="space-y-4">
+                    @foreach($stagesMatrix as $stageId => $stageData)
+                        @php
+                            $cat = $stageData['category'];
+                            $stageJudges = $stageData['judges'];
+                            $hasJudges = count($stageJudges) > 0;
+                        @endphp
+                        <div class="p-4 rounded-2xl border {{ $hasJudges ? 'border-slate-200/80 bg-slate-50/50' : 'border-dashed border-slate-200 bg-white' }}">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5 mb-3">
                                 <div class="flex items-center gap-2">
-                                    <span class="font-bold text-sm text-slate-900">{{ $ass->judge->name ?? 'Juri' }}</span>
-                                    <span class="text-[11px] px-2 py-0.5 rounded-full font-semibold {{ $ass->status === 'submitted' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
-                                        {{ ucfirst($ass->status) }}
+                                    <span class="w-2.5 h-2.5 rounded-full {{ $hasJudges ? 'bg-blue-600' : 'bg-slate-300' }}"></span>
+                                    <h3 class="font-bold text-sm text-slate-900">{{ $cat->name }}</h3>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                                        Bobot {{ number_format($stageData['weight'], 0) }}%
                                     </span>
                                 </div>
-                                @if($ass->feedback_strengths)
-                                    <p class="text-xs text-slate-600 mt-1 line-clamp-1">
-                                        <strong>Kelebihan:</strong> {{ $ass->feedback_strengths }}
-                                    </p>
-                                @endif
+
+                                <div class="flex items-center gap-3">
+                                    @if($hasJudges)
+                                        <div class="text-right">
+                                            <span class="text-[10px] font-semibold text-slate-500 uppercase block">Rata-rata Tahap</span>
+                                            <span class="text-sm font-black text-blue-700">
+                                                {{ number_format($stageData['stage_stats']['average'], 2) }}
+                                                <span class="text-[10px] font-medium text-slate-500">/ 10</span>
+                                            </span>
+                                        </div>
+                                        <div class="text-right pl-3 border-l border-slate-200">
+                                            <span class="text-[10px] font-semibold text-slate-500 uppercase block">Kontribusi</span>
+                                            <span class="text-sm font-black text-emerald-700">
+                                                +{{ number_format($stageData['stage_contribution'], 2) }}
+                                            </span>
+                                        </div>
+                                    @else
+                                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                                            Belum Dinilai
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
 
-                            <div class="text-right flex-shrink-0">
-                                <span class="text-xl font-black text-slate-900">{{ number_format($ass->weighted_score, 2) }}</span>
-                                <span class="text-xs text-slate-400 block font-semibold">Skor Tertimbang</span>
-                            </div>
+                            @if($hasJudges)
+                                <div class="space-y-2">
+                                    <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                                        Dewan Juri Penilai Tahap Ini ({{ count($stageJudges) }} Juri):
+                                    </span>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                        @foreach($stageJudges as $judge)
+                                            @php
+                                                $jScore = $stageData['judge_stage_scores'][$judge->id] ?? null;
+                                                $jFb = $stageData['judge_feedback'][$judge->id] ?? null;
+                                            @endphp
+                                            <div class="p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+                                                <div class="flex items-start justify-between gap-2">
+                                                    <div>
+                                                        <div class="font-bold text-xs sm:text-sm text-slate-800">{{ $judge->name }}</div>
+                                                        <div class="text-[10px] text-slate-400">{{ $judge->department->name ?? ($judge->nik ?? 'Dewan Juri') }}</div>
+                                                    </div>
+                                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold {{ ($jFb['status'] ?? '') === 'submitted' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
+                                                        {{ ucfirst($jFb['status'] ?? 'Draft') }}
+                                                    </span>
+                                                </div>
+                                                <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                                    <span class="text-[11px] text-slate-500 font-medium">Skor Tahap:</span>
+                                                    <span class="text-sm font-black text-slate-900">
+                                                        {{ $jScore !== null ? number_format($jScore, 2) : '-' }}
+                                                    </span>
+                                                </div>
+                                                @if(!empty($jFb['strengths']) || !empty($jFb['improvements']))
+                                                    <div class="mt-1.5 pt-1 text-[10px] text-slate-500 space-y-0.5">
+                                                        @if(!empty($jFb['strengths']))
+                                                            <div class="line-clamp-1"><strong class="text-emerald-700">Kelebihan:</strong> {{ $jFb['strengths'] }}</div>
+                                                        @endif
+                                                        @if(!empty($jFb['improvements']))
+                                                            <div class="line-clamp-1"><strong class="text-amber-700">Perbaikan:</strong> {{ $jFb['improvements'] }}</div>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @else
+                                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-400 py-1">
+                                    <span>Belum ada dewan juri yang memberikan penilaian untuk tahap ini.</span>
+                                    <a href="{{ route('qcc.circles.assess', [$circle, 'category_id' => $cat->id]) }}" class="text-blue-600 hover:text-blue-800 font-bold hover:underline inline-flex items-center gap-1">
+                                        <span>Beri Nilai Tahap Ini</span>
+                                        <span>&rarr;</span>
+                                    </a>
+                                </div>
+                            @endif
                         </div>
-                    @empty
-                        <div class="text-center py-6 text-slate-400 text-xs">
-                            Belum ada juri yang mengirimkan penilaian untuk gugus ini.
-                        </div>
-                    @endforelse
+                    @endforeach
                 </div>
             </div>
         </div>
@@ -231,6 +305,212 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Summary & Matriks Penilaian Dewan Juri per Tahap (Format Excel Mockup) -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs mb-8 space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+                <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+                    Summary & Matriks Penilaian Dewan Juri per Tahap
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+                    Tampilan butir kriteria penilaian, skor masing-masing dewan juri per tahap, statistik deviasi, dan nilai tertimbang.
+                </p>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+                <!-- Unduh Excel (CSV) -->
+                <a href="{{ route('qcc.circles.export', $circle) }}" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <span>Unduh Excel (CSV)</span>
+                </a>
+
+                <!-- Print Button -->
+                <button type="button" onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm border border-slate-200 transition inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                    </svg>
+                    <span>Cetak</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Stage Navigation Tabs -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-100 text-xs font-bold">
+            <button type="button" onclick="selectMatrixStageTab('all')" data-tab-id="all" 
+                class="matrix-tab-btn px-4 py-2 rounded-xl bg-blue-600 text-white transition shadow-xs whitespace-nowrap">
+                Semua Tahap Penilaian
+            </button>
+            @foreach($stagesMatrix as $stageId => $stageData)
+                <button type="button" onclick="selectMatrixStageTab('{{ $stageId }}')" data-tab-id="{{ $stageId }}" 
+                    class="matrix-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition whitespace-nowrap">
+                    {{ $stageData['category']->name }} ({{ number_format($stageData['weight'], 0) }}%)
+                </button>
+            @endforeach
+        </div>
+
+        <!-- Stage Panels Loop -->
+        <div class="space-y-8">
+            @foreach($stagesMatrix as $stageId => $stageData)
+                @php
+                    $cat = $stageData['category'];
+                    $stageJudges = $stageData['judges'];
+                    $hasJudges = count($stageJudges) > 0;
+                @endphp
+                <div id="stage_matrix_panel_{{ $stageId }}" class="stage-matrix-panel space-y-4" data-stage-id="{{ $stageId }}">
+                    
+                    <!-- Excel-Like Top Banner (Team: Permata | Score: 7.426667) -->
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="text-xs uppercase font-extrabold tracking-wider text-slate-400">Team:</span>
+                            <span class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{{ $circle->circle_name }}</span>
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-100 text-blue-800">
+                                {{ $cat->name }}
+                            </span>
+                            <span class="text-xs font-semibold text-slate-500">
+                                (Bobot Tahap: {{ number_format($stageData['weight'], 0) }}%)
+                            </span>
+                        </div>
+
+                        <!-- Yellow Cell Score (Matching Excel Mockup) -->
+                        <div class="flex items-center gap-2 self-start sm:self-auto">
+                            <span class="text-xs font-black uppercase tracking-wider text-slate-500">Score</span>
+                            <span class="px-3.5 py-1.5 bg-yellow-300 border border-yellow-400 font-mono font-black text-slate-950 text-base sm:text-lg rounded-md shadow-2xs tracking-wide">
+                                {{ number_format($circle->final_score ?? $calculatedFinalScore, 4) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    @if($hasJudges)
+                        <!-- Table Content (Item | Judges | Max | Min | Range | Average | Deviasi Max | Deviasi Min | Deviasi) -->
+                        <div class="overflow-x-auto border border-slate-200 rounded-2xl shadow-2xs bg-white">
+                            <table class="w-full text-left text-xs border-collapse min-w-[950px]">
+                                <thead>
+                                    <!-- Row: Nilai Tertimbang -->
+                                    <tr class="bg-amber-50/70 border-b-2 border-slate-200 text-slate-900">
+                                        <th class="p-3 font-black text-xs text-slate-900 sticky left-0 bg-amber-50/90 z-10 border-r border-slate-200">
+                                            Nilai Tertimbang
+                                        </th>
+                                        @foreach($stageJudges as $judge)
+                                            <th class="p-3 text-center font-black text-sm text-blue-800 border-r border-slate-200/80">
+                                                {{ $stageData['judge_stage_scores'][$judge->id] ?? '-' }}
+                                            </th>
+                                        @endforeach
+                                        <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                            {{ $stageData['stage_stats']['max'] !== null ? number_format($stageData['stage_stats']['max'], 2) : '-' }}
+                                        </th>
+                                        <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                            {{ $stageData['stage_stats']['min'] !== null ? number_format($stageData['stage_stats']['min'], 2) : '-' }}
+                                        </th>
+                                        <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                            {{ $stageData['stage_stats']['range'] !== null ? number_format($stageData['stage_stats']['range'], 2) : '-' }}
+                                        </th>
+                                        <th class="p-3 text-center font-black text-sm text-blue-900 bg-blue-100/70 border-r border-slate-200/80">
+                                            {{ $stageData['stage_stats']['average'] !== null ? number_format($stageData['stage_stats']['average'], 2) : '-' }}
+                                        </th>
+                                        <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                            {{ $stageData['stage_stats']['deviasi_max'] !== null ? number_format($stageData['stage_stats']['deviasi_max'], 2) : '-' }}
+                                        </th>
+                                        <th class="p-3 text-center font-bold text-slate-700 bg-slate-100/60 border-r border-slate-200/80">
+                                            {{ $stageData['stage_stats']['deviasi_min'] !== null ? number_format($stageData['stage_stats']['deviasi_min'], 2) : '-' }}
+                                        </th>
+                                        <th class="p-3 text-center font-black text-purple-900 bg-purple-100/70">
+                                            {{ $stageData['stage_stats']['deviasi'] !== null ? number_format($stageData['stage_stats']['deviasi'], 2) : '-' }}
+                                        </th>
+                                    </tr>
+
+                                    <!-- Table Column Headers -->
+                                    <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-wider">
+                                        <th class="p-3 sticky left-0 bg-slate-100 z-10 border-r border-slate-200">
+                                            Item Penilaian
+                                        </th>
+                                        @foreach($stageJudges as $judge)
+                                            <th class="p-3 text-center border-r border-slate-200 whitespace-nowrap">
+                                                {{ $judge->name }}
+                                            </th>
+                                        @endforeach
+                                        <th class="p-3 text-center border-r border-slate-200">Max</th>
+                                        <th class="p-3 text-center border-r border-slate-200">Min</th>
+                                        <th class="p-3 text-center border-r border-slate-200">Range</th>
+                                        <th class="p-3 text-center bg-blue-100/80 text-blue-900 border-r border-slate-200">Average</th>
+                                        <th class="p-3 text-center border-r border-slate-200">Deviasi Max</th>
+                                        <th class="p-3 text-center border-r border-slate-200">Deviasi Min</th>
+                                        <th class="p-3 text-center bg-purple-100/80 text-purple-900">Deviasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @foreach($stageData['criteria_rows'] as $row)
+                                        @php
+                                            $crit = $row['criterion'];
+                                            $stats = $row['stats'];
+                                        @endphp
+                                        <tr class="hover:bg-slate-50/80 transition even:bg-slate-50/30">
+                                            <td class="p-3 font-semibold text-slate-900 sticky left-0 bg-white group-hover:bg-slate-50 border-r border-slate-200">
+                                                <div class="flex items-center gap-1.5">
+                                                    @if($crit->code)
+                                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700 flex-shrink-0">
+                                                            {{ $crit->code }}
+                                                        </span>
+                                                    @endif
+                                                    <span class="line-clamp-2" title="{{ $crit->title }}">{{ $crit->title }}</span>
+                                                </div>
+                                            </td>
+                                            @foreach($stageJudges as $judge)
+                                                @php
+                                                    $sc = $row['scores_by_judge'][$judge->id] ?? null;
+                                                @endphp
+                                                <td class="p-3 text-center font-bold text-slate-800 border-r border-slate-100">
+                                                    {{ $sc !== null ? number_format($sc, 0) : '-' }}
+                                                </td>
+                                            @endforeach
+                                            <td class="p-3 text-center text-slate-600 font-medium bg-slate-50/50 border-r border-slate-100">
+                                                {{ $stats['max'] !== null ? number_format($stats['max'], 2) : '-' }}
+                                            </td>
+                                            <td class="p-3 text-center text-slate-600 font-medium bg-slate-50/50 border-r border-slate-100">
+                                                {{ $stats['min'] !== null ? number_format($stats['min'], 2) : '-' }}
+                                            </td>
+                                            <td class="p-3 text-center text-slate-600 font-medium bg-slate-50/50 border-r border-slate-100">
+                                                {{ $stats['range'] !== null ? number_format($stats['range'], 2) : '-' }}
+                                            </td>
+                                            <td class="p-3 text-center font-bold text-blue-900 bg-blue-50/60 border-r border-slate-100">
+                                                {{ $stats['average'] !== null ? number_format($stats['average'], 2) : '-' }}
+                                            </td>
+                                            <td class="p-3 text-center text-slate-600 font-medium bg-slate-50/50 border-r border-slate-100">
+                                                {{ $stats['deviasi_max'] !== null ? number_format($stats['deviasi_max'], 2) : '-' }}
+                                            </td>
+                                            <td class="p-3 text-center text-slate-600 font-medium bg-slate-50/50 border-r border-slate-100">
+                                                {{ $stats['deviasi_min'] !== null ? number_format($stats['deviasi_min'], 2) : '-' }}
+                                            </td>
+                                            <td class="p-3 text-center font-semibold text-purple-900 bg-purple-50/60">
+                                                {{ $stats['deviasi'] !== null ? number_format($stats['deviasi'], 2) : '-' }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <!-- Empty State for this stage -->
+                        <div class="p-8 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 space-y-2">
+                            <span class="text-2xl block">📋</span>
+                            <p class="text-sm font-bold text-slate-700">Tahap ini belum dinilai oleh dewan juri</p>
+                            <p class="text-xs text-slate-500">Nilai akan otomatis muncul di matriks ini setelah juri mengirimkan penilaian.</p>
+                            <div class="pt-2">
+                                <a href="{{ route('qcc.circles.assess', [$circle, 'category_id' => $cat->id]) }}" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition">
+                                    <span>Buka Form Penilaian Tahap Ini</span>
+                                    <span>&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+
+                </div>
+            @endforeach
+        </div>
     </div>
 
 </div>
@@ -443,3 +723,28 @@
 </script>
 @endpush
 @endif
+
+@push('scripts')
+<script>
+    function selectMatrixStageTab(tabId) {
+        document.querySelectorAll('.stage-matrix-panel').forEach(panel => {
+            if (tabId === 'all') {
+                panel.classList.remove('hidden');
+            } else {
+                panel.classList.toggle('hidden', panel.dataset.stageId !== String(tabId));
+            }
+        });
+
+        document.querySelectorAll('.matrix-tab-btn').forEach(btn => {
+            const isActive = btn.dataset.tabId === String(tabId);
+            if (isActive) {
+                btn.classList.add('bg-blue-600', 'text-white', 'shadow-xs');
+                btn.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+            } else {
+                btn.classList.remove('bg-blue-600', 'text-white', 'shadow-xs');
+                btn.classList.add('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+            }
+        });
+    }
+</script>
+@endpush

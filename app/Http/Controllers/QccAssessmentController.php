@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class QccAssessmentController extends Controller
 {
@@ -116,19 +117,36 @@ class QccAssessmentController extends Controller
             'leader',
             'facilitator',
             'members',
-            'assessments.judge',
-            'assessments.scores.criterion',
+            'assessments.judge.department',
+            'assessments.scores.criterion.category',
         ]);
 
         $currentJudgeId = session('active_judge_id', User::role('judge')->first()?->id);
         $currentJudge = User::find($currentJudgeId);
 
         $myAssessment = $circle->assessments->firstWhere('judge_id', $currentJudgeId);
-        $categories = CriteriaCategory::orderBy('display_order', 'asc')->get();
+        $categories = CriteriaCategory::with(['criteria' => function ($q) {
+            $q->where('is_active', true)->orderBy('display_order', 'asc');
+        }])->orderBy('display_order', 'asc')->get();
         $criteriaStages = $categories;
         $allJudges = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->get();
 
-        return view('qcc.show', compact('circle', 'currentJudge', 'myAssessment', 'categories', 'criteriaStages', 'allJudges'));
+        $matrixData = $this->buildAssessmentMatrix($circle, $categories);
+        $stagesMatrix = $matrixData['stages'];
+        $allEvaluatingJudges = $matrixData['all_evaluating_judges'];
+        $calculatedFinalScore = $matrixData['final_score'];
+
+        return view('qcc.show', compact(
+            'circle',
+            'currentJudge',
+            'myAssessment',
+            'categories',
+            'criteriaStages',
+            'allJudges',
+            'stagesMatrix',
+            'allEvaluatingJudges',
+            'calculatedFinalScore'
+        ));
     }
 
     /**
@@ -381,34 +399,34 @@ class QccAssessmentController extends Controller
             'submitted_at' => $isSubmit ? now() : $assessment->submitted_at,
         ]);
 
-        // Recalculate Circle Final Score and Award if all submitted
-        $submittedAssessments = Assessment::where('circle_id', $circle->id)
-            ->where('status', 'submitted')
-            ->get();
+        // Recalculate Circle Final Score and Award Level based on Stage-Weighted Matrix
+        $categories = CriteriaCategory::with(['criteria' => function ($q) {
+            $q->where('is_active', true)->orderBy('display_order', 'asc');
+        }])->orderBy('display_order', 'asc')->get();
 
-        if ($submittedAssessments->isNotEmpty()) {
-            $finalWeighted = $submittedAssessments->avg('weighted_score');
-            $circle->final_score = round($finalWeighted, 2);
+        $matrixData = $this->buildAssessmentMatrix($circle, $categories);
+        $finalScore = $matrixData['final_score'];
+        $circle->final_score = $finalScore;
 
-            // Award classification (Skala 0 - 10)
-            if ($finalWeighted >= 9.0) {
-                $circle->award_level = 'Diamond';
-            } elseif ($finalWeighted >= 8.5) {
-                $circle->award_level = 'Platinum';
-            } elseif ($finalWeighted >= 8.0) {
-                $circle->award_level = 'Gold';
-            } elseif ($finalWeighted >= 7.5) {
-                $circle->award_level = 'Silver';
-            } else {
-                $circle->award_level = 'Bronze';
-            }
+        if ($finalScore >= 9.0) {
+            $circle->award_level = 'Diamond';
+        } elseif ($finalScore >= 8.5) {
+            $circle->award_level = 'Platinum';
+        } elseif ($finalScore >= 8.0) {
+            $circle->award_level = 'Gold';
+        } elseif ($finalScore >= 7.5) {
+            $circle->award_level = 'Silver';
+        } elseif ($finalScore > 0) {
+            $circle->award_level = 'Bronze';
+        }
 
+        $hasSubmitted = Assessment::where('circle_id', $circle->id)->where('status', 'submitted')->exists();
+        if ($hasSubmitted) {
             $circle->status = 'evaluated';
-            $circle->save();
         } elseif ($circle->status === 'scheduled') {
             $circle->status = 'under_assessment';
-            $circle->save();
         }
+        $circle->save();
 
         $message = $isSubmit
             ? 'Penilaian berhasil dikirim secara final!'
@@ -481,5 +499,279 @@ class QccAssessmentController extends Controller
             ->get();
 
         return view('qcc.leaderboard', compact('activePeriod', 'categories', 'circles', 'activeYear'));
+    }
+
+    /**
+     * Build statistical matrix per stage and judge evaluation
+     */
+    public function buildAssessmentMatrix(Circle $circle, $categories): array
+    {
+        $assessments = $circle->assessments()
+            ->with(['judge.department', 'scores.criterion'])
+            ->get();
+
+        $allEvaluatingJudges = $assessments->map(fn ($a) => $a->judge)->filter()->unique('id')->values();
+
+        $stagesMatrix = [];
+        $overallWeightedSum = 0.0;
+        $totalWeightSum = 0.0;
+
+        foreach ($categories as $cat) {
+            $catCriteria = $cat->criteria;
+            $catWeight = (float) $cat->weight_percentage;
+            $totalWeightSum += $catWeight;
+
+            // 1. Hitung bobot relatif setiap butir penilaian dalam tahap ini (basis 100%)
+            $catCriteriaSum = (float) $catCriteria->sum(fn ($c) => (float) ($c->weight ?? 0));
+            $critCount = $catCriteria->count();
+            $criteriaRelWeights = [];
+            foreach ($catCriteria as $crit) {
+                if ($catCriteriaSum > 0 && $crit->weight !== null && (float) $crit->weight > 0) {
+                    $criteriaRelWeights[$crit->id] = ((float) $crit->weight / $catCriteriaSum) * 100;
+                } else {
+                    $criteriaRelWeights[$crit->id] = $critCount > 0 ? (100 / $critCount) : 0;
+                }
+            }
+
+            // 2. Cari juri yang secara spesifik telah menilai tahap ini
+            $catCriteriaIds = $catCriteria->pluck('id')->toArray();
+            $stageAssessments = $assessments->filter(function ($a) use ($catCriteriaIds) {
+                return $a->scores->whereIn('assessment_criterion_id', $catCriteriaIds)->isNotEmpty();
+            });
+
+            $stageJudges = $stageAssessments->map(fn ($a) => $a->judge)->filter()->unique('id')->values();
+
+            // 3. Hitung skor tahap (skala 0 - 10) untuk masing-masing juri pada tahap ini
+            $judgeStageScores = [];
+            $judgeFeedback = [];
+
+            foreach ($stageJudges as $judge) {
+                $judgeAss = $stageAssessments->firstWhere('judge_id', $judge->id);
+                if (! $judgeAss) {
+                    continue;
+                }
+
+                $judgeScoresMap = $judgeAss->scores->keyBy('assessment_criterion_id');
+                $weightedSum = 0.0;
+                $evaluatedRelWeightSum = 0.0;
+
+                foreach ($catCriteria as $crit) {
+                    if ($judgeScoresMap->has($crit->id)) {
+                        $rawScore = (float) $judgeScoresMap->get($crit->id)->score;
+                        $relW = $criteriaRelWeights[$crit->id] ?? 0;
+                        $weightedSum += ($rawScore * $relW);
+                        $evaluatedRelWeightSum += $relW;
+                    }
+                }
+
+                if ($evaluatedRelWeightSum > 0) {
+                    $judgeStageScore = $weightedSum / $evaluatedRelWeightSum;
+                    $judgeStageScores[$judge->id] = round($judgeStageScore, 2);
+                    $judgeFeedback[$judge->id] = [
+                        'status' => $judgeAss->status,
+                        'strengths' => $judgeAss->feedback_strengths,
+                        'improvements' => $judgeAss->feedback_improvements,
+                    ];
+                }
+            }
+
+            // 4. Hitung statistik tahap untuk baris "Nilai Tertimbang"
+            $stageScoresList = array_values($judgeStageScores);
+            $stageScoresCount = count($stageScoresList);
+            $stageStats = [
+                'max' => $stageScoresCount > 0 ? max($stageScoresList) : null,
+                'min' => $stageScoresCount > 0 ? min($stageScoresList) : null,
+                'range' => $stageScoresCount > 0 ? round(max($stageScoresList) - min($stageScoresList), 2) : null,
+                'average' => $stageScoresCount > 0 ? round(array_sum($stageScoresList) / $stageScoresCount, 2) : null,
+            ];
+            $stageStats['deviasi_max'] = ($stageStats['max'] !== null && $stageStats['average'] !== null)
+                ? round($stageStats['max'] - $stageStats['average'], 2)
+                : null;
+            $stageStats['deviasi_min'] = ($stageStats['min'] !== null && $stageStats['average'] !== null)
+                ? round($stageStats['average'] - $stageStats['min'], 2)
+                : null;
+            $stageStats['deviasi'] = $this->calculateStandardDeviation($stageScoresList);
+
+            $stageContribution = 0.0;
+            if ($stageStats['average'] !== null) {
+                $stageContribution = ($stageStats['average'] * $catWeight) / 100;
+                $overallWeightedSum += $stageContribution;
+            }
+
+            // 5. Hitung baris skor setiap butir kriteria khusus dewan juri di tahap ini
+            $criteriaRows = [];
+            foreach ($catCriteria as $crit) {
+                $critScoresByJudge = [];
+                foreach ($stageJudges as $judge) {
+                    $judgeAss = $stageAssessments->firstWhere('judge_id', $judge->id);
+                    $scoreObj = $judgeAss?->scores->firstWhere('assessment_criterion_id', $crit->id);
+                    $critScoresByJudge[$judge->id] = $scoreObj !== null ? (float) $scoreObj->score : null;
+                }
+
+                $validCritScores = array_values(array_filter($critScoresByJudge, fn ($v) => $v !== null));
+                $vCount = count($validCritScores);
+
+                $critStats = [
+                    'max' => $vCount > 0 ? max($validCritScores) : null,
+                    'min' => $vCount > 0 ? min($validCritScores) : null,
+                    'range' => $vCount > 0 ? round(max($validCritScores) - min($validCritScores), 2) : null,
+                    'average' => $vCount > 0 ? round(array_sum($validCritScores) / $vCount, 2) : null,
+                ];
+                $critStats['deviasi_max'] = ($critStats['max'] !== null && $critStats['average'] !== null)
+                    ? round($critStats['max'] - $critStats['average'], 2)
+                    : null;
+                $critStats['deviasi_min'] = ($critStats['min'] !== null && $critStats['average'] !== null)
+                    ? round($critStats['average'] - $critStats['min'], 2)
+                    : null;
+                $critStats['deviasi'] = $this->calculateStandardDeviation($validCritScores);
+
+                $criteriaRows[] = [
+                    'criterion' => $crit,
+                    'rel_weight' => round($criteriaRelWeights[$crit->id] ?? 0, 1),
+                    'scores_by_judge' => $critScoresByJudge,
+                    'stats' => $critStats,
+                ];
+            }
+
+            $stagesMatrix[$cat->id] = [
+                'category' => $cat,
+                'weight' => $catWeight,
+                'judges' => $stageJudges,
+                'judge_stage_scores' => $judgeStageScores,
+                'judge_feedback' => $judgeFeedback,
+                'stage_stats' => $stageStats,
+                'stage_contribution' => round($stageContribution, 2),
+                'criteria_rows' => $criteriaRows,
+            ];
+        }
+
+        $calculatedFinalScore = round($overallWeightedSum, 2);
+
+        return [
+            'stages' => $stagesMatrix,
+            'all_evaluating_judges' => $allEvaluatingJudges,
+            'final_score' => $calculatedFinalScore,
+        ];
+    }
+
+    /**
+     * Calculate Sample Standard Deviation
+     */
+    private function calculateStandardDeviation(array $values): ?float
+    {
+        $count = count($values);
+        if ($count <= 1) {
+            return $count === 1 ? 0.0 : null;
+        }
+
+        $mean = array_sum($values) / $count;
+        $variance = 0.0;
+        foreach ($values as $val) {
+            $variance += pow($val - $mean, 2);
+        }
+
+        return round(sqrt($variance / ($count - 1)), 2);
+    }
+
+    /**
+     * Export Assessment Summary Matrix to CSV (Excel compatible)
+     */
+    public function exportAssessmentCsv(Circle $circle): StreamedResponse
+    {
+        $categories = CriteriaCategory::with(['criteria' => function ($q) {
+            $q->where('is_active', true)->orderBy('display_order', 'asc');
+        }])->orderBy('display_order', 'asc')->get();
+
+        $matrixData = $this->buildAssessmentMatrix($circle, $categories);
+        $stages = $matrixData['stages'];
+        $finalScore = $circle->final_score ?? $matrixData['final_score'];
+
+        $filename = 'Rekap_Penilaian_'.str_replace(' ', '_', $circle->circle_name).'_'.date('Ymd_His').'.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ];
+
+        return response()->stream(function () use ($circle, $stages, $finalScore) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            foreach ($stages as $stageData) {
+                $cat = $stageData['category'];
+                $stageJudges = $stageData['judges'];
+                $jCount = count($stageJudges);
+
+                // Top Header Row: Team Permata, Score 7.426667
+                $headerRow1 = ['Team', $circle->circle_name];
+                for ($i = 0; $i < max(1, $jCount) + 3; $i++) {
+                    $headerRow1[] = '';
+                }
+                $headerRow1[] = 'Score';
+                $headerRow1[] = $finalScore;
+                fputcsv($handle, $headerRow1);
+
+                // Stage Info
+                fputcsv($handle, ['Tahap Penilaian', $cat->name.' (Bobot: '.number_format($stageData['weight'], 0).'%)']);
+
+                if ($jCount === 0) {
+                    fputcsv($handle, ['Status', 'Belum ada dewan juri yang memberikan penilaian untuk tahap ini.']);
+                    fputcsv($handle, []);
+                    fputcsv($handle, []);
+
+                    continue;
+                }
+
+                // Nilai Tertimbang Row
+                $tertimbangRow = ['Nilai Tertimbang'];
+                foreach ($stageJudges as $judge) {
+                    $tertimbangRow[] = $stageData['judge_stage_scores'][$judge->id] ?? '-';
+                }
+                $tertimbangRow[] = $stageData['stage_stats']['max'] !== null ? number_format($stageData['stage_stats']['max'], 2) : '-';
+                $tertimbangRow[] = $stageData['stage_stats']['min'] !== null ? number_format($stageData['stage_stats']['min'], 2) : '-';
+                $tertimbangRow[] = $stageData['stage_stats']['range'] !== null ? number_format($stageData['stage_stats']['range'], 2) : '-';
+                $tertimbangRow[] = $stageData['stage_stats']['average'] !== null ? number_format($stageData['stage_stats']['average'], 2) : '-';
+                $tertimbangRow[] = $stageData['stage_stats']['deviasi_max'] !== null ? number_format($stageData['stage_stats']['deviasi_max'], 2) : '-';
+                $tertimbangRow[] = $stageData['stage_stats']['deviasi_min'] !== null ? number_format($stageData['stage_stats']['deviasi_min'], 2) : '-';
+                $tertimbangRow[] = $stageData['stage_stats']['deviasi'] !== null ? number_format($stageData['stage_stats']['deviasi'], 2) : '-';
+                fputcsv($handle, $tertimbangRow);
+
+                // Table Column Header Row: Item | Judges | Max | Min | Range | Average | Deviasi Max | Deviasi Min | Deviasi
+                $itemHeader = ['Item'];
+                foreach ($stageJudges as $judge) {
+                    $itemHeader[] = $judge->name;
+                }
+                $itemHeader = array_merge($itemHeader, ['Max', 'Min', 'Range', 'Average', 'Deviasi Max', 'Deviasi Min', 'Deviasi']);
+                fputcsv($handle, $itemHeader);
+
+                // Criteria Rows
+                foreach ($stageData['criteria_rows'] as $row) {
+                    $crit = $row['criterion'];
+                    $stats = $row['stats'];
+                    $critRow = [($crit->code ? $crit->code.' - ' : '').$crit->title];
+
+                    foreach ($stageJudges as $judge) {
+                        $s = $row['scores_by_judge'][$judge->id] ?? null;
+                        $critRow[] = $s !== null ? $s : '-';
+                    }
+
+                    $critRow[] = $stats['max'] !== null ? number_format($stats['max'], 2) : '-';
+                    $critRow[] = $stats['min'] !== null ? number_format($stats['min'], 2) : '-';
+                    $critRow[] = $stats['range'] !== null ? number_format($stats['range'], 2) : '-';
+                    $critRow[] = $stats['average'] !== null ? number_format($stats['average'], 2) : '-';
+                    $critRow[] = $stats['deviasi_max'] !== null ? number_format($stats['deviasi_max'], 2) : '-';
+                    $critRow[] = $stats['deviasi_min'] !== null ? number_format($stats['deviasi_min'], 2) : '-';
+                    $critRow[] = $stats['deviasi'] !== null ? number_format($stats['deviasi'], 2) : '-';
+
+                    fputcsv($handle, $critRow);
+                }
+
+                // Empty space between stages
+                fputcsv($handle, []);
+                fputcsv($handle, []);
+            }
+
+            fclose($handle);
+        }, 200, $headers);
     }
 }
