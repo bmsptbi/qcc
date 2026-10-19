@@ -395,7 +395,7 @@
         </div>
 
         <!-- Sticky Floating Bottom Bar -->
-        <div class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl px-4 py-3 sm:py-4">
+        <div class="fixed bottom-0 left-0 md:left-20 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl px-4 py-3 sm:py-4 transition-[left] duration-300">
             <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
                 
                 <!-- Live Total Score Display -->

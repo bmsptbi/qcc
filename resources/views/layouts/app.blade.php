@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'QCC Assessment') - Konvensi Mutu & Kaizen</title>
     
     <!-- Fonts -->
@@ -52,134 +53,402 @@
         .touch-action-manipulation {
             touch-action: manipulation;
         }
+
+        /* Desktop Expandable Rail Navigation Styles */
+        .sidebar-text {
+            opacity: 0;
+            max-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #desktopSidebar:hover .sidebar-text,
+        #desktopSidebar.is-pinned .sidebar-text {
+            opacity: 1;
+            max-width: 190px;
+            pointer-events: auto;
+        }
+        #desktopSidebar.is-pinned {
+            width: 16rem !important; /* 256px */
+            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.1);
+        }
+        #mainContentWrapper.is-pinned {
+            padding-left: 16rem !important;
+        }
+        #desktopSidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
     </style>
     @stack('styles')
 </head>
-<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-blue-600 selection:text-white bg-slate-50">
 
-    <!-- Top Navigation Bar -->
-    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- Brand / Logo -->
-                <div class="flex items-center space-x-3">
-                    <a href="{{ route('qcc.index') }}" class="flex items-center space-x-2.5">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/20 font-extrabold text-lg tracking-tight">
-                            QC
-                        </div>
-                        <div>
-                            <div class="font-extrabold text-slate-900 tracking-tight text-base sm:text-lg leading-tight flex items-center gap-1.5">
-                                QCC Assessment
-                                <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">2026</span>
-                            </div>
-                            <p class="text-[11px] text-slate-500 hidden sm:block">Sistem Penilaian Gugus Kendali Mutu & Kaizen</p>
-                        </div>
-                    </a>
+    <!-- DESKTOP EXPANDABLE SIDEBAR (Rail minimized w-20, expands to w-64 on cursor hover) -->
+    <aside id="desktopSidebar"
+        class="hidden md:flex fixed top-0 bottom-0 left-0 z-50 flex-col bg-white border-r border-slate-200/90 shadow-sm hover:shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] group/sidebar w-20 hover:w-64 overflow-x-hidden overflow-y-auto select-none"
+        aria-label="Sidebar Navigasi Utama">
+        
+        <!-- Sidebar Brand Header -->
+        <div class="h-20 flex-shrink-0 flex items-center px-4.5 border-b border-slate-100/90 justify-between">
+            <a href="{{ route('qcc.index') }}" class="flex items-center gap-3 w-full overflow-hidden">
+                <!-- Logo Badge QC -->
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 font-black text-lg tracking-tight flex-shrink-0">
+                    QC
                 </div>
-
-                <!-- Desktop Navigation Links -->
-                <nav class="hidden md:flex items-center space-x-1">
-                    <a href="{{ route('qcc.index') }}" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('qcc.index') ? 'text-blue-700 bg-blue-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                        Dashboard Gugus
-                    </a>
-                    <a href="{{ route('qcc.leaderboard') }}" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('qcc.leaderboard') ? 'text-blue-700 bg-blue-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                        Leaderboard & Hasil
-                    </a>
-
-                    @if(Auth::check() && Auth::user()->role === 'admin')
-                        <a href="{{ route('admin.judges.index') }}" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('admin.judges.*') ? 'text-indigo-700 bg-indigo-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                            Kelola Juri
-                        </a>
-                        <a href="{{ route('admin.criteria.index') }}" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('admin.criteria.*') ? 'text-amber-700 bg-amber-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                            Kriteria Nilai
-                        </a>
-                        <a href="{{ route('admin.circles.create') }}" class="ml-2 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition border border-blue-200">
-                            + Circle Baru
-                        </a>
-                    @endif
-                </nav>
-
-                <!-- Top Right: Admin Sign In / Profile -->
-                <div class="flex items-center space-x-2 sm:space-x-3">
-                    <!-- Admin Auth Button in Top Right Corner -->
-                    @if(Auth::check() && Auth::user()->role === 'admin')
-                        <div class="flex items-center gap-1.5 pl-1 sm:pl-2 border-l border-slate-200">
-                            <div class="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                <span class="max-w-[120px] truncate">{{ Auth::user()->name }}</span>
-                                <span class="px-1.5 py-0.2 rounded bg-indigo-600 text-white text-[9px] uppercase font-black">Admin</span>
-                            </div>
-
-                            <form method="POST" action="{{ route('logout') }}" class="inline">
-                                @csrf
-                                <button type="submit" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 text-xs font-bold transition flex items-center gap-1 shadow-2xs" title="Sign Out Administrator">
-                                    <svg class="w-3.5 h-3.5 text-slate-500 hover:text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                                    </svg>
-                                    <span class="hidden sm:inline">Sign Out</span>
-                                </button>
-                            </form>
-                        </div>
-                    @else
-                        <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-600 hover:from-blue-600 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-sm shadow-blue-600/20 transition">
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                            </svg>
-                            <span>Sign In</span>
-                        </a>
-                    @endif
+                <!-- Brand Title (Appears on Hover / Expand) -->
+                <div class="sidebar-text flex flex-col justify-center">
+                    <div class="font-extrabold text-slate-900 tracking-tight text-base leading-tight flex items-center gap-1.5">
+                        <span>QCC System</span>
+                        <span class="text-[9px] uppercase font-black px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700">2026</span>
+                    </div>
+                    <span class="text-[10px] font-semibold text-slate-400 truncate">PT Bekaert Indonesia</span>
                 </div>
+            </a>
+
+            <!-- Pin / Lock Sidebar Toggle Button (Only visible on hover) -->
+            <button type="button" id="pinSidebarBtn" onclick="togglePinSidebar()" 
+                class="sidebar-text p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition ml-auto flex-shrink-0"
+                title="Kunci Sidebar Terbuka / Minimize">
+                <svg id="pinIcon" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Navigation Links Container -->
+        <div class="flex-1 py-4 px-3 space-y-1.5 overflow-y-auto overflow-x-hidden">
+            
+            <!-- Section: Navigasi Utama -->
+            <div class="px-2 pt-1 pb-1">
+                <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                    Menu Utama
+                </span>
+                <div class="w-8 h-0.5 bg-slate-200 rounded mx-auto group-hover/sidebar:hidden"></div>
             </div>
+
+            <!-- Item 1: Dashboard Gugus -->
+            <a href="{{ route('qcc.index') }}" 
+                class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('qcc.index') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
+                title="Dashboard Gugus">
+                <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                    </svg>
+                </div>
+                <div class="sidebar-text">
+                    <span class="text-sm block leading-tight">Dashboard Gugus</span>
+                    <span class="text-[10px] opacity-75 block font-normal">Daftar Circle Peserta</span>
+                </div>
+            </a>
+
+            <!-- Item 2: Leaderboard & Hasil -->
+            <a href="{{ route('qcc.leaderboard') }}" 
+                class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('qcc.leaderboard') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
+                title="Leaderboard & Hasil">
+                <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <div class="sidebar-text">
+                    <span class="text-sm block leading-tight">Leaderboard & Hasil</span>
+                    <span class="text-[10px] opacity-75 block font-normal">Peringkat & Medali</span>
+                </div>
+            </a>
+
+            <!-- Section: Panel Admin (Only for Admin) -->
+            @if(Auth::check() && Auth::user()->role === 'admin')
+                <div class="pt-4 px-2 pb-1 border-t border-slate-100 my-2">
+                    <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-indigo-500 block mb-1">
+                        Panel Administrator
+                    </span>
+                    <div class="w-8 h-0.5 bg-indigo-200 rounded mx-auto group-hover/sidebar:hidden"></div>
+                </div>
+
+                <!-- Item 3: Kelola Juri -->
+                <a href="{{ route('admin.judges.index') }}" 
+                    class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.judges.*') ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
+                    title="Kelola Juri & Penugasan">
+                    <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <div class="sidebar-text">
+                        <span class="text-sm block leading-tight">Kelola Juri</span>
+                        <span class="text-[10px] opacity-75 block font-normal">Daftar & Penugasan</span>
+                    </div>
+                </a>
+
+                <!-- Item 4: Kriteria Nilai -->
+                <a href="{{ route('admin.criteria.index') }}" 
+                    class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.criteria.*') ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
+                    title="Kriteria & Rubrik Penilaian">
+                    <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                        </svg>
+                    </div>
+                    <div class="sidebar-text">
+                        <span class="text-sm block leading-tight">Kriteria Nilai</span>
+                        <span class="text-[10px] opacity-75 block font-normal">Bobot & Rubrik PDCA</span>
+                    </div>
+                </a>
+
+                <!-- Item 5: Tambah Circle Baru -->
+                <a href="{{ route('admin.circles.create') }}" 
+                    class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.circles.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-emerald-50/70 hover:text-emerald-800 font-semibold' }}"
+                    title="Daftarkan Circle Gugus Baru">
+                    <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="sidebar-text">
+                        <span class="text-sm block leading-tight">+ Circle Baru</span>
+                        <span class="text-[10px] opacity-75 block font-normal">Registrasi Gugus</span>
+                    </div>
+                </a>
+            @endif
+
+        </div>
+
+        <!-- Sidebar Bottom Footer: Profile & Authentication -->
+        <div class="p-3 border-t border-slate-200/80 bg-slate-50/80 flex-shrink-0">
+            @if(Auth::check() && Auth::user()->role === 'admin')
+                <div class="flex items-center justify-between gap-2 overflow-hidden">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-700 to-blue-600 text-white font-black text-sm flex items-center justify-center shadow-xs flex-shrink-0 relative">
+                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-white absolute -top-0.5 -right-0.5"></span>
+                        </div>
+                        <div class="sidebar-text min-w-0">
+                            <span class="text-xs font-bold text-slate-800 block truncate leading-tight">{{ Auth::user()->name }}</span>
+                            <span class="text-[9px] uppercase font-black px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-700 inline-block mt-0.5">Admin</span>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ route('logout') }}" class="sidebar-text flex-shrink-0">
+                        @csrf
+                        <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Sign Out Administrator">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            @else
+                <a href="{{ route('login') }}" 
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-gradient-to-r from-blue-700 to-indigo-600 hover:from-blue-600 hover:to-indigo-500 text-white font-bold text-xs shadow-sm transition"
+                    title="Sign In Administrator">
+                    <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                        </svg>
+                    </div>
+                    <span class="sidebar-text">Sign In Admin</span>
+                </a>
+            @endif
+        </div>
+
+    </aside>
+
+    <!-- MOBILE TOP BAR (For touch devices & screens < md) -->
+    <header class="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 h-16 flex items-center justify-between shadow-2xs">
+        <div class="flex items-center gap-3">
+            <!-- Mobile Menu Trigger -->
+            <button type="button" onclick="openMobileSidebar()" class="p-2 -ml-1 rounded-xl text-slate-700 hover:bg-slate-100 transition active:scale-95" aria-label="Buka Menu Navigasi">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+
+            <!-- Brand Logo -->
+            <a href="{{ route('qcc.index') }}" class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-sky-400 flex items-center justify-center text-white shadow-xs font-black text-sm">
+                    QC
+                </div>
+                <div>
+                    <span class="font-extrabold text-slate-900 text-sm tracking-tight block leading-none">QCC Assessment</span>
+                    <span class="text-[9px] font-bold text-slate-400 block mt-0.5">Konvensi Mutu 2026</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Right Quick Action (Profile / Sign In) -->
+        <div>
+            @if(Auth::check() && Auth::user()->role === 'admin')
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span class="max-w-[80px] truncate text-[11px]">{{ Auth::user()->name }}</span>
+                </div>
+            @else
+                <a href="{{ route('login') }}" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs transition">
+                    Sign In
+                </a>
+            @endif
         </div>
     </header>
 
-    <!-- Flash Alerts -->
-    @if(session('error'))
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
-            <div class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between shadow-xs">
-                <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5 text-rose-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                    </svg>
-                    <span class="text-sm font-semibold">{{ session('error') }}</span>
-                </div>
-                <button onclick="this.parentElement.remove()" class="text-rose-600 hover:text-rose-800 text-lg leading-none">&times;</button>
-            </div>
-        </div>
-    @endif
+    <!-- MOBILE DRAWER BACKDROP & SLIDE-OVER -->
+    <div id="mobileBackdrop" onclick="closeMobileSidebar()" 
+        class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300 hidden opacity-0 md:hidden" aria-hidden="true"></div>
 
-    @if(session('success'))
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
-            <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-xs">
-                <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>
-                    <span class="text-sm font-semibold">{{ session('success') }}</span>
+    <div id="mobileDrawerPanel" 
+        class="fixed top-0 bottom-0 left-0 z-50 w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col transform -translate-x-full transition-transform duration-300 ease-out md:hidden">
+        
+        <!-- Mobile Drawer Header -->
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-sky-400 flex items-center justify-center text-white shadow-sm font-black text-base">
+                    QC
                 </div>
-                <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-800 text-lg leading-none">&times;</button>
+                <div>
+                    <h3 class="font-black text-slate-900 text-sm leading-tight">QCC Assessment</h3>
+                    <p class="text-[10px] text-slate-400 font-semibold">PT Bekaert Indonesia</p>
+                </div>
             </div>
+            <button type="button" onclick="closeMobileSidebar()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg leading-none">
+                &times;
+            </button>
         </div>
-    @endif
 
-    @if(session('info'))
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
-            <div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 flex items-center space-x-2 text-sm">
-                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        <!-- Mobile Drawer Navigation Items -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-1.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block px-2 mb-1">Menu Utama</span>
+            
+            <a href="{{ route('qcc.index') }}" onclick="closeMobileSidebar()" 
+                class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('qcc.index') ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50' }}">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                 </svg>
-                <span>{{ session('info') }}</span>
-            </div>
+                <span>Dashboard Gugus</span>
+            </a>
+
+            <a href="{{ route('qcc.leaderboard') }}" onclick="closeMobileSidebar()" 
+                class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('qcc.leaderboard') ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50' }}">
+                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <span>Leaderboard & Hasil</span>
+            </a>
+
+            @if(Auth::check() && Auth::user()->role === 'admin')
+                <div class="pt-4 border-t border-slate-100 my-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-500 block px-2 mb-1">Administrasi</span>
+                    
+                    <a href="{{ route('admin.judges.index') }}" onclick="closeMobileSidebar()" 
+                        class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('admin.judges.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50' }}">
+                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <span>Kelola Juri</span>
+                    </a>
+
+                    <a href="{{ route('admin.criteria.index') }}" onclick="closeMobileSidebar()" 
+                        class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('admin.criteria.*') ? 'bg-amber-50 text-amber-700' : 'text-slate-700 hover:bg-slate-50' }}">
+                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <span>Kriteria Nilai</span>
+                    </a>
+
+                    <a href="{{ route('admin.circles.create') }}" onclick="closeMobileSidebar()" 
+                        class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('admin.circles.*') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-50' }}">
+                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>+ Tambah Circle</span>
+                    </a>
+                </div>
+            @endif
         </div>
-    @endif
 
-    <!-- Main Content Area -->
-    <main class="flex-1 pb-24 md:pb-12">
-        @yield('content')
-    </main>
+        <!-- Mobile Drawer Footer -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50/80">
+            @if(Auth::check() && Auth::user()->role === 'admin')
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-800 block">{{ Auth::user()->name }}</span>
+                        <span class="text-[10px] text-indigo-600 font-semibold block">Administrator QCC</span>
+                    </div>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-100 transition">
+                            Sign Out
+                        </button>
+                    </form>
+                </div>
+            @else
+                <a href="{{ route('login') }}" class="w-full py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs">
+                    Sign In Admin
+                </a>
+            @endif
+        </div>
 
-    <!-- Mobile Bottom Navigation Bar -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2 flex justify-around items-center shadow-lg">
+    </div>
+
+    <!-- MAIN CONTENT WRAPPER (Left offset by w-20 on desktop) -->
+    <div id="mainContentWrapper" class="flex-1 min-h-screen flex flex-col md:pl-20 transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+        
+        <!-- Flash Alerts -->
+        @if(session('error'))
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+                <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between shadow-xs">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-rose-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                        <span class="text-sm font-semibold">{{ session('error') }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-rose-600 hover:text-rose-800 text-lg leading-none">&times;</button>
+                </div>
+            </div>
+        @endif
+
+        @if(session('success'))
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+                <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-xs">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <span class="text-sm font-semibold">{{ session('success') }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-800 text-lg leading-none">&times;</button>
+                </div>
+            </div>
+        @endif
+
+        @if(session('info'))
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+                <div class="p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-800 flex items-center space-x-2 text-sm shadow-xs">
+                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>{{ session('info') }}</span>
+                </div>
+            </div>
+        @endif
+
+        <!-- Main Body Content -->
+        <main class="flex-1 pb-24 md:pb-12">
+            @yield('content')
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 hidden md:block">
+            <div class="max-w-7xl mx-auto px-4">
+                <p>&copy; {{ date('Y') }} PT Bekaert Indonesia - QCC Assessment & Kaizen Convention System.</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar (Fast 1-Thumb Reach) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-1.5 flex justify-around items-center shadow-lg">
         <a href="{{ route('qcc.index') }}" class="flex flex-col items-center py-1 {{ request()->routeIs('qcc.index') ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
@@ -225,12 +494,65 @@
         @endif
     </nav>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 hidden md:block">
-        <div class="max-w-7xl mx-auto px-4">
-            <p>&copy; {{ date('Y') }} PT Bekaert Indonesia - QCC Assessment & Kaizen Convention System.</p>
-        </div>
-    </footer>
+    <!-- Navigation Interactive Scripts -->
+    <script>
+        // Mobile Sidebar Drawer
+        function openMobileSidebar() {
+            const drawer = document.getElementById('mobileDrawerPanel');
+            const backdrop = document.getElementById('mobileBackdrop');
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                drawer.classList.remove('-translate-x-full');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileSidebar() {
+            const drawer = document.getElementById('mobileDrawerPanel');
+            const backdrop = document.getElementById('mobileBackdrop');
+            drawer.classList.add('-translate-x-full');
+            backdrop.classList.add('opacity-0');
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
+        }
+
+        // Desktop Pin Sidebar Toggle
+        function togglePinSidebar() {
+            const sidebar = document.getElementById('desktopSidebar');
+            const wrapper = document.getElementById('mainContentWrapper');
+            const pinIcon = document.getElementById('pinIcon');
+            const isCurrentlyPinned = sidebar.classList.contains('is-pinned');
+
+            if (isCurrentlyPinned) {
+                sidebar.classList.remove('is-pinned');
+                wrapper.classList.remove('is-pinned');
+                if (pinIcon) pinIcon.classList.remove('rotate-180');
+                localStorage.setItem('qcc_sidebar_pinned', 'false');
+            } else {
+                sidebar.classList.add('is-pinned');
+                wrapper.classList.add('is-pinned');
+                if (pinIcon) pinIcon.classList.add('rotate-180');
+                localStorage.setItem('qcc_sidebar_pinned', 'true');
+            }
+        }
+
+        // Restore pinned state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('qcc_sidebar_pinned') === 'true') {
+                const sidebar = document.getElementById('desktopSidebar');
+                const wrapper = document.getElementById('mainContentWrapper');
+                const pinIcon = document.getElementById('pinIcon');
+                if (sidebar && wrapper) {
+                    sidebar.classList.add('is-pinned');
+                    wrapper.classList.add('is-pinned');
+                    if (pinIcon) pinIcon.classList.add('rotate-180');
+                }
+            }
+        });
+    </script>
 
     @stack('scripts')
 </body>
