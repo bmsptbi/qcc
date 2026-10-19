@@ -53,20 +53,14 @@
                 1. Data Utama Gugus
             </h2>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kode Gugus <span class="text-rose-500">*</span></label>
-                    <input type="text" name="circle_code" value="{{ old('circle_code', $suggestedCode) }}" required
-                        placeholder="Contoh: QCC-2026-005"
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Gugus / Circle <span class="text-rose-500">*</span></label>
-                    <input type="text" name="circle_name" value="{{ old('circle_name') }}" required
-                        placeholder="Contoh: QCC THUNDER, KAIZEN MASTER"
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Gugus / Circle <span class="text-rose-500">*</span></label>
+                <input type="text" name="circle_name" value="{{ old('circle_name') }}" required
+                    placeholder="Contoh: QCC THUNDER, KAIZEN MASTER, DELTA TEAM"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                <span class="text-[11px] text-slate-400 mt-1 block">
+                    ✨ Kode Gugus (seperti QCC-{{ session('active_year', date('Y')) }}-xxx) otomatis di-generate unik oleh sistem saat disimpan agar tidak terjadi bentrok nomor.
+                </span>
             </div>
 
             <div>

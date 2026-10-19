@@ -13,6 +13,7 @@ use App\Models\JudgeAssignment;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
@@ -83,19 +84,17 @@ class AdminController extends Controller
         }
 
         $activeYear = session('active_year', (int) date('Y'));
-        $latestId = Circle::max('id') + 1;
-        $suggestedCode = sprintf('QCC-%s-%03d', $activeYear, $latestId);
 
-        return view('admin.circles.create', compact('departments', 'facilitators', 'suggestedCode', 'activeYear'));
+        return view('admin.circles.create', compact('departments', 'facilitators', 'activeYear'));
     }
 
     /**
-     * Simpan pendaftaran circle dan anggota timnya
+     * Simpan pendaftaran circle dan anggota timnya (Kode otomatis di-generate unik di backend)
      */
     public function storeCircle(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'circle_code' => ['required', 'string', 'max:50', 'unique:circles,circle_code'],
+            'circle_code' => ['nullable', 'string', 'max:50'],
             'circle_name' => ['required', 'string', 'max:150'],
             'theme_title' => ['required', 'string', 'max:255'],
             'department_id' => ['required', 'exists:departments,id'],
@@ -129,32 +128,53 @@ class AdminController extends Controller
 
         $categoryId = $validated['circle_category_id'] ?? CircleCategory::first()?->id;
 
-        $circle = Circle::create([
-            'assessment_period_id' => $periodId,
-            'year' => $year,
-            'circle_category_id' => $categoryId,
-            'department_id' => $validated['department_id'],
-            'facilitator_id' => $validated['facilitator_id'] ?? null,
-            'circle_code' => strtoupper($validated['circle_code']),
-            'circle_name' => $validated['circle_name'],
-            'theme_title' => $validated['theme_title'],
-            'status' => $validated['status'] ?? 'scheduled',
-        ]);
+        $circle = DB::transaction(function () use ($validated, $year, $periodId, $categoryId) {
+            // Auto-generate kode gugus secara unik jika tidak diisi manual
+            $circleCode = ! empty($validated['circle_code']) ? strtoupper(trim($validated['circle_code'])) : null;
 
-        // Simpan anggota tim
-        if (! empty($validated['members'])) {
-            foreach ($validated['members'] as $m) {
-                if (! empty($m['name']) && ! empty($m['nik'])) {
-                    CircleMember::create([
-                        'circle_id' => $circle->id,
-                        'name' => $m['name'],
-                        'nik' => $m['nik'],
-                        'role' => $m['role'] ?? 'member',
-                        'email' => $m['email'] ?? null,
-                    ]);
+            if (! $circleCode) {
+                // Lock row tahun terkait agar tidak ada tabrakan nomor saat user mendaftar bersamaan
+                $count = Circle::where('year', $year)->lockForUpdate()->count();
+                $seq = $count + 1;
+                do {
+                    $candidate = sprintf('QCC-%d-%03d', $year, $seq);
+                    if (! Circle::where('circle_code', $candidate)->exists()) {
+                        $circleCode = $candidate;
+                        break;
+                    }
+                    $seq++;
+                } while (true);
+            }
+
+            $newCircle = Circle::create([
+                'assessment_period_id' => $periodId,
+                'year' => $year,
+                'circle_category_id' => $categoryId,
+                'department_id' => $validated['department_id'],
+                'facilitator_id' => $validated['facilitator_id'] ?? null,
+                'circle_code' => $circleCode,
+                'circle_name' => $validated['circle_name'],
+                'theme_title' => $validated['theme_title'],
+                'status' => $validated['status'] ?? 'scheduled',
+            ]);
+
+            // Simpan anggota tim
+            if (! empty($validated['members'])) {
+                foreach ($validated['members'] as $m) {
+                    if (! empty($m['name']) && ! empty($m['nik'])) {
+                        CircleMember::create([
+                            'circle_id' => $newCircle->id,
+                            'name' => $m['name'],
+                            'nik' => $m['nik'],
+                            'role' => $m['role'] ?? 'member',
+                            'email' => $m['email'] ?? null,
+                        ]);
+                    }
                 }
             }
-        }
+
+            return $newCircle;
+        });
 
         return redirect()->route('admin.circles.index')
             ->with('success', "Gugus {$circle->circle_name} ({$circle->circle_code}) periode {$circle->year} berhasil didaftarkan!");
