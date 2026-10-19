@@ -239,10 +239,19 @@ class QccAssessmentController extends Controller
             ->pluck('judge_id')
             ->toArray();
 
+        $categoriesMeta = $categoriesWithCriteria->mapWithKeys(fn ($c) => [
+            $c->id => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'weight' => (float) $c->weight_percentage,
+            ],
+        ])->all();
+
         return view('qcc.assess', compact(
             'circle',
             'currentJudge',
             'categoriesWithCriteria',
+            'categoriesMeta',
             'existingAssessment',
             'existingScores',
             'allJudges',

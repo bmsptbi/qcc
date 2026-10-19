@@ -893,11 +893,7 @@
     let activeStageTab = "{{ $activeCategoryId ?? 'all' }}";
     const isStageLocked = @json($isStageLocked);
     const lockedCatId = @json($lockedCategory?->id);
-    const categoriesMeta = @json($categoriesWithCriteria->mapWithKeys(fn ($c) => [$c->id => [
-        'id' => $c->id,
-        'name' => $c->name,
-        'weight' => (float) $c->weight_percentage,
-    ]]));
+    const categoriesMeta = @json($categoriesMeta ?? []);
     let currentActiveCatId = lockedCatId || (activeStageTab !== 'all' ? activeStageTab : null);
 
     // Tab Stage Switcher
