@@ -464,11 +464,18 @@
                 <!-- Live Total Score Display -->
                 <div class="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
                     <div>
-                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Nilai Tertimbang (Grand Score)</span>
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block" id="floatingScoreLabel">
+                            {{ ($isStageLocked && $lockedCategory) ? 'Nilai Tahap (' . $lockedCategory->name . ')' : 'Total Nilai Tertimbang (Grand Score)' }}
+                        </span>
                         <div class="flex items-baseline gap-1.5">
                             <span id="floatingTotalScore" class="text-2xl sm:text-3xl font-black text-slate-900 leading-none">0.00</span>
                             <span class="text-xs font-semibold text-slate-400">/ 10</span>
                         </div>
+                        <span id="floatingScoreSub" class="text-[10px] text-slate-500 font-semibold block {{ ($isStageLocked && $lockedCategory) ? '' : 'hidden' }}">
+                            @if($isStageLocked && $lockedCategory)
+                                Bobot Tahap: {{ number_format($lockedCategory->weight_percentage, 0) }}% | Kontribusi: 0.00
+                            @endif
+                        </span>
                     </div>
 
                     <!-- Medal Preview Badge -->
@@ -839,8 +846,32 @@
             <h3 class="text-lg font-bold text-slate-900">Konfirmasi Kirim Penilaian</h3>
             <p class="text-xs text-slate-600 mt-1 leading-relaxed">
                 Anda akan mengirimkan nilai akhir untuk <strong class="text-slate-800">{{ $circle->circle_name }}</strong> sebagai <strong class="text-slate-800">{{ $currentJudge?->name }}</strong>.
-                Total nilai tertimbang saat ini adalah <strong id="modalFinalScore" class="text-emerald-700 font-black">0.00</strong>.
             </p>
+        </div>
+
+        <!-- Card Nilai Tertimbang Terhadap Parent (Tahap) -->
+        <div class="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 text-center space-y-1.5">
+            <span id="modalScoreSubtitle" class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                @if($isStageLocked && $lockedCategory)
+                    Nilai Tertimbang Tahap {{ $lockedCategory->name }}
+                @else
+                    Nilai Tertimbang Tahap
+                @endif
+            </span>
+            <div class="flex items-baseline justify-center gap-1.5">
+                <span id="modalFinalScore" class="text-3xl font-black text-emerald-600">0.00</span>
+                <span class="text-xs font-bold text-slate-400">/ 10</span>
+            </div>
+            <div id="modalScoreDetail" class="text-[11px] text-slate-600 font-medium leading-relaxed">
+                @if($isStageLocked && $lockedCategory)
+                    Nilai tertimbang terhadap parent (tahap).<br>
+                    <span class="text-[10px] text-slate-400">Bobot Tahap: {{ number_format($lockedCategory->weight_percentage, 0) }}% &bull; Kontribusi ke Nilai Akhir: 0.00</span>
+                @else
+                    Nilai tertimbang terhadap parent (tahap).
+                @endif
+            </div>
+            <div id="modalStageBreakdown" class="hidden text-left pt-2.5 mt-2 border-t border-slate-200/80 space-y-1.5 text-xs">
+            </div>
         </div>
 
         <div class="grid grid-cols-2 gap-2 pt-2">
@@ -859,6 +890,13 @@
 <script>
     const baseUrl = "{{ url('/circles/' . $circle->id . '/assess') }}";
     let activeStageTab = "{{ $activeCategoryId ?? 'all' }}";
+    const isStageLocked = @json($isStageLocked);
+    const lockedCatId = @json($lockedCategory?->id);
+    const categoriesMeta = @json($categoriesWithCriteria->mapWithKeys(fn ($c) => [$c->id => [
+        'id' => $c->id,
+        'name' => $c->name,
+        'weight' => (float) $c->weight_percentage,
+    ]]));
 
     // Tab Stage Switcher
     function selectStageTab(stageId) {
@@ -1131,15 +1169,128 @@
             grandTotalWeighted += (scoreInCat * catWeight) / 100;
         }
 
-        // Update Floating Score
-        const floatingEl = document.getElementById('floatingTotalScore');
-        if (floatingEl) {
-            floatingEl.innerText = grandTotalWeighted.toFixed(2);
+        // Determine target category for stage-level view (terhadap parent tahap)
+        let targetCatId = null;
+        if (isStageLocked && lockedCatId) {
+            targetCatId = lockedCatId;
+        } else if (activeStageTab && activeStageTab !== 'all') {
+            targetCatId = activeStageTab;
         }
 
+        // Update Floating Score
+        const floatingEl = document.getElementById('floatingTotalScore');
+        const floatingLabel = document.getElementById('floatingScoreLabel');
+        const floatingSub = document.getElementById('floatingScoreSub');
+        const medalBadge = document.getElementById('medalBadge');
+
+        let displayScore = grandTotalWeighted;
+
+        if (targetCatId && categoriesMeta[targetCatId]) {
+            const catMeta = categoriesMeta[targetCatId];
+            const stageScore = catSubtotals[targetCatId] !== undefined ? catSubtotals[targetCatId] : 0;
+            displayScore = stageScore;
+
+            if (floatingLabel) {
+                floatingLabel.innerText = 'Nilai Tahap (' + catMeta.name + ')';
+            }
+            if (floatingEl) {
+                floatingEl.innerText = stageScore.toFixed(2);
+            }
+            if (floatingSub) {
+                const contribution = (stageScore * catMeta.weight) / 100;
+                floatingSub.innerText = 'Bobot Tahap: ' + catMeta.weight + '% | Kontribusi: ' + contribution.toFixed(2);
+                floatingSub.classList.remove('hidden');
+            }
+        } else {
+            if (floatingLabel) {
+                floatingLabel.innerText = 'Total Nilai Tertimbang (Grand Score)';
+            }
+            if (floatingEl) {
+                floatingEl.innerText = grandTotalWeighted.toFixed(2);
+            }
+            if (floatingSub) {
+                floatingSub.classList.add('hidden');
+            }
+        }
+
+        // Update Modal Score Display
+        const modalScoreSubtitle = document.getElementById('modalScoreSubtitle');
         const modalScoreEl = document.getElementById('modalFinalScore');
-        if (modalScoreEl) {
-            modalScoreEl.innerText = grandTotalWeighted.toFixed(2);
+        const modalScoreDetail = document.getElementById('modalScoreDetail');
+        const modalStageBreakdown = document.getElementById('modalStageBreakdown');
+
+        if (targetCatId && categoriesMeta[targetCatId]) {
+            const catMeta = categoriesMeta[targetCatId];
+            const stageScore = catSubtotals[targetCatId] !== undefined ? catSubtotals[targetCatId] : 0;
+            const contribution = (stageScore * catMeta.weight) / 100;
+
+            if (modalScoreSubtitle) {
+                modalScoreSubtitle.innerText = 'Nilai Tertimbang Tahap ' + catMeta.name;
+            }
+            if (modalScoreEl) {
+                modalScoreEl.innerText = stageScore.toFixed(2);
+            }
+            if (modalScoreDetail) {
+                modalScoreDetail.innerHTML = 'Nilai tertimbang terhadap parent (tahap).<br><span class="text-[10px] text-slate-400">Bobot Tahap: ' + catMeta.weight + '% &bull; Kontribusi ke Nilai Akhir: ' + contribution.toFixed(2) + '</span>';
+            }
+            if (modalStageBreakdown) {
+                modalStageBreakdown.classList.add('hidden');
+                modalStageBreakdown.innerHTML = '';
+            }
+        } else {
+            // All stages mode
+            const ratedCatIds = Object.keys(catRatedCounts).filter(cid => catRatedCounts[cid] > 0);
+            if (ratedCatIds.length === 1 && categoriesMeta[ratedCatIds[0]]) {
+                const singleCatId = ratedCatIds[0];
+                const catMeta = categoriesMeta[singleCatId];
+                const stageScore = catSubtotals[singleCatId] || 0;
+                const contribution = (stageScore * catMeta.weight) / 100;
+
+                if (modalScoreSubtitle) {
+                    modalScoreSubtitle.innerText = 'Nilai Tertimbang Tahap ' + catMeta.name;
+                }
+                if (modalScoreEl) {
+                    modalScoreEl.innerText = stageScore.toFixed(2);
+                }
+                if (modalScoreDetail) {
+                    modalScoreDetail.innerHTML = 'Nilai tertimbang terhadap parent (tahap).<br><span class="text-[10px] text-slate-400">Bobot Tahap: ' + catMeta.weight + '% &bull; Kontribusi ke Nilai Akhir: ' + contribution.toFixed(2) + '</span>';
+                }
+                if (modalStageBreakdown) {
+                    modalStageBreakdown.classList.add('hidden');
+                }
+            } else {
+                if (modalScoreSubtitle) {
+                    modalScoreSubtitle.innerText = 'Total Nilai Tertimbang Keseluruhan';
+                }
+                if (modalScoreEl) {
+                    modalScoreEl.innerText = grandTotalWeighted.toFixed(2);
+                }
+                if (modalScoreDetail) {
+                    modalScoreDetail.innerText = 'Rincian nilai tertimbang terhadap parent per tahap:';
+                }
+                if (modalStageBreakdown) {
+                    modalStageBreakdown.classList.remove('hidden');
+                    let html = '';
+                    for (const [cid, meta] of Object.entries(categoriesMeta)) {
+                        const sScore = catSubtotals[cid] || 0;
+                        const rCount = catRatedCounts[cid] || 0;
+                        const contr = (sScore * meta.weight) / 100;
+                        html += `
+                            <div class="flex items-center justify-between py-1 border-b border-slate-200/60 last:border-0">
+                                <div>
+                                    <strong class="text-slate-800 font-bold">${meta.name}</strong>
+                                    <span class="text-[10px] text-slate-400 block">Bobot ${meta.weight}% &bull; Kontribusi: ${contr.toFixed(2)}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-black ${rCount > 0 ? 'text-emerald-600' : 'text-slate-400'}">${rCount > 0 ? sScore.toFixed(2) : '-'}</span>
+                                    <span class="text-[10px] text-slate-400">/ 10</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    modalStageBreakdown.innerHTML = html;
+                }
+            }
         }
 
         // Update Progress Bar & Incomplete Badge Button
@@ -1164,26 +1315,26 @@
         }
 
         // Update Medal Preview (Skala 0 - 10)
-        const medalBadge = document.getElementById('medalBadge');
         if (medalBadge) {
+            const scoreForMedal = displayScore;
             if (status.filled === 0) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-semibold shadow-xs bg-slate-100 text-slate-500';
                 medalBadge.innerText = 'Belum Dinilai';
-            } else if (grandTotalWeighted >= 9.0) {
+            } else if (scoreForMedal >= 9.0) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-cyan-500 to-blue-600 text-white';
-                medalBadge.innerText = '★ Diamond (' + grandTotalWeighted.toFixed(2) + ')';
-            } else if (grandTotalWeighted >= 8.5) {
+                medalBadge.innerText = '★ Diamond (' + scoreForMedal.toFixed(2) + ')';
+            } else if (scoreForMedal >= 8.5) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-slate-300 to-slate-500 text-white';
-                medalBadge.innerText = '★ Platinum (' + grandTotalWeighted.toFixed(2) + ')';
-            } else if (grandTotalWeighted >= 8.0) {
+                medalBadge.innerText = '★ Platinum (' + scoreForMedal.toFixed(2) + ')';
+            } else if (scoreForMedal >= 8.0) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-amber-400 to-amber-600 text-white';
-                medalBadge.innerText = '★ Gold (' + grandTotalWeighted.toFixed(2) + ')';
-            } else if (grandTotalWeighted >= 7.5) {
+                medalBadge.innerText = '★ Gold (' + scoreForMedal.toFixed(2) + ')';
+            } else if (scoreForMedal >= 7.5) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-slate-200 to-slate-400 text-slate-800';
-                medalBadge.innerText = '★ Silver (' + grandTotalWeighted.toFixed(2) + ')';
+                medalBadge.innerText = '★ Silver (' + scoreForMedal.toFixed(2) + ')';
             } else {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-amber-700 to-amber-900 text-amber-100';
-                medalBadge.innerText = '★ Bronze (' + grandTotalWeighted.toFixed(2) + ')';
+                medalBadge.innerText = '★ Bronze (' + scoreForMedal.toFixed(2) + ')';
             }
         }
     }
@@ -1313,7 +1464,10 @@
             return;
         }
 
-        // 3. All complete -> open confirmation modal
+        // 3. Recalculate scores to ensure parent stage score and breakdown are completely fresh
+        recalculateScores();
+
+        // 4. All complete -> open confirmation modal
         document.getElementById('submitModal').classList.remove('hidden');
     }
 
