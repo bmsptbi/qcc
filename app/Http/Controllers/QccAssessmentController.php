@@ -280,10 +280,10 @@ class QccAssessmentController extends Controller
         foreach ($scoresInput as $criterionId => $scoreVal) {
             if ($scoreVal !== null && $scoreVal !== '' && is_numeric($scoreVal)) {
                 $scoreNum = (float) $scoreVal;
-                if ($scoreNum > 100 || $scoreNum < 0) {
+                if ($scoreNum > 10 || $scoreNum < 0) {
                     return back()
                         ->withInput()
-                        ->with('error', 'Nilai butir penilaian tidak boleh lebih dari 100 atau kurang dari 0.');
+                        ->with('error', 'Nilai butir penilaian tidak boleh lebih dari 10 atau kurang dari 0 (Skala 0 - 10).');
                 }
                 $validScores[$criterionId] = $scoreNum;
             }
@@ -381,14 +381,14 @@ class QccAssessmentController extends Controller
             $finalWeighted = $submittedAssessments->avg('weighted_score');
             $circle->final_score = round($finalWeighted, 2);
 
-            // Award classification
-            if ($finalWeighted >= 90) {
+            // Award classification (Skala 0 - 10)
+            if ($finalWeighted >= 9.0) {
                 $circle->award_level = 'Diamond';
-            } elseif ($finalWeighted >= 85) {
+            } elseif ($finalWeighted >= 8.5) {
                 $circle->award_level = 'Platinum';
-            } elseif ($finalWeighted >= 80) {
+            } elseif ($finalWeighted >= 8.0) {
                 $circle->award_level = 'Gold';
-            } elseif ($finalWeighted >= 75) {
+            } elseif ($finalWeighted >= 7.5) {
                 $circle->award_level = 'Silver';
             } else {
                 $circle->award_level = 'Bronze';

@@ -314,6 +314,15 @@
                                                         <span>📋 Petunjuk Nilai</span>
                                                     </button>
                                                 @endif
+
+                                                <!-- Note toggle button -->
+                                                <button type="button" onclick="toggleNoteInput({{ $criterion->id }})" 
+                                                    id="note_btn_{{ $criterion->id }}"
+                                                    class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md transition flex-shrink-0 {{ !empty($currentNote) ? 'text-blue-700 bg-blue-50 border border-blue-200' : 'text-slate-500 hover:text-blue-600 bg-slate-50 hover:bg-slate-100 border border-slate-200/80' }}"
+                                                    title="Tambah / lihat catatan untuk butir ini">
+                                                    <span>📝</span>
+                                                    <span id="note_label_{{ $criterion->id }}">{{ !empty($currentNote) ? 'Catatan (Ada)' : 'Catatan' }}</span>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -321,7 +330,7 @@
                                     <!-- Right: Touch Stepper & Score Controls -->
                                     <div class="flex items-center justify-between sm:justify-end gap-1.5 flex-shrink-0">
                                         <!-- Step Minus Button -->
-                                        <button type="button" onclick="adjustScore({{ $criterion->id }}, -5)"
+                                        <button type="button" onclick="adjustScore({{ $criterion->id }}, -1)"
                                             class="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 active:scale-95 flex items-center justify-center font-black text-sm transition touch-action-manipulation shadow-2xs">
                                             -
                                         </button>
@@ -332,14 +341,14 @@
                                                 id="score_input_{{ $criterion->id }}"
                                                 name="scores[{{ $criterion->id }}]"
                                                 value="{{ $isRated ? (float)$currentVal : '' }}"
-                                                min="0" max="100" step="1"
+                                                min="0" max="10" step="any"
                                                 placeholder="-"
                                                 oninput="handleScoreInput({{ $criterion->id }})"
                                                 class="score-input w-full text-center h-8 px-1 bg-white rounded-xl border {{ $isRated ? 'border-blue-500 font-black text-slate-900 ring-1 ring-blue-500/20' : 'border-slate-300 font-semibold text-slate-400' }} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs">
                                         </div>
 
                                         <!-- Step Plus Button -->
-                                        <button type="button" onclick="adjustScore({{ $criterion->id }}, 5)"
+                                        <button type="button" onclick="adjustScore({{ $criterion->id }}, 1)"
                                             class="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 active:scale-95 flex items-center justify-center font-black text-sm transition touch-action-manipulation shadow-2xs">
                                             +
                                         </button>
@@ -363,26 +372,20 @@
 
                                 </div>
 
-                                <!-- Sub-Row: Micro Presets & Note Button -->
-                                <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-                                    <div class="flex items-center gap-1 flex-shrink-0">
-                                        <span class="text-[10px] text-slate-400 font-semibold mr-0.5">Pilihan:</span>
-                                        @foreach([60, 70, 75, 80, 85, 90, 100] as $presetVal)
-                                            <button type="button" onclick="setPresetScore({{ $criterion->id }}, {{ $presetVal }})"
-                                                id="preset_{{ $criterion->id }}_{{ $presetVal }}"
-                                                class="preset-pill-{{ $criterion->id }} px-2 py-0.5 rounded-md text-[10px] font-bold transition touch-action-manipulation {{ ($isRated && (float)$currentVal == $presetVal) ? 'bg-blue-600 text-white shadow-2xs' : 'bg-slate-50 border border-slate-200/80 text-slate-600 hover:bg-slate-100' }}">
-                                                {{ $presetVal }}
-                                            </button>
-                                        @endforeach
+                                <!-- Sub-Row: Micro Presets (Full Width Grid 1-10, Zero Overflow on Mobile) -->
+                                <div class="mt-2 pt-1.5 border-t border-slate-100">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-[10px] text-slate-400 font-semibold hidden sm:inline flex-shrink-0">Pilihan:</span>
+                                        <div class="grid grid-cols-10 gap-0.5 sm:gap-1 flex-1 min-w-0">
+                                            @foreach([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as $presetVal)
+                                                <button type="button" onclick="setPresetScore({{ $criterion->id }}, {{ $presetVal }})"
+                                                    id="preset_{{ $criterion->id }}_{{ $presetVal }}"
+                                                    class="preset-pill-{{ $criterion->id }} w-full py-1.5 sm:py-1 rounded-lg text-[11px] sm:text-xs font-black transition touch-action-manipulation text-center {{ ($isRated && (float)$currentVal == $presetVal) ? 'bg-blue-600 text-white shadow-2xs' : 'bg-slate-50 border border-slate-200/80 text-slate-700 hover:bg-slate-100' }}">
+                                                    {{ $presetVal }}
+                                                </button>
+                                            @endforeach
+                                        </div>
                                     </div>
-
-                                    <!-- Note toggle button -->
-                                    <button type="button" onclick="toggleNoteInput({{ $criterion->id }})" 
-                                        id="note_btn_{{ $criterion->id }}"
-                                        class="text-[10px] font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1 flex-shrink-0 px-1.5 py-0.5 rounded-md hover:bg-slate-100 transition {{ !empty($currentNote) ? 'text-blue-600 bg-blue-50/70' : '' }}">
-                                        <span>📝</span>
-                                        <span id="note_label_{{ $criterion->id }}">{{ !empty($currentNote) ? 'Catatan (Ada)' : '+ Catatan' }}</span>
-                                    </button>
                                 </div>
 
                                 <!-- Collapsible Rubric Guidelines -->
@@ -450,7 +453,7 @@
         <div id="scoreWarningToast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 opacity-0 pointer-events-none -translate-y-4 max-w-md w-[92%] sm:w-auto">
             <div class="bg-rose-600 text-white text-xs sm:text-sm font-bold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 border border-rose-400/50">
                 <span class="text-base sm:text-lg">⚠️</span>
-                <span id="scoreWarningMessage">Nilai maksimal adalah 100!</span>
+                <span id="scoreWarningMessage">Nilai maksimal adalah 10!</span>
             </div>
         </div>
 
@@ -464,7 +467,7 @@
                         <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Nilai Tertimbang (Grand Score)</span>
                         <div class="flex items-baseline gap-1.5">
                             <span id="floatingTotalScore" class="text-2xl sm:text-3xl font-black text-slate-900 leading-none">0.00</span>
-                            <span class="text-xs font-semibold text-slate-400">/ 100</span>
+                            <span class="text-xs font-semibold text-slate-400">/ 10</span>
                         </div>
                     </div>
 
@@ -599,7 +602,7 @@
             <div class="flex items-center justify-between text-slate-600">
                 <span>Total Nilai Tersimpan:</span>
                 <span class="font-black text-blue-700 text-sm">
-                    {{ number_format($existingAssessment?->final_score ?? $existingAssessment?->weighted_score ?? $existingAssessment?->total_score ?? 0, 2) }} / 100
+                    {{ number_format($existingAssessment?->final_score ?? $existingAssessment?->weighted_score ?? $existingAssessment?->total_score ?? 0, 2) }} / 10
                 </span>
             </div>
             @if($existingAssessment?->submitted_at)
@@ -776,7 +779,7 @@
 
         <div class="p-3 bg-rose-50/80 border border-rose-200/70 rounded-2xl text-xs text-rose-950 leading-relaxed flex-shrink-0">
             <p>
-                <strong>Perhatian:</strong> Untuk dapat melakukan <strong>Kirim Final</strong>, seluruh butir penilaian pada tahap ini wajib dinilai lengkap (0 - 100).
+                <strong>Perhatian:</strong> Untuk dapat melakukan <strong>Kirim Final</strong>, seluruh butir penilaian pada tahap ini wajib dinilai lengkap (skala 0 - 10).
                 Jika Anda ingin menyimpan penilaian sementara dan melanjutkannya nanti, silakan gunakan <strong>Simpan Draft</strong>.
             </p>
         </div>
@@ -889,11 +892,11 @@
         const label = document.getElementById('note_label_' + id);
         if (input && btn && label) {
             if (input.value.trim() !== '') {
-                btn.className = 'text-[10px] font-bold flex items-center gap-1 flex-shrink-0 px-1.5 py-0.5 rounded-md transition text-blue-600 bg-blue-50/70';
+                btn.className = 'inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md transition text-blue-700 bg-blue-50 border border-blue-200 flex-shrink-0';
                 label.innerText = 'Catatan (Ada)';
             } else {
-                btn.className = 'text-[10px] font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1 flex-shrink-0 px-1.5 py-0.5 rounded-md hover:bg-slate-100 transition';
-                label.innerText = '+ Catatan';
+                btn.className = 'inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-blue-600 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-md transition flex-shrink-0';
+                label.innerText = 'Catatan';
             }
         }
     }
@@ -1053,7 +1056,7 @@
                 if (rawVal !== '' && !isNaN(rawVal)) {
                     let val = parseFloat(rawVal);
                     if (val < 0) val = 0;
-                    if (val > 100) val = 100;
+                    if (val > 10) val = 10;
 
                     catRatedCounts[catId]++;
 
@@ -1073,9 +1076,9 @@
                     pills.forEach(pill => {
                         const pVal = parseFloat(pill.innerText.trim());
                         if (pVal === val) {
-                            pill.className = `preset-pill-${id} px-2 py-0.5 rounded-md text-[10px] font-bold transition touch-action-manipulation bg-blue-600 text-white shadow-2xs`;
+                            pill.className = `preset-pill-${id} w-full py-1.5 sm:py-1 rounded-lg text-[11px] sm:text-xs font-black transition touch-action-manipulation text-center bg-blue-600 text-white shadow-2xs`;
                         } else {
-                            pill.className = `preset-pill-${id} px-2 py-0.5 rounded-md text-[10px] font-bold transition touch-action-manipulation bg-slate-50 border border-slate-200/80 text-slate-600 hover:bg-slate-100`;
+                            pill.className = `preset-pill-${id} w-full py-1.5 sm:py-1 rounded-lg text-[11px] sm:text-xs font-black transition touch-action-manipulation text-center bg-slate-50 border border-slate-200/80 text-slate-700 hover:bg-slate-100`;
                         }
                     });
                 } else {
@@ -1089,7 +1092,7 @@
                     // Clear preset pills
                     const pills = row.querySelectorAll('[class*="preset-pill-"]');
                     pills.forEach(pill => {
-                        pill.className = `preset-pill-${id} px-2 py-0.5 rounded-md text-[10px] font-bold transition touch-action-manipulation bg-slate-50 border border-slate-200/80 text-slate-600 hover:bg-slate-100`;
+                        pill.className = `preset-pill-${id} w-full py-1.5 sm:py-1 rounded-lg text-[11px] sm:text-xs font-black transition touch-action-manipulation text-center bg-slate-50 border border-slate-200/80 text-slate-700 hover:bg-slate-100`;
                     });
                 }
             }
@@ -1139,27 +1142,27 @@
             }
         }
 
-        // Update Medal Preview
+        // Update Medal Preview (Skala 0 - 10)
         const medalBadge = document.getElementById('medalBadge');
         if (medalBadge) {
             if (status.filled === 0) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-semibold shadow-xs bg-slate-100 text-slate-500';
                 medalBadge.innerText = 'Belum Dinilai';
-            } else if (grandTotalWeighted >= 90) {
+            } else if (grandTotalWeighted >= 9.0) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-cyan-500 to-blue-600 text-white';
-                medalBadge.innerText = '★ Diamond (' + grandTotalWeighted.toFixed(1) + ')';
-            } else if (grandTotalWeighted >= 85) {
+                medalBadge.innerText = '★ Diamond (' + grandTotalWeighted.toFixed(2) + ')';
+            } else if (grandTotalWeighted >= 8.5) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-slate-300 to-slate-500 text-white';
-                medalBadge.innerText = '★ Platinum (' + grandTotalWeighted.toFixed(1) + ')';
-            } else if (grandTotalWeighted >= 80) {
+                medalBadge.innerText = '★ Platinum (' + grandTotalWeighted.toFixed(2) + ')';
+            } else if (grandTotalWeighted >= 8.0) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-amber-400 to-amber-600 text-white';
-                medalBadge.innerText = '★ Gold (' + grandTotalWeighted.toFixed(1) + ')';
-            } else if (grandTotalWeighted >= 75) {
+                medalBadge.innerText = '★ Gold (' + grandTotalWeighted.toFixed(2) + ')';
+            } else if (grandTotalWeighted >= 7.5) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-slate-200 to-slate-400 text-slate-800';
-                medalBadge.innerText = '★ Silver (' + grandTotalWeighted.toFixed(1) + ')';
+                medalBadge.innerText = '★ Silver (' + grandTotalWeighted.toFixed(2) + ')';
             } else {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-amber-700 to-amber-900 text-amber-100';
-                medalBadge.innerText = '★ Bronze (' + grandTotalWeighted.toFixed(1) + ')';
+                medalBadge.innerText = '★ Bronze (' + grandTotalWeighted.toFixed(2) + ')';
             }
         }
     }
@@ -1198,16 +1201,16 @@
             return;
         }
 
-        if (val > 100) {
-            input.value = 100;
-            showScoreWarning('Nilai tidak boleh lebih dari 100! (Skala nilai: 0 - 100)');
+        if (val > 10) {
+            input.value = 10;
+            showScoreWarning('Nilai tidak boleh lebih dari 10! (Skala nilai: 0 - 10)');
             input.classList.add('ring-2', 'ring-rose-500', 'border-rose-500');
             setTimeout(() => {
                 input.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500');
             }, 1500);
         } else if (val < 0) {
             input.value = 0;
-            showScoreWarning('Nilai minimal adalah 0! (Skala nilai: 0 - 100)');
+            showScoreWarning('Nilai minimal adalah 0! (Skala nilai: 0 - 10)');
         }
 
         recalculateScores();
@@ -1220,12 +1223,12 @@
     function adjustScore(id, delta) {
         const input = document.getElementById('score_input_' + id);
         if (input) {
-            let current = parseInt(input.value);
-            if (isNaN(current)) current = 75; // Starting point if adjusting from blank
-            let next = current + delta;
-            if (next > 100) {
-                input.value = 100;
-                showScoreWarning('Nilai sudah mencapai batas maksimal 100!');
+            let current = parseFloat(input.value);
+            if (isNaN(current)) current = 8; // Default starting point if blank
+            let next = Math.round((current + delta) * 10) / 10;
+            if (next > 10) {
+                input.value = 10;
+                showScoreWarning('Nilai sudah mencapai batas maksimal 10!');
             } else if (next < 0) {
                 input.value = 0;
                 showScoreWarning('Nilai minimal adalah 0!');
@@ -1239,7 +1242,7 @@
     function setPresetScore(id, val) {
         const input = document.getElementById('score_input_' + id);
         if (input) {
-            input.value = Math.min(100, Math.max(0, val));
+            input.value = Math.min(10, Math.max(0, val));
             recalculateScores();
         }
     }
