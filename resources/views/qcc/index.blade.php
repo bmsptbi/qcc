@@ -90,12 +90,32 @@
             </div>
 
             <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+                <!-- Year Period Filter -->
+                <select name="year" onchange="this.form.submit()" class="px-3 py-2.5 rounded-xl border border-blue-200 text-xs sm:text-sm font-bold text-blue-900 bg-blue-50/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    @foreach($availableYears as $yr)
+                        <option value="{{ $yr }}" {{ (string)$activeYear === (string)$yr ? 'selected' : '' }}>
+                            Tahun {{ $yr }}
+                        </option>
+                    @endforeach
+                    <option value="all" {{ (string)$activeYear === 'all' ? 'selected' : '' }}>Semua Tahun</option>
+                </select>
+
                 <!-- Category Filter -->
                 <select name="category" onchange="this.form.submit()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                     <option value="">Semua Kategori</option>
                     @foreach($categories as $cat)
                         <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>
                             {{ $cat->name }}
+                        </option>
+                    @endforeach
+                </select>
+
+                <!-- Department Filter -->
+                <select name="department" onchange="this.form.submit()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    <option value="">Semua Departemen</option>
+                    @foreach($departments as $dept)
+                        <option value="{{ $dept->id }}" {{ request('department') == $dept->id ? 'selected' : '' }}>
+                            {{ $dept->name }}
                         </option>
                     @endforeach
                 </select>
@@ -109,7 +129,7 @@
                     <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Terverifikasi</option>
                 </select>
 
-                @if(request()->anyFilled(['search', 'category', 'status']))
+                @if(request()->anyFilled(['search', 'category', 'department', 'status']))
                     <a href="{{ route('qcc.index') }}" class="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 transition whitespace-nowrap">
                         Reset
                     </a>
@@ -294,7 +314,7 @@
                 <select id="share_stage_select" onchange="updateGeneratedShareUrl()" 
                     class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold text-slate-800 focus:outline-none focus:border-blue-500">
                     <option value="all">Semua Tahap Penilaian (Lengkap)</option>
-                    @foreach($categories as $cat)
+                    @foreach($criteriaStages as $cat)
                         <option value="{{ $cat->id }}">
                             Tahap: {{ $cat->name }} (Bobot: {{ number_format($cat->weight_percentage, 0) }}%)
                         </option>
@@ -302,20 +322,30 @@
                 </select>
             </div>
 
-            <!-- 2. Setup Juri Penerima (Opsional) -->
+            <!-- 2. Setup Juri Penerima (Bisa Multiple Juri) -->
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
-                    Ditujukan Khusus Untuk Juri (Opsional):
-                </label>
-                <select id="share_judge_select" onchange="updateGeneratedShareUrl()" 
-                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold text-slate-800 focus:outline-none focus:border-blue-500">
-                    <option value="">Umum (Juri Memilih Sendiri di Form)</option>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-bold text-slate-700 uppercase">
+                        Ditujukan Khusus Juri (Bisa Pilih >1 Juri):
+                    </label>
+                    <button type="button" onclick="toggleAllShareJudges()" id="toggle_all_judges_btn" class="text-[10px] font-bold text-blue-600 hover:text-blue-800">
+                        Pilih Semua
+                    </button>
+                </div>
+                <div class="max-h-36 overflow-y-auto p-2 bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
                     @foreach($allJudges as $j)
-                        <option value="{{ $j->id }}">
-                            {{ $j->name }} ({{ ucfirst($j->role) }})
-                        </option>
+                        <label class="flex items-center justify-between p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-xs">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" value="{{ $j->id }}" class="share-judge-cb rounded border-slate-300 text-blue-600 focus:ring-blue-500" onchange="updateGeneratedShareUrl()">
+                                <span class="font-semibold text-slate-800">{{ $j->name }}</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 font-mono">{{ $j->nik ?? $j->role }}</span>
+                        </label>
                     @endforeach
-                </select>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-1">
+                    💡 <em>Jika dipilih >1 juri atau dikosongkan, juri wajib memilih namanya sendiri saat membuka link / scan QR form penilaian.</em>
+                </p>
             </div>
         </div>
 
@@ -377,6 +407,12 @@
         currentCircle = { id, name, code, theme };
         document.getElementById('share_circle_name').innerText = name + ' (' + code + ')';
         document.getElementById('share_circle_theme').innerText = '"' + theme + '"';
+        
+        // Reset checkboxes
+        document.querySelectorAll('.share-judge-cb').forEach(cb => cb.checked = false);
+        const toggleBtn = document.getElementById('toggle_all_judges_btn');
+        if (toggleBtn) toggleBtn.innerText = 'Pilih Semua';
+
         updateGeneratedShareUrl();
         document.getElementById('shareModal').classList.remove('hidden');
     }
@@ -385,17 +421,28 @@
         document.getElementById('shareModal').classList.add('hidden');
     }
 
+    function toggleAllShareJudges() {
+        const cbs = document.querySelectorAll('.share-judge-cb');
+        const anyUnchecked = Array.from(cbs).some(cb => !cb.checked);
+        cbs.forEach(cb => cb.checked = anyUnchecked);
+        const toggleBtn = document.getElementById('toggle_all_judges_btn');
+        if (toggleBtn) toggleBtn.innerText = anyUnchecked ? 'Kosongkan Semua' : 'Pilih Semua';
+        updateGeneratedShareUrl();
+    }
+
     function updateGeneratedShareUrl() {
         if (!currentCircle) return;
         const stageVal = document.getElementById('share_stage_select').value;
-        const judgeVal = document.getElementById('share_judge_select').value;
+        const checkedJudges = Array.from(document.querySelectorAll('.share-judge-cb:checked')).map(cb => cb.value);
         
         let url = new URL(window.location.origin + '/circles/' + currentCircle.id + '/assess');
         if (stageVal && stageVal !== 'all') {
             url.searchParams.set('category_id', stageVal);
         }
-        if (judgeVal) {
-            url.searchParams.set('judge_id', judgeVal);
+        if (checkedJudges.length === 1) {
+            url.searchParams.set('judge_id', checkedJudges[0]);
+        } else if (checkedJudges.length > 1) {
+            url.searchParams.set('judges', checkedJudges.join(','));
         }
 
         const fullUrl = url.toString();
@@ -428,10 +475,16 @@
         const url = document.getElementById('share_url_display').value;
         const stageSelect = document.getElementById('share_stage_select');
         const stageName = stageSelect.options[stageSelect.selectedIndex].text;
-        const judgeSelect = document.getElementById('share_judge_select');
-        const judgeName = judgeSelect.value ? judgeSelect.options[judgeSelect.selectedIndex].text : 'Bapak/Ibu Juri';
+        
+        const checkedJudges = Array.from(document.querySelectorAll('.share-judge-cb:checked'));
+        let judgeName = 'Bapak/Ibu Dewan Juri';
+        if (checkedJudges.length === 1) {
+            judgeName = checkedJudges[0].closest('label').querySelector('.font-semibold').innerText;
+        } else if (checkedJudges.length > 1) {
+            judgeName = 'Bapak/Ibu Tim Juri (' + checkedJudges.length + ' Juri)';
+        }
 
-        const text = `*FORM PENILAIAN QCC 2026*\n` +
+        const text = `*FORM PENILAIAN QCC {{ $activeYear ?? date('Y') }}*\n` +
             `Halo ${judgeName},\n` +
             `Berikut link penilaian untuk:\n` +
             `• *Gugus:* ${currentCircle.name} (${currentCircle.code})\n` +

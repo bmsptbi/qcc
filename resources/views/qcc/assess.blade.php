@@ -45,29 +45,35 @@
             </div>
             <div>
                 <div class="flex items-center gap-2">
-                    <span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
-                        Juri Penilai Aktif
-                    </span>
-                    @if($currentJudge?->nik)
-                        <span class="text-[11px] text-slate-300 font-mono">NIK: {{ $currentJudge->nik }}</span>
+                    @if($currentJudge)
+                        <span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                            Juri Penilai Aktif
+                        </span>
+                        @if($currentJudge->nik)
+                            <span class="text-[11px] text-slate-300 font-mono">NIK: {{ $currentJudge->nik }}</span>
+                        @endif
+                    @else
+                        <span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 animate-pulse">
+                            Wajib Pilih Identitas Juri
+                        </span>
                     @endif
                 </div>
                 <h2 class="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
-                    {{ $currentJudge?->name ?? 'Juri Penilai' }}
+                    {{ $currentJudge?->name ?? 'Belum Memilih Juri' }}
                 </h2>
                 <p class="text-[11px] sm:text-xs text-slate-300">
-                    {{ $currentJudge?->department->name ?? 'Dewan Juri Konvensi Mutu QCC' }}
+                    {{ $currentJudge?->department->name ?? 'Silakan pilih nama Anda untuk mengaktifkan lembar penilaian' }}
                 </p>
             </div>
         </div>
 
         <div class="flex items-center gap-2">
             <!-- Button Ganti Juri -->
-            <button type="button" onclick="openJudgeModal()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs">
-                <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="button" onclick="openJudgeModal()" class="px-3.5 py-2 rounded-xl {{ ! $currentJudge ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 font-black animate-pulse' : 'bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold' }} text-xs transition flex items-center gap-1.5 shadow-xs">
+                <svg class="w-3.5 h-3.5 {{ ! $currentJudge ? 'text-slate-900' : 'text-amber-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                 </svg>
-                <span>Ganti Juri</span>
+                <span>{{ $currentJudge ? 'Ganti Juri' : 'Pilih Nama Juri' }}</span>
             </button>
 
             <!-- Button Share Link Penilaian (Hanya untuk Admin) -->
@@ -441,28 +447,37 @@
 
 </div>
 
-<!-- Modal Ganti Juri Penilai -->
-<div id="judgeModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+<!-- Modal Pilih / Ganti Juri Penilai -->
+<div id="judgeModal" class="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 {{ $mustSelectJudge ? '' : 'hidden' }}">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div class="flex items-center gap-2">
-                <span class="text-lg">⚖️</span>
-                <h3 class="text-base font-bold text-slate-900">Pilih Identitas Juri Penilai</h3>
+                <span class="text-xl">⚖️</span>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">
+                        {{ $mustSelectJudge ? 'Pilih Identitas Juri Anda' : 'Ganti Juri Penilai' }}
+                    </h3>
+                    <p class="text-[11px] text-slate-500">
+                        {{ ! empty($allowedJudgeIds) ? 'Dikhususkan untuk tim juri yang ditugaskan' : 'Pilih nama Anda dari daftar dewan juri' }}
+                    </p>
+                </div>
             </div>
-            <button type="button" onclick="closeJudgeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            @if(! $mustSelectJudge)
+                <button type="button" onclick="closeJudgeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            @endif
         </div>
 
-        <p class="text-xs text-slate-500">
-            Pilih nama Anda dari daftar juri yang ditugaskan untuk gugus ini:
+        <p class="text-xs text-slate-600 font-medium">
+            Silakan klik nama Anda untuk membuka & mengisi formulir penilaian:
         </p>
 
         <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
-            @foreach($allJudges as $j)
+            @forelse($selectableJudges as $j)
                 <button type="button" onclick="selectJudge({{ $j->id }})" 
-                    class="w-full text-left p-3 rounded-2xl border transition flex items-center justify-between gap-3 {{ $currentJudge?->id == $j->id ? 'bg-blue-50/80 border-blue-400 text-blue-950 font-bold shadow-xs' : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100' }}">
+                    class="w-full text-left p-3 rounded-2xl border transition flex items-center justify-between gap-3 {{ $currentJudge?->id == $j->id ? 'bg-blue-50/80 border-blue-400 text-blue-950 font-bold shadow-xs' : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-blue-50/60 hover:border-blue-300' }}">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                            {{ substr($j->name, 0, 1) }}
+                            {{ strtoupper(substr($j->name, 0, 1)) }}
                         </div>
                         <div>
                             <span class="text-xs sm:text-sm font-bold block">{{ $j->name }}</span>
@@ -471,16 +486,24 @@
                     </div>
                     @if($currentJudge?->id == $j->id)
                         <span class="text-xs font-black text-blue-600">Aktif</span>
+                    @else
+                        <span class="text-xs font-semibold text-blue-600">Pilih &rarr;</span>
                     @endif
                 </button>
-            @endforeach
+            @empty
+                <div class="text-center py-6 text-xs text-slate-400">
+                    Tidak ada juri yang cocok dengan penugasan link ini.
+                </div>
+            @endforelse
         </div>
 
-        <div class="pt-2 border-t border-slate-100 text-right">
-            <button type="button" onclick="closeJudgeModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
-                Tutup
-            </button>
-        </div>
+        @if(! $mustSelectJudge)
+            <div class="pt-2 border-t border-slate-100 text-right">
+                <button type="button" onclick="closeJudgeModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+                    Tutup
+                </button>
+            </div>
+        @endif
     </div>
 </div>
 
@@ -520,20 +543,30 @@
                 </select>
             </div>
 
-            <!-- 2. Setup Juri Penerima (Opsional) -->
+            <!-- 2. Setup Juri Penerima (Bisa Multiple Juri) -->
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
-                    Ditujukan Khusus Untuk Juri (Opsional):
-                </label>
-                <select id="share_judge_select" onchange="updateGeneratedShareUrl()" 
-                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold text-slate-800 focus:outline-none focus:border-blue-500">
-                    <option value="">Umum (Juri Memilih Sendiri di Form)</option>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-bold text-slate-700 uppercase">
+                        Ditujukan Khusus Juri (Bisa Pilih >1 Juri):
+                    </label>
+                    <button type="button" onclick="toggleAllShareJudges()" id="toggle_all_judges_btn" class="text-[10px] font-bold text-blue-600 hover:text-blue-800">
+                        Pilih Semua
+                    </button>
+                </div>
+                <div class="max-h-36 overflow-y-auto p-2 bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
                     @foreach($allJudges as $j)
-                        <option value="{{ $j->id }}" {{ $currentJudge?->id == $j->id ? 'selected' : '' }}>
-                            {{ $j->name }} ({{ ucfirst($j->role) }})
-                        </option>
+                        <label class="flex items-center justify-between p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-xs">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" value="{{ $j->id }}" class="share-judge-cb rounded border-slate-300 text-blue-600 focus:ring-blue-500" onchange="updateGeneratedShareUrl()">
+                                <span class="font-semibold text-slate-800">{{ $j->name }}</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 font-mono">{{ $j->nik ?? $j->role }}</span>
+                        </label>
                     @endforeach
-                </select>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-1">
+                    💡 <em>Jika dipilih >1 juri atau dikosongkan, juri wajib memilih namanya sendiri saat membuka link / scan QR form penilaian.</em>
+                </p>
             </div>
         </div>
 
@@ -841,6 +874,11 @@
     }
 
     function submitFinalForm() {
+        if (!@json($currentJudge?->id)) {
+            openJudgeModal();
+            alert('Silakan pilih identitas juri Anda terlebih dahulu sebelum menyimpan penilaian.');
+            return;
+        }
         const form = document.getElementById('assessmentForm');
         const actionInput = document.createElement('input');
         actionInput.type = 'hidden';
@@ -860,9 +898,10 @@
     }
 
     function selectJudge(judgeId) {
-        // Reload current page with judge_id parameter and preserve stage tab
+        // Reload current page with judge_id parameter and preserve stage tab & judges filter
         let url = new URL(window.location.href);
         url.searchParams.set('judge_id', judgeId);
+        url.searchParams.delete('choose_judge');
         if (activeStageTab && activeStageTab !== 'all') {
             url.searchParams.set('category_id', activeStageTab);
         }
@@ -871,6 +910,9 @@
 
     // Share Modal Handlers
     function openShareModal() {
+        document.querySelectorAll('.share-judge-cb').forEach(cb => cb.checked = false);
+        const toggleBtn = document.getElementById('toggle_all_judges_btn');
+        if (toggleBtn) toggleBtn.innerText = 'Pilih Semua';
         updateGeneratedShareUrl();
         document.getElementById('shareModal').classList.remove('hidden');
     }
@@ -879,16 +921,27 @@
         document.getElementById('shareModal').classList.add('hidden');
     }
 
+    function toggleAllShareJudges() {
+        const cbs = document.querySelectorAll('.share-judge-cb');
+        const anyUnchecked = Array.from(cbs).some(cb => !cb.checked);
+        cbs.forEach(cb => cb.checked = anyUnchecked);
+        const toggleBtn = document.getElementById('toggle_all_judges_btn');
+        if (toggleBtn) toggleBtn.innerText = anyUnchecked ? 'Kosongkan Semua' : 'Pilih Semua';
+        updateGeneratedShareUrl();
+    }
+
     function updateGeneratedShareUrl() {
         const stageVal = document.getElementById('share_stage_select').value;
-        const judgeVal = document.getElementById('share_judge_select').value;
+        const checkedJudges = Array.from(document.querySelectorAll('.share-judge-cb:checked')).map(cb => cb.value);
         
         let url = new URL(baseUrl);
         if (stageVal && stageVal !== 'all') {
             url.searchParams.set('category_id', stageVal);
         }
-        if (judgeVal) {
-            url.searchParams.set('judge_id', judgeVal);
+        if (checkedJudges.length === 1) {
+            url.searchParams.set('judge_id', checkedJudges[0]);
+        } else if (checkedJudges.length > 1) {
+            url.searchParams.set('judges', checkedJudges.join(','));
         }
 
         const fullUrl = url.toString();
@@ -920,10 +973,16 @@
         const url = document.getElementById('share_url_display').value;
         const stageSelect = document.getElementById('share_stage_select');
         const stageName = stageSelect.options[stageSelect.selectedIndex].text;
-        const judgeSelect = document.getElementById('share_judge_select');
-        const judgeName = judgeSelect.value ? judgeSelect.options[judgeSelect.selectedIndex].text : 'Bapak/Ibu Juri';
+        
+        const checkedJudges = Array.from(document.querySelectorAll('.share-judge-cb:checked'));
+        let judgeName = 'Bapak/Ibu Dewan Juri';
+        if (checkedJudges.length === 1) {
+            judgeName = checkedJudges[0].closest('label').querySelector('.font-semibold').innerText;
+        } else if (checkedJudges.length > 1) {
+            judgeName = 'Bapak/Ibu Tim Juri (' + checkedJudges.length + ' Juri)';
+        }
 
-        const text = `*FORM PENILAIAN QCC 2026*\n` +
+        const text = `*FORM PENILAIAN QCC {{ $circle->year ?? $activeYear ?? date('Y') }}*\n` +
             `Halo ${judgeName},\n` +
             `Berikut link penilaian untuk:\n` +
             `• *Gugus:* {{ $circle->circle_name }} ({{ $circle->circle_code }})\n` +

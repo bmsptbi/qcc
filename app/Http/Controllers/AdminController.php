@@ -19,13 +19,66 @@ use Illuminate\View\View;
 class AdminController extends Controller
 {
     /**
+     * Halaman manajemen daftar gugus QCC (Tabel, Filter, Edit, Hapus)
+     */
+    public function circlesIndex(Request $request): View
+    {
+        $periods = AssessmentPeriod::orderByDesc('year')->get();
+        $categories = CircleCategory::where('is_active', true)->get();
+        $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
+
+        $query = Circle::with(['period', 'category', 'department', 'leader', 'facilitator', 'members'])
+            ->withCount(['members', 'assessments']);
+
+        if ($request->filled('period_id')) {
+            $query->where('assessment_period_id', $request->period_id);
+        }
+
+        if ($request->filled('year') && $request->year !== 'all') {
+            $query->where('year', $request->year);
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('circle_category_id', $request->category_id);
+        }
+
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('circle_name', 'like', "%{$s}%")
+                    ->orWhere('circle_code', 'like', "%{$s}%")
+                    ->orWhere('theme_title', 'like', "%{$s}%");
+            });
+        }
+
+        $circles = $query->orderByDesc('id')->paginate(15)->withQueryString();
+
+        $stats = [
+            'total' => Circle::count(),
+            'scheduled' => Circle::where('status', 'scheduled')->count(),
+            'evaluated' => Circle::whereIn('status', ['evaluated', 'awarded'])->count(),
+            'draft' => Circle::where('status', 'draft')->count(),
+        ];
+
+        return view('admin.circles.index', compact('circles', 'periods', 'categories', 'departments', 'stats'));
+    }
+
+    /**
      * Tampilkan form pendaftaran circle baru
      */
     public function createCircle(): View
     {
         $periods = AssessmentPeriod::orderByDesc('year')->get();
         $categories = CircleCategory::where('is_active', true)->get();
-        $departments = Department::where('is_active', true)->get();
+        $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
         $facilitators = User::whereIn('role', ['facilitator', 'admin'])->get();
 
         // Rekomendasi kode gugus berikutnya (cth: QCC-2026-005)
@@ -45,7 +98,8 @@ class AdminController extends Controller
             'circle_code' => ['required', 'string', 'max:50', 'unique:circles,circle_code'],
             'circle_name' => ['required', 'string', 'max:150'],
             'theme_title' => ['required', 'string', 'max:255'],
-            'assessment_period_id' => ['required', 'exists:assessment_periods,id'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2099'],
+            'assessment_period_id' => ['nullable', 'exists:assessment_periods,id'],
             'circle_category_id' => ['required', 'exists:circle_categories,id'],
             'department_id' => ['required', 'exists:departments,id'],
             'facilitator_id' => ['nullable', 'exists:users,id'],
@@ -61,8 +115,25 @@ class AdminController extends Controller
             'members.*.email' => ['nullable', 'email'],
         ]);
 
+        $year = (int) $validated['year'];
+        $periodId = $validated['assessment_period_id'] ?? null;
+        if (! $periodId) {
+            $period = AssessmentPeriod::firstOrCreate(
+                ['year' => $year],
+                [
+                    'name' => "Konvensi Mutu & QCC {$year}",
+                    'theme' => "Continuous Improvement & Innovation {$year}",
+                    'status' => 'active',
+                    'start_date' => "{$year}-01-01",
+                    'end_date' => "{$year}-12-31",
+                ]
+            );
+            $periodId = $period->id;
+        }
+
         $circle = Circle::create([
-            'assessment_period_id' => $validated['assessment_period_id'],
+            'assessment_period_id' => $periodId,
+            'year' => $year,
             'circle_category_id' => $validated['circle_category_id'],
             'department_id' => $validated['department_id'],
             'facilitator_id' => $validated['facilitator_id'] ?? null,
@@ -91,8 +162,120 @@ class AdminController extends Controller
             }
         }
 
-        return redirect()->route('qcc.circles.show', $circle)
-            ->with('success', "Gugus {$circle->circle_name} ({$circle->circle_code}) berhasil didaftarkan!");
+        return redirect()->route('admin.circles.index')
+            ->with('success', "Gugus {$circle->circle_name} ({$circle->circle_code}) periode {$circle->year} berhasil didaftarkan!");
+    }
+
+    /**
+     * Tampilkan form edit circle
+     */
+    public function editCircle(Circle $circle): View
+    {
+        $circle->load(['members', 'category', 'department', 'facilitator']);
+        $periods = AssessmentPeriod::orderByDesc('year')->get();
+        $categories = CircleCategory::where('is_active', true)->get();
+        $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
+        $facilitators = User::whereIn('role', ['facilitator', 'admin'])->get();
+
+        return view('admin.circles.edit', compact('circle', 'periods', 'categories', 'departments', 'facilitators'));
+    }
+
+    /**
+     * Update data gugus QCC beserta anggota timnya
+     */
+    public function updateCircle(Request $request, Circle $circle): RedirectResponse
+    {
+        $validated = $request->validate([
+            'circle_code' => ['required', 'string', 'max:50', 'unique:circles,circle_code,'.$circle->id],
+            'circle_name' => ['required', 'string', 'max:150'],
+            'theme_title' => ['required', 'string', 'max:255'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2099'],
+            'assessment_period_id' => ['nullable', 'exists:assessment_periods,id'],
+            'circle_category_id' => ['required', 'exists:circle_categories,id'],
+            'department_id' => ['required', 'exists:departments,id'],
+            'facilitator_id' => ['nullable', 'exists:users,id'],
+            'problem_statement' => ['nullable', 'string'],
+            'target_statement' => ['nullable', 'string'],
+            'presentation_schedule' => ['nullable', 'date'],
+            'presentation_room' => ['nullable', 'string', 'max:150'],
+            'status' => ['required', 'in:draft,submitted,verified,scheduled,evaluated,awarded'],
+            'members' => ['nullable', 'array'],
+            'members.*.name' => ['required_with:members.*.nik', 'string', 'max:150'],
+            'members.*.nik' => ['required_with:members.*.name', 'string', 'max:50'],
+            'members.*.role' => ['required_with:members.*.name', 'in:leader,secretary,facilitator,member'],
+            'members.*.email' => ['nullable', 'email'],
+        ]);
+
+        $year = (int) $validated['year'];
+        $periodId = $validated['assessment_period_id'] ?? null;
+        if (! $periodId) {
+            $period = AssessmentPeriod::firstOrCreate(
+                ['year' => $year],
+                [
+                    'name' => "Konvensi Mutu & QCC {$year}",
+                    'theme' => "Continuous Improvement & Innovation {$year}",
+                    'status' => 'active',
+                    'start_date' => "{$year}-01-01",
+                    'end_date' => "{$year}-12-31",
+                ]
+            );
+            $periodId = $period->id;
+        }
+
+        $circle->update([
+            'assessment_period_id' => $periodId,
+            'year' => $year,
+            'circle_category_id' => $validated['circle_category_id'],
+            'department_id' => $validated['department_id'],
+            'facilitator_id' => $validated['facilitator_id'] ?? null,
+            'circle_code' => strtoupper($validated['circle_code']),
+            'circle_name' => $validated['circle_name'],
+            'theme_title' => $validated['theme_title'],
+            'problem_statement' => $validated['problem_statement'] ?? null,
+            'target_statement' => $validated['target_statement'] ?? null,
+            'presentation_schedule' => $validated['presentation_schedule'] ?? null,
+            'presentation_room' => $validated['presentation_room'] ?? null,
+            'status' => $validated['status'],
+        ]);
+
+        // Perbarui anggota tim jika diberikan
+        if (isset($validated['members'])) {
+            $circle->members()->delete();
+            foreach ($validated['members'] as $m) {
+                if (! empty($m['name']) && ! empty($m['nik'])) {
+                    CircleMember::create([
+                        'circle_id' => $circle->id,
+                        'name' => $m['name'],
+                        'nik' => $m['nik'],
+                        'role' => $m['role'] ?? 'member',
+                        'email' => $m['email'] ?? null,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('admin.circles.index')
+            ->with('success', "Data gugus {$circle->circle_name} ({$circle->circle_code}) berhasil diperbarui!");
+    }
+
+    /**
+     * Hapus gugus QCC beserta anggota dan skor penilaiannya
+     */
+    public function destroyCircle(Circle $circle): RedirectResponse
+    {
+        $name = $circle->circle_name;
+        $code = $circle->circle_code;
+
+        foreach ($circle->assessments as $assessment) {
+            $assessment->scores()->delete();
+            $assessment->delete();
+        }
+
+        $circle->members()->delete();
+        $circle->delete();
+
+        return redirect()->route('admin.circles.index')
+            ->with('success', "Gugus {$name} ({$code}) beserta seluruh data penilaiannya telah dihapus!");
     }
 
     /**
@@ -101,7 +284,7 @@ class AdminController extends Controller
     public function judgesIndex(): View
     {
         $judges = User::where('role', 'judge')->with(['department', 'judgeAssignments.period', 'judgeAssignments.category'])->get();
-        $departments = Department::where('is_active', true)->get();
+        $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
         $periods = AssessmentPeriod::orderByDesc('year')->get();
         $categories = CircleCategory::where('is_active', true)->get();
 
@@ -167,6 +350,53 @@ class AdminController extends Controller
         $assignment->delete();
 
         return back()->with('success', 'Penugasan juri telah dihapus.');
+    }
+
+    /**
+     * Update data dewan juri
+     */
+    public function updateJudge(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'email' => ['required', 'email', 'max:150', 'unique:users,email,'.$user->id],
+            'nik' => ['nullable', 'string', 'max:50'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'password' => ['nullable', 'string', 'min:6'],
+        ]);
+
+        $data = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'nik' => $validated['nik'] ?? null,
+            'department_id' => $validated['department_id'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+        ];
+
+        if (! empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($data);
+
+        return back()->with('success', "Data juri {$user->name} berhasil diperbarui!");
+    }
+
+    /**
+     * Hapus dewan juri
+     */
+    public function destroyJudge(User $user): RedirectResponse
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        $name = $user->name;
+        $user->judgeAssignments()->delete();
+        $user->delete();
+
+        return back()->with('success', "Juri {$name} berhasil dihapus!");
     }
 
     /**
@@ -346,7 +576,7 @@ class AdminController extends Controller
         }
 
         $users = $query->orderBy('name', 'asc')->get();
-        $departments = Department::where('is_active', true)->get();
+        $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
 
         $stats = [
             'total_users' => User::count(),

@@ -101,7 +101,7 @@
                 <div class="sidebar-text flex flex-col justify-center">
                     <div class="font-extrabold text-slate-900 tracking-tight text-base leading-tight flex items-center gap-1.5">
                         <span>QCC System</span>
-                        <span class="text-[9px] uppercase font-black px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700">2026</span>
+                        <span class="text-[9px] uppercase font-black px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700">{{ $activeYear === 'all' ? 'SEMUA' : $activeYear }}</span>
                     </div>
                     <span class="text-[10px] font-semibold text-slate-400 truncate">PT Bekaert Indonesia</span>
                 </div>
@@ -212,18 +212,18 @@
                     </div>
                 </a>
 
-                <!-- Item 5: Tambah Circle Baru -->
-                <a href="{{ route('admin.circles.create') }}" 
-                    class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.circles.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-emerald-50/70 hover:text-emerald-800 font-semibold' }}"
-                    title="Daftarkan Circle Gugus Baru">
+                <!-- Item 5: Kelola Gugus QCC -->
+                <a href="{{ route('admin.circles.index') }}" 
+                    class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.circles.*') ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md shadow-teal-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
+                    title="Manajemen Gugus QCC">
                     <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                         </svg>
                     </div>
                     <div class="sidebar-text">
-                        <span class="text-sm block leading-tight">+ Circle Baru</span>
-                        <span class="text-[10px] opacity-75 block font-normal">Registrasi Gugus</span>
+                        <span class="text-sm block leading-tight">Kelola Gugus QCC</span>
+                        <span class="text-[10px] opacity-75 block font-normal">Data Tim & Jadwal</span>
                     </div>
                 </a>
             @endif
@@ -272,7 +272,7 @@
 
     <!-- MOBILE TOP BAR (For touch devices & screens < md) -->
     <header class="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 h-16 flex items-center justify-between shadow-2xs">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2.5">
             <!-- Mobile Menu Trigger -->
             <button type="button" onclick="openMobileSidebar()" class="p-2 -ml-1 rounded-xl text-slate-700 hover:bg-slate-100 transition active:scale-95" aria-label="Buka Menu Navigasi">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,21 +286,42 @@
                     QC
                 </div>
                 <div>
-                    <span class="font-extrabold text-slate-900 text-sm tracking-tight block leading-none">QCC Assessment</span>
-                    <span class="text-[9px] font-bold text-slate-400 block mt-0.5">Konvensi Mutu 2026</span>
+                    <span class="font-extrabold text-slate-900 text-sm tracking-tight block leading-none">QCC System</span>
+                    <span class="text-[9px] font-bold text-slate-400 block mt-0.5">Konvensi {{ $activeYear === 'all' ? 'Semua' : $activeYear }}</span>
                 </div>
             </a>
         </div>
 
-        <!-- Right Quick Action (Profile / Sign In) -->
-        <div>
+        <!-- Right Quick Action (Year Selector & Profile / Sign In) -->
+        <div class="flex items-center gap-2">
+            <!-- Switch Year Selector Mobile -->
+            <form method="POST" action="{{ route('qcc.switch-year') }}" class="inline-block">
+                @csrf
+                <div class="relative">
+                    <select name="year" onchange="this.form.submit()" 
+                        class="appearance-none bg-slate-100 text-slate-800 text-[11px] font-bold py-1 pl-2 pr-6 rounded-lg border border-slate-200 focus:outline-none">
+                        @foreach($availableYears as $yr)
+                            <option value="{{ $yr }}" {{ (string)$activeYear === (string)$yr ? 'selected' : '' }}>
+                                {{ $yr }}
+                            </option>
+                        @endforeach
+                        <option value="all" {{ (string)$activeYear === 'all' ? 'selected' : '' }}>Semua</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-slate-400">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+            </form>
+
             @if(Auth::check() && Auth::user()->role === 'admin')
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold">
+                <div class="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold">
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span class="max-w-[80px] truncate text-[11px]">{{ Auth::user()->name }}</span>
+                    <span class="max-w-[70px] truncate text-[11px]">{{ Auth::user()->name }}</span>
                 </div>
             @else
-                <a href="{{ route('login') }}" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs transition">
+                <a href="{{ route('login') }}" class="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs transition">
                     Sign In
                 </a>
             @endif
@@ -378,12 +399,12 @@
                         <span>Kriteria Nilai</span>
                     </a>
 
-                    <a href="{{ route('admin.circles.create') }}" onclick="closeMobileSidebar()" 
-                        class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('admin.circles.*') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-50' }}">
-                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <a href="{{ route('admin.circles.index') }}" onclick="closeMobileSidebar()" 
+                        class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('admin.circles.*') ? 'bg-teal-50 text-teal-700' : 'text-slate-700 hover:bg-slate-50' }}">
+                        <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                         </svg>
-                        <span>+ Tambah Circle</span>
+                        <span>Kelola Gugus QCC</span>
                     </a>
                 </div>
             @endif
@@ -416,6 +437,58 @@
     <!-- MAIN CONTENT WRAPPER (Left offset by w-20 on desktop) -->
     <div id="mainContentWrapper" class="flex-1 min-h-screen flex flex-col md:pl-20 transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
         
+        <!-- Desktop Sticky Global Topbar -->
+        <header class="hidden md:flex bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-6 lg:px-8 py-3 items-center justify-between shadow-2xs">
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold text-slate-700">QCC Assessment PT Bekaert Indonesia</span>
+                <span class="text-slate-300">•</span>
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-bold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Periode Aktif: {{ $activeYear === 'all' ? 'Semua Periode' : 'Tahun ' . $activeYear }}</span>
+                </div>
+            </div>
+
+            <!-- Global Actions: Year Dropdown Switcher & Admin State -->
+            <div class="flex items-center gap-3">
+                <!-- Dropdown Form Switch Year -->
+                <form method="POST" action="{{ route('qcc.switch-year') }}" class="flex items-center gap-2">
+                    @csrf
+                    <label for="desktopGlobalYearSelect" class="text-xs font-bold text-slate-500">Pilih Periode:</label>
+                    <div class="relative">
+                        <select id="desktopGlobalYearSelect" name="year" onchange="this.form.submit()" 
+                            class="appearance-none bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl border border-slate-300/80 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition shadow-2xs">
+                            @foreach($availableYears as $yr)
+                                <option value="{{ $yr }}" {{ (string)$activeYear === (string)$yr ? 'selected' : '' }}>
+                                    Tahun {{ $yr }}
+                                </option>
+                            @endforeach
+                            <option value="all" {{ (string)$activeYear === 'all' ? 'selected' : '' }}>Semua Tahun</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                </form>
+
+                @if(Auth::check() && Auth::user()->role === 'admin')
+                    <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+                        <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-extrabold">
+                            A
+                        </div>
+                        <span class="text-xs font-bold text-slate-700">{{ Auth::user()->name }}</span>
+                    </div>
+                @else
+                    <div class="pl-3 border-l border-slate-200">
+                        <a href="{{ route('login') }}" class="text-xs font-bold text-blue-600 hover:text-blue-700 transition">
+                            Sign In Admin &rarr;
+                        </a>
+                    </div>
+                @endif
+            </div>
+        </header>
+
         <!-- Flash Alerts -->
         @if(session('error'))
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">

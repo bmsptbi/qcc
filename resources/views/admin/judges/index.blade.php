@@ -211,6 +211,30 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Action Edit & Hapus Juri -->
+                            <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
+                                <button type="button" 
+                                    onclick='openEditJudgeModal(@json($judge))'
+                                    class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-bold text-xs transition flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                    <span>Edit</span>
+                                </button>
+
+                                @if($judge->id !== auth()->id())
+                                    <form method="POST" action="{{ route('admin.judges.destroy', $judge) }}" class="inline" onsubmit="return confirm('PERINGATAN: Hapus juri {{ $judge->name }}? Seluruh penugasan juri ini akan ikut terhapus.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 font-bold text-xs transition" title="Hapus Juri">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                     @empty
                         <div class="text-center py-6 text-slate-400 text-xs">
@@ -225,4 +249,85 @@
     </div>
 
 </div>
+
+<!-- Modal Edit Juri -->
+<div id="editJudgeModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <span>✏️</span> Edit Data Juri
+            </h3>
+            <button type="button" onclick="closeEditJudgeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        </div>
+
+        <form id="editJudgeForm" method="POST" action="" class="space-y-3.5">
+            @csrf
+            @method('PUT')
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Lengkap & Gelar <span class="text-rose-500">*</span></label>
+                <input type="text" id="edit_judge_name" name="name" required class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Email <span class="text-rose-500">*</span></label>
+                <input type="email" id="edit_judge_email" name="email" required class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">NIK</label>
+                    <input type="text" id="edit_judge_nik" name="nik" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">No. WhatsApp</label>
+                    <input type="text" id="edit_judge_phone" name="phone" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Departemen / Divisi</label>
+                <select id="edit_judge_department_id" name="department_id" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white">
+                    <option value="">-- Pilih Departemen --</option>
+                    @foreach($departments as $dept)
+                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Ubah Password</label>
+                <input type="password" name="password" placeholder="Kosongkan jika tidak diubah" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                <span class="text-[10px] text-slate-400">Minimal 6 karakter, biarkan kosong bila password tidak diganti</span>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button type="button" onclick="closeEditJudgeModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs">
+                    Batal
+                </button>
+                <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/25">
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    function openEditJudgeModal(judge) {
+        document.getElementById('editJudgeForm').action = '/admin/judges/' + judge.id;
+        document.getElementById('edit_judge_name').value = judge.name || '';
+        document.getElementById('edit_judge_email').value = judge.email || '';
+        document.getElementById('edit_judge_nik').value = judge.nik || '';
+        document.getElementById('edit_judge_phone').value = judge.phone || '';
+        document.getElementById('edit_judge_department_id').value = judge.department_id || '';
+        document.getElementById('editJudgeModal').classList.remove('hidden');
+    }
+
+    function closeEditJudgeModal() {
+        document.getElementById('editJudgeModal').classList.add('hidden');
+    }
+</script>
+@endpush
 @endsection

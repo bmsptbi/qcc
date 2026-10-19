@@ -76,7 +76,18 @@
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tahun Periode <span class="text-rose-500">*</span></label>
+                    <select name="year" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
+                        @foreach($availableYears as $yr)
+                            <option value="{{ $yr }}" {{ (old('year', $activeYear) == $yr) ? 'selected' : '' }}>
+                                Tahun {{ $yr }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kategori Circle <span class="text-rose-500">*</span></label>
                     <select name="circle_category_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
@@ -100,11 +111,12 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Periode Konvensi <span class="text-rose-500">*</span></label>
-                    <select name="assessment_period_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Periode Konvensi</label>
+                    <select name="assessment_period_id" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
+                        <option value="">-- Otomatis Sesuai Tahun --</option>
                         @foreach($periods as $per)
                             <option value="{{ $per->id }}" {{ old('assessment_period_id') == $per->id ? 'selected' : '' }}>
-                                {{ $per->name }}
+                                {{ $per->name }} ({{ $per->year }})
                             </option>
                         @endforeach
                     </select>

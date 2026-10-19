@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'assessment_period_id',
+    'year',
     'circle_category_id',
     'department_id',
     'facilitator_id',
@@ -34,9 +35,19 @@ class Circle extends Model
     /** @use HasFactory<CircleFactory> */
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::saving(function (Circle $circle) {
+            if (empty($circle->year) && $circle->assessment_period_id) {
+                $circle->year = $circle->period?->year ?? (int) date('Y');
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
+            'year' => 'integer',
             'presentation_schedule' => 'datetime',
             'final_score' => 'decimal:2',
             'ranking' => 'integer',

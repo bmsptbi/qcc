@@ -22,17 +22,29 @@ class QccAssessmentController extends Controller
      */
     public function index(Request $request): View
     {
-        $activePeriod = AssessmentPeriod::where('status', 'active')->latest()->first()
-            ?? AssessmentPeriod::latest()->first();
+        $activeYear = session('active_year', $request->query('year', 2026));
+        if ($request->filled('year')) {
+            $activeYear = $request->query('year') === 'all' ? 'all' : (int) $request->query('year');
+            session(['active_year' => $activeYear]);
+        }
+
+        $activePeriod = null;
+        if ($activeYear !== 'all') {
+            $activePeriod = AssessmentPeriod::where('year', $activeYear)->first();
+        }
+        if (! $activePeriod) {
+            $activePeriod = AssessmentPeriod::where('status', 'active')->latest()->first()
+                ?? AssessmentPeriod::latest()->first();
+        }
 
         $categories = CircleCategory::where('is_active', true)->get();
-        $departments = Department::where('is_active', true)->get();
+        $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
 
         $query = Circle::with(['category', 'department', 'leader', 'facilitator', 'members'])
             ->withCount(['members', 'assessments']);
 
-        if ($activePeriod) {
-            $query->where('assessment_period_id', $activePeriod->id);
+        if ($activeYear !== 'all') {
+            $query->where('year', $activeYear);
         }
 
         if ($request->filled('category')) {
@@ -60,10 +72,15 @@ class QccAssessmentController extends Controller
             ->orderBy('id', 'asc')
             ->get();
 
+        $statsQuery = Circle::query();
+        if ($activeYear !== 'all') {
+            $statsQuery->where('year', $activeYear);
+        }
+
         $stats = [
-            'total_circles' => Circle::count(),
-            'scheduled_today' => Circle::whereDate('presentation_schedule', now()->toDateString())->count(),
-            'completed_assessment' => Circle::whereIn('status', ['evaluated', 'awarded'])->count(),
+            'total_circles' => (clone $statsQuery)->count(),
+            'scheduled_today' => (clone $statsQuery)->whereDate('presentation_schedule', now()->toDateString())->count(),
+            'completed_assessment' => (clone $statsQuery)->whereIn('status', ['evaluated', 'awarded'])->count(),
             'active_judges' => User::where('role', 'judge')->count(),
         ];
 
@@ -71,6 +88,7 @@ class QccAssessmentController extends Controller
         $currentJudgeId = session('active_judge_id', User::where('role', 'judge')->first()?->id);
         $currentJudge = User::find($currentJudgeId) ?? User::where('role', 'judge')->first();
         $allJudges = User::whereIn('role', ['judge', 'admin'])->get();
+        $criteriaStages = CriteriaCategory::orderBy('display_order', 'asc')->get();
 
         return view('qcc.index', compact(
             'activePeriod',
@@ -79,7 +97,9 @@ class QccAssessmentController extends Controller
             'circles',
             'stats',
             'currentJudge',
-            'allJudges'
+            'allJudges',
+            'criteriaStages',
+            'activeYear'
         ));
     }
 
@@ -104,9 +124,10 @@ class QccAssessmentController extends Controller
 
         $myAssessment = $circle->assessments->firstWhere('judge_id', $currentJudgeId);
         $categories = CriteriaCategory::orderBy('display_order', 'asc')->get();
+        $criteriaStages = $categories;
         $allJudges = User::whereIn('role', ['judge', 'admin'])->get();
 
-        return view('qcc.show', compact('circle', 'currentJudge', 'myAssessment', 'categories', 'allJudges'));
+        return view('qcc.show', compact('circle', 'currentJudge', 'myAssessment', 'categories', 'criteriaStages', 'allJudges'));
     }
 
     /**
@@ -116,16 +137,51 @@ class QccAssessmentController extends Controller
     {
         $circle->load(['period', 'category', 'department', 'leader', 'facilitator', 'members']);
 
-        // Check if judge_id is passed in query (e.g. from shared link)
+        $allJudges = User::whereIn('role', ['judge', 'admin'])->get();
+        $mustSelectJudge = false;
+        $allowedJudgeIds = [];
+
+        // Deteksi jika link dikhususkan untuk multiple juri (?judges=1,3)
+        if ($request->filled('judges')) {
+            $allowedJudgeIds = array_values(array_map('intval', array_filter(explode(',', (string) $request->query('judges')))));
+        }
+
+        // Check if judge_id is explicitly passed in query
         if ($request->filled('judge_id')) {
             $sharedJudge = User::whereIn('role', ['judge', 'admin'])->find($request->query('judge_id'));
             if ($sharedJudge) {
                 session(['active_judge_id' => $sharedJudge->id]);
             }
+        } elseif (! empty($allowedJudgeIds)) {
+            if (count($allowedJudgeIds) === 1) {
+                $sharedJudge = User::whereIn('role', ['judge', 'admin'])->find($allowedJudgeIds[0]);
+                if ($sharedJudge) {
+                    session(['active_judge_id' => $sharedJudge->id]);
+                }
+            } else {
+                // Link ditujukan ke multiple juri: wajib memilih nama saat buka form!
+                $sessionJudgeId = session('active_judge_id');
+                if (! $sessionJudgeId || ! in_array((int) $sessionJudgeId, $allowedJudgeIds, true) || $request->has('choose_judge')) {
+                    $mustSelectJudge = true;
+                    session()->forget('active_judge_id');
+                }
+            }
+        } elseif ($request->has('choose_judge')) {
+            $mustSelectJudge = true;
         }
 
-        $currentJudgeId = session('active_judge_id', Auth::check() ? Auth::id() : User::where('role', 'judge')->first()?->id);
-        $currentJudge = User::find($currentJudgeId) ?? User::where('role', 'judge')->first();
+        $currentJudgeId = session('active_judge_id', Auth::check() ? Auth::id() : null);
+        $currentJudge = $currentJudgeId ? User::find($currentJudgeId) : null;
+
+        // Jika belum ada juri terpilih, juri harus memilih nama terlebih dahulu
+        if (! $currentJudge) {
+            $mustSelectJudge = true;
+        }
+
+        // Tentukan daftar juri yang boleh dipilih pada form
+        $selectableJudges = ! empty($allowedJudgeIds)
+            ? $allJudges->whereIn('id', $allowedJudgeIds)
+            : $allJudges;
 
         // Check if category_id or stage_id is passed in query (share stage setup)
         $activeCategoryId = $request->query('category_id') ?? $request->query('stage_id');
@@ -149,16 +205,16 @@ class QccAssessmentController extends Controller
         }
 
         // Check if judge has an existing draft/submission
-        $existingAssessment = Assessment::with('scores')
-            ->where('circle_id', $circle->id)
-            ->where('judge_id', $currentJudge?->id)
-            ->first();
+        $existingAssessment = $currentJudge
+            ? Assessment::with('scores')
+                ->where('circle_id', $circle->id)
+                ->where('judge_id', $currentJudge->id)
+                ->first()
+            : null;
 
         $existingScores = $existingAssessment
             ? $existingAssessment->scores->keyBy('assessment_criterion_id')
             : collect();
-
-        $allJudges = User::whereIn('role', ['judge', 'admin'])->get();
 
         return view('qcc.assess', compact(
             'circle',
@@ -167,7 +223,10 @@ class QccAssessmentController extends Controller
             'existingAssessment',
             'existingScores',
             'allJudges',
-            'activeCategoryId'
+            'activeCategoryId',
+            'mustSelectJudge',
+            'selectableJudges',
+            'allowedJudgeIds'
         ));
     }
 
@@ -313,20 +372,45 @@ class QccAssessmentController extends Controller
     }
 
     /**
+     * Switch Active Convention Year Period
+     */
+    public function switchYear(Request $request): RedirectResponse
+    {
+        $year = $request->input('year');
+        if ($year === 'all' || is_numeric($year)) {
+            session(['active_year' => $year === 'all' ? 'all' : (int) $year]);
+        }
+
+        return back()->with('info', 'Periode konvensi aktif diubah ke: '.($year === 'all' ? 'Semua Tahun' : 'Tahun '.$year));
+    }
+
+    /**
      * Live Leaderboard & Awarding
      */
     public function leaderboard(Request $request): View
     {
-        $activePeriod = AssessmentPeriod::where('status', 'active')->latest()->first()
-            ?? AssessmentPeriod::latest()->first();
+        $activeYear = session('active_year', $request->query('year', 2026));
+        if ($request->filled('year')) {
+            $activeYear = $request->query('year') === 'all' ? 'all' : (int) $request->query('year');
+            session(['active_year' => $activeYear]);
+        }
+
+        $activePeriod = null;
+        if ($activeYear !== 'all') {
+            $activePeriod = AssessmentPeriod::where('year', $activeYear)->first();
+        }
+        if (! $activePeriod) {
+            $activePeriod = AssessmentPeriod::where('status', 'active')->latest()->first()
+                ?? AssessmentPeriod::latest()->first();
+        }
 
         $categories = CircleCategory::where('is_active', true)->get();
 
         $query = Circle::with(['category', 'department', 'leader', 'assessments'])
             ->withCount('assessments');
 
-        if ($activePeriod) {
-            $query->where('assessment_period_id', $activePeriod->id);
+        if ($activeYear !== 'all') {
+            $query->where('year', $activeYear);
         }
 
         if ($request->filled('category')) {
@@ -337,6 +421,6 @@ class QccAssessmentController extends Controller
             ->orderBy('circle_name', 'asc')
             ->get();
 
-        return view('qcc.leaderboard', compact('activePeriod', 'categories', 'circles'));
+        return view('qcc.leaderboard', compact('activePeriod', 'categories', 'circles', 'activeYear'));
     }
 }

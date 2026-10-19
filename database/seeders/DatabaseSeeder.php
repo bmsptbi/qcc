@@ -21,30 +21,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Departments
-        $deptProd1 = Department::firstOrCreate(['code' => 'PROD-W1'], [
-            'name' => 'Production Wire Drawing 1',
-            'description' => 'Area produksi kawat primer dan drawing halus',
-            'is_active' => true,
-        ]);
-
-        $deptMaint = Department::firstOrCreate(['code' => 'MAINT-ENG'], [
-            'name' => 'Maintenance & Engineering',
-            'description' => 'Departemen pemeliharaan mesin, utilitas, dan otomasi',
-            'is_active' => true,
-        ]);
-
-        $deptQA = Department::firstOrCreate(['code' => 'QA-QC'], [
-            'name' => 'Quality Assurance & Lab',
-            'description' => 'Pengujian mutu, sertifikasi produk, dan kalibrasi alat uji',
-            'is_active' => true,
-        ]);
-
-        $deptLog = Department::firstOrCreate(['code' => 'LOG-WH'], [
-            'name' => 'Supply Chain & Warehouse',
-            'description' => 'Manajemen bahan baku, suku cadang, dan pengiriman barang jadi',
-            'is_active' => true,
-        ]);
+        // 1. Departments (16 Departemen Resmi Sesuai Struktur Mutu)
+        $this->call(DepartmentSeeder::class);
+        $deptMaint = Department::where('code', 'MAINT')->first();
+        $deptQA = Department::where('code', 'QA')->first();
+        $deptLog = Department::where('code', 'SCM')->first();
+        $deptProd1 = Department::where('code', 'WWD')->first();
 
         // 2. Users (Admin, Judges, Facilitator, Circle Leader)
         $password = Hash::make('password');

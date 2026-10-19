@@ -12,6 +12,7 @@ Route::get('/circles/{circle}/assess', [QccAssessmentController::class, 'assess'
 Route::post('/circles/{circle}/assess', [QccAssessmentController::class, 'storeAssessment'])->name('qcc.circles.assess.store');
 Route::get('/leaderboard', [QccAssessmentController::class, 'leaderboard'])->name('qcc.leaderboard');
 Route::post('/switch-judge', [QccAssessmentController::class, 'switchJudge'])->name('qcc.switch-judge');
+Route::post('/switch-year', [QccAssessmentController::class, 'switchYear'])->name('qcc.switch-year');
 
 // Authentication Routes (Admin Sign In / Out)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -26,10 +27,19 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
     Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
 
+    // Circle Management Routes
+    Route::get('/circles', [AdminController::class, 'circlesIndex'])->name('circles.index');
     Route::get('/circles/create', [AdminController::class, 'createCircle'])->name('circles.create');
     Route::post('/circles', [AdminController::class, 'storeCircle'])->name('circles.store');
+    Route::get('/circles/{circle}/edit', [AdminController::class, 'editCircle'])->name('circles.edit');
+    Route::put('/circles/{circle}', [AdminController::class, 'updateCircle'])->name('circles.update');
+    Route::delete('/circles/{circle}', [AdminController::class, 'destroyCircle'])->name('circles.destroy');
+
+    // Judge Management Routes
     Route::get('/judges', [AdminController::class, 'judgesIndex'])->name('judges.index');
     Route::post('/judges', [AdminController::class, 'storeJudge'])->name('judges.store');
+    Route::put('/judges/{user}', [AdminController::class, 'updateJudge'])->name('judges.update');
+    Route::delete('/judges/{user}', [AdminController::class, 'destroyJudge'])->name('judges.destroy');
     Route::post('/judges/assign', [AdminController::class, 'assignJudge'])->name('judges.assign');
     Route::delete('/judges/assignment/{assignment}', [AdminController::class, 'destroyAssignment'])->name('judges.assignment.destroy');
     Route::get('/criteria', [AdminController::class, 'criteriaIndex'])->name('criteria.index');
