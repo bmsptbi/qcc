@@ -81,13 +81,13 @@ class QccAssessmentController extends Controller
             'total_circles' => (clone $statsQuery)->count(),
             'scheduled_today' => (clone $statsQuery)->whereDate('presentation_schedule', now()->toDateString())->count(),
             'completed_assessment' => (clone $statsQuery)->whereIn('status', ['evaluated', 'awarded'])->count(),
-            'active_judges' => User::where('role', 'judge')->count(),
+            'active_judges' => User::role('judge')->count(),
         ];
 
         // Active judge in session or default to Judge 1 for convenient testing
-        $currentJudgeId = session('active_judge_id', User::where('role', 'judge')->first()?->id);
-        $currentJudge = User::find($currentJudgeId) ?? User::where('role', 'judge')->first();
-        $allJudges = User::whereIn('role', ['judge', 'admin'])->get();
+        $currentJudgeId = session('active_judge_id', User::role('judge')->first()?->id);
+        $currentJudge = User::find($currentJudgeId) ?? User::role('judge')->first();
+        $allJudges = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->get();
         $criteriaStages = CriteriaCategory::orderBy('display_order', 'asc')->get();
 
         return view('qcc.index', compact(
@@ -119,13 +119,13 @@ class QccAssessmentController extends Controller
             'assessments.scores.criterion',
         ]);
 
-        $currentJudgeId = session('active_judge_id', User::where('role', 'judge')->first()?->id);
+        $currentJudgeId = session('active_judge_id', User::role('judge')->first()?->id);
         $currentJudge = User::find($currentJudgeId);
 
         $myAssessment = $circle->assessments->firstWhere('judge_id', $currentJudgeId);
         $categories = CriteriaCategory::orderBy('display_order', 'asc')->get();
         $criteriaStages = $categories;
-        $allJudges = User::whereIn('role', ['judge', 'admin'])->get();
+        $allJudges = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->get();
 
         return view('qcc.show', compact('circle', 'currentJudge', 'myAssessment', 'categories', 'criteriaStages', 'allJudges'));
     }
@@ -137,7 +137,7 @@ class QccAssessmentController extends Controller
     {
         $circle->load(['period', 'category', 'department', 'leader', 'facilitator', 'members']);
 
-        $allJudges = User::whereIn('role', ['judge', 'admin'])->get();
+        $allJudges = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->get();
         $mustSelectJudge = false;
         $allowedJudgeIds = [];
 
@@ -148,13 +148,13 @@ class QccAssessmentController extends Controller
 
         // Check if judge_id is explicitly passed in query
         if ($request->filled('judge_id')) {
-            $sharedJudge = User::whereIn('role', ['judge', 'admin'])->find($request->query('judge_id'));
+            $sharedJudge = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->find($request->query('judge_id'));
             if ($sharedJudge) {
                 session(['active_judge_id' => $sharedJudge->id]);
             }
         } elseif (! empty($allowedJudgeIds)) {
             if (count($allowedJudgeIds) === 1) {
-                $sharedJudge = User::whereIn('role', ['judge', 'admin'])->find($allowedJudgeIds[0]);
+                $sharedJudge = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->find($allowedJudgeIds[0]);
                 if ($sharedJudge) {
                     session(['active_judge_id' => $sharedJudge->id]);
                 }

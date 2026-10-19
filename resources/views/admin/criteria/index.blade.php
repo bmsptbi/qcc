@@ -399,11 +399,20 @@
 <script>
     function openEditCategoryModal(id, name, stage, weight, desc) {
         document.getElementById('edit_cat_name').value = name;
-        document.getElementById('edit_cat_stage').value = stage;
         document.getElementById('edit_cat_weight').value = weight;
         document.getElementById('edit_cat_desc').value = desc;
         document.getElementById('editCategoryForm').action = '/admin/criteria/categories/' + id;
-        document.getElementById('editCategoryModal').classList.remove('hidden');
+        
+        const modal = document.getElementById('editCategoryModal');
+        modal.classList.remove('hidden');
+        if (window.initSearchableSelects) window.initSearchableSelects(modal);
+
+        const stageSelect = document.getElementById('edit_cat_stage');
+        if (stageSelect.tomselect) {
+            stageSelect.tomselect.setValue(stage);
+        } else {
+            stageSelect.value = stage;
+        }
     }
 
     function closeEditCategoryModal() {
@@ -411,13 +420,22 @@
     }
 
     function openEditCriterionModal(id, categoryId, code, title, weight, guidelines) {
-        document.getElementById('edit_crit_category_id').value = categoryId;
         document.getElementById('edit_crit_code').value = code || '';
         document.getElementById('edit_crit_title').value = title;
         document.getElementById('edit_crit_weight').value = (weight !== null && weight !== 'null' && weight !== undefined) ? weight : '';
         document.getElementById('edit_crit_guidelines').value = guidelines || '';
         document.getElementById('editCriterionForm').action = '/admin/criteria/' + id;
-        document.getElementById('editCriterionModal').classList.remove('hidden');
+        
+        const modal = document.getElementById('editCriterionModal');
+        modal.classList.remove('hidden');
+        if (window.initSearchableSelects) window.initSearchableSelects(modal);
+
+        const catSelect = document.getElementById('edit_crit_category_id');
+        if (catSelect.tomselect) {
+            catSelect.tomselect.setValue(categoryId);
+        } else {
+            catSelect.value = categoryId;
+        }
     }
 
     function closeEditCriterionModal() {

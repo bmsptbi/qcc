@@ -53,44 +53,54 @@
     @endif
 
     <!-- Stat Cards Summary -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-base flex-shrink-0">
                 👤
             </div>
             <div>
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Pengguna</span>
-                <span class="text-xl sm:text-2xl font-black text-slate-900 leading-none">{{ $stats['total_users'] }}</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Akun</span>
+                <span class="text-xl font-black text-slate-900 leading-none">{{ $stats['total_users'] }}</span>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-base flex-shrink-0">
-                🛡️
-            </div>
-            <div>
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Administrator</span>
-                <span class="text-xl sm:text-2xl font-black text-indigo-600 leading-none">{{ $stats['total_admins'] }}</span>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-base flex-shrink-0">
                 ⚖️
             </div>
             <div>
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Dewan Juri</span>
-                <span class="text-xl sm:text-2xl font-black text-amber-600 leading-none">{{ $stats['total_judges'] }}</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Dewan Juri</span>
+                <span class="text-xl font-black text-amber-600 leading-none">{{ $stats['total_judges'] }}</span>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-base flex-shrink-0">
                 🤝
             </div>
             <div>
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Fasilitator</span>
-                <span class="text-xl sm:text-2xl font-black text-emerald-600 leading-none">{{ $stats['total_facilitators'] }}</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Fasilitator</span>
+                <span class="text-xl font-black text-emerald-600 leading-none">{{ $stats['total_facilitators'] }}</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-base flex-shrink-0">
+                👑
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Circle Leader</span>
+                <span class="text-xl font-black text-purple-600 leading-none">{{ $stats['total_leaders'] ?? 0 }}</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-base flex-shrink-0">
+                🛡️
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Administrator</span>
+                <span class="text-xl font-black text-indigo-600 leading-none">{{ $stats['total_admins'] }}</span>
             </div>
         </div>
     </div>
@@ -102,7 +112,7 @@
             <!-- Search Text -->
             <div class="sm:col-span-5 relative">
                 <input type="text" name="search" value="{{ request('search') }}" 
-                    placeholder="Cari berdasarkan nama, NIK, atau email..."
+                    placeholder="Cari nama, NIK, atau email..."
                     class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-blue-500">
                 <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -112,11 +122,12 @@
             <!-- Filter Role -->
             <div class="sm:col-span-3">
                 <select name="role" class="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-blue-500">
-                    <option value="">Semua Role</option>
-                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Administrator</option>
-                    <option value="judge" {{ request('role') === 'judge' ? 'selected' : '' }}>Dewan Juri</option>
-                    <option value="facilitator" {{ request('role') === 'facilitator' ? 'selected' : '' }}>Fasilitator</option>
-                    <option value="member" {{ request('role') === 'member' ? 'selected' : '' }}>Member / Anggota</option>
+                    <option value="">Semua Role (Filter)</option>
+                    <option value="judge" {{ request('role') === 'judge' ? 'selected' : '' }}>⚖️ Dewan Juri</option>
+                    <option value="facilitator" {{ request('role') === 'facilitator' ? 'selected' : '' }}>🤝 Fasilitator</option>
+                    <option value="circle_leader" {{ request('role') === 'circle_leader' ? 'selected' : '' }}>👑 Circle Leader</option>
+                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>🛡️ Administrator</option>
+                    <option value="member" {{ request('role') === 'member' ? 'selected' : '' }}>👤 Member / Anggota</option>
                 </select>
             </div>
 
@@ -187,25 +198,36 @@
                                 {{ $user->nik ?? '-' }}
                             </td>
 
-                            <!-- Role Badge -->
+                            <!-- Role Badges (Multiple Roles Support) -->
                             <td class="py-3.5 px-4">
-                                @if($user->role === 'admin')
-                                    <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800">
-                                        Administrator
-                                    </span>
-                                @elseif($user->role === 'judge')
-                                    <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800">
-                                        Dewan Juri
-                                    </span>
-                                @elseif($user->role === 'facilitator')
-                                    <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">
-                                        Fasilitator
-                                    </span>
-                                @else
-                                    <span class="px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">
-                                        {{ ucfirst($user->role) }}
-                                    </span>
-                                @endif
+                                @php
+                                    $userRoles = !empty($user->roles) && is_array($user->roles) ? $user->roles : [$user->role];
+                                @endphp
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach($userRoles as $r)
+                                        @if($r === 'admin')
+                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800">
+                                                🛡️ Admin
+                                            </span>
+                                        @elseif($r === 'judge')
+                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800">
+                                                ⚖️ Juri
+                                            </span>
+                                        @elseif($r === 'facilitator')
+                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                                                🤝 Fasilitator
+                                            </span>
+                                        @elseif($r === 'circle_leader' || $r === 'leader')
+                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800">
+                                                👑 Leader
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">
+                                                👤 {{ ucfirst($r) }}
+                                            </span>
+                                        @endif
+                                    @endforeach
+                                </div>
                             </td>
 
                             <!-- Department -->
@@ -295,26 +317,47 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Role / Hak Akses *</label>
-                    <select name="role" required class="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
-                        <option value="judge">Dewan Juri (Evaluator)</option>
-                        <option value="facilitator">Fasilitator Gugus</option>
-                        <option value="member">Member / Leader</option>
-                        <option value="admin">Administrator Sistem</option>
-                    </select>
+            <!-- Multi-Role Selection -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Role / Hak Akses (Bisa Pilih Lebih dari 1) *
+                </label>
+                <div class="grid grid-cols-2 gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/50">
+                    <label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition">
+                        <input type="checkbox" name="roles[]" value="judge" class="rounded text-amber-600 focus:ring-amber-500 w-4 h-4" checked>
+                        <span class="text-xs font-bold text-slate-800">⚖️ Dewan Juri</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition">
+                        <input type="checkbox" name="roles[]" value="facilitator" class="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-800">🤝 Fasilitator</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-purple-400 hover:bg-purple-50/30 transition">
+                        <input type="checkbox" name="roles[]" value="circle_leader" class="rounded text-purple-600 focus:ring-purple-500 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-800">👑 Circle Leader</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition">
+                        <input type="checkbox" name="roles[]" value="admin" class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-800">🛡️ Administrator</span>
+                    </label>
+                    <label class="col-span-2 flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition">
+                        <input type="checkbox" name="roles[]" value="member" class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-800">👤 Member / Anggota Gugus</span>
+                    </label>
                 </div>
+                <p class="text-[11px] text-slate-400 mt-1">
+                    💡 Contoh: Seseorang dapat ditugaskan sebagai <strong>Fasilitator</strong> sekaligus <strong>Dewan Juri</strong>.
+                </p>
+            </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Departemen</label>
-                    <select name="department_id" class="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
-                        <option value="">-- Pilih Departemen --</option>
-                        @foreach($departments as $dept)
-                            <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+            <!-- Departemen -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Departemen</label>
+                <select name="department_id" class="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Pilih Departemen --</option>
+                    @foreach($departments as $dept)
+                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                    @endforeach
+                </select>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -382,26 +425,44 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Role / Hak Akses *</label>
-                    <select id="edit_role" name="role" required class="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
-                        <option value="judge">Dewan Juri (Evaluator)</option>
-                        <option value="facilitator">Fasilitator Gugus</option>
-                        <option value="member">Member / Leader</option>
-                        <option value="admin">Administrator Sistem</option>
-                    </select>
+            <!-- Edit Multi-Role Selection -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Role / Hak Akses (Bisa Pilih Lebih dari 1) *
+                </label>
+                <div class="grid grid-cols-2 gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/50">
+                    <label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition">
+                        <input type="checkbox" id="edit_role_judge" name="roles[]" value="judge" class="rounded text-amber-600 focus:ring-amber-500 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-800">⚖️ Dewan Juri</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition">
+                        <input type="checkbox" id="edit_role_facilitator" name="roles[]" value="facilitator" class="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-800">🤝 Fasilitator</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-purple-400 hover:bg-purple-50/30 transition">
+                        <input type="checkbox" id="edit_role_circle_leader" name="roles[]" value="circle_leader" class="rounded text-purple-600 focus:ring-purple-500 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-800">👑 Circle Leader</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition">
+                        <input type="checkbox" id="edit_role_admin" name="roles[]" value="admin" class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-800">🛡️ Administrator</span>
+                    </label>
+                    <label class="col-span-2 flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition">
+                        <input type="checkbox" id="edit_role_member" name="roles[]" value="member" class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-800">👤 Member / Anggota Gugus</span>
+                    </label>
                 </div>
+            </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Departemen</label>
-                    <select id="edit_department_id" name="department_id" class="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
-                        <option value="">-- Pilih Departemen --</option>
-                        @foreach($departments as $dept)
-                            <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+            <!-- Departemen -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Departemen</label>
+                <select id="edit_department_id" name="department_id" class="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Pilih Departemen --</option>
+                    @foreach($departments as $dept)
+                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                    @endforeach
+                </select>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -436,7 +497,11 @@
 @push('scripts')
 <script>
     function openCreateUserModal() {
-        document.getElementById('createUserModal').classList.remove('hidden');
+        const modal = document.getElementById('createUserModal');
+        modal.classList.remove('hidden');
+        if (window.initSearchableSelects) {
+            window.initSearchableSelects(modal);
+        }
     }
 
     function closeCreateUserModal() {
@@ -448,10 +513,51 @@
         document.getElementById('edit_name').value = user.name || '';
         document.getElementById('edit_email').value = user.email || '';
         document.getElementById('edit_nik').value = user.nik || '';
-        document.getElementById('edit_role').value = user.role || 'judge';
-        document.getElementById('edit_department_id').value = user.department_id || '';
         document.getElementById('edit_phone').value = user.phone || '';
-        document.getElementById('editUserModal').classList.remove('hidden');
+
+        const deptSelect = document.getElementById('edit_department_id');
+        const modal = document.getElementById('editUserModal');
+        modal.classList.remove('hidden');
+
+        if (window.initSearchableSelects) {
+            window.initSearchableSelects(modal);
+        }
+
+        if (deptSelect.tomselect) {
+            deptSelect.tomselect.setValue(user.department_id || '');
+        } else {
+            deptSelect.value = user.department_id || '';
+        }
+
+        // Reset all role checkboxes
+        ['judge', 'facilitator', 'circle_leader', 'admin', 'member'].forEach(role => {
+            const el = document.getElementById('edit_role_' + role);
+            if (el) el.checked = false;
+        });
+
+        // Determine user roles array
+        let roles = [];
+        if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
+            roles = user.roles;
+        } else if (typeof user.roles === 'string') {
+            try {
+                roles = JSON.parse(user.roles);
+            } catch (e) {
+                roles = [user.roles];
+            }
+        } else if (user.role) {
+            roles = [user.role];
+        }
+
+        // Handle alias leader -> circle_leader
+        if (roles.includes('leader') && !roles.includes('circle_leader')) {
+            roles.push('circle_leader');
+        }
+
+        roles.forEach(role => {
+            const el = document.getElementById('edit_role_' + role);
+            if (el) el.checked = true;
+        });
     }
 
     function closeEditUserModal() {

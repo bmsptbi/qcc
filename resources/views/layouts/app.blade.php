@@ -80,7 +80,54 @@
             scrollbar-width: thin;
             scrollbar-color: #cbd5e1 transparent;
         }
+
+        /* TomSelect Modern Styling */
+        .ts-wrapper.single .ts-control {
+            border-radius: 0.75rem !important;
+            border: 1px solid #e2e8f0 !important;
+            padding: 0.45rem 0.75rem !important;
+            font-size: 0.8125rem !important;
+            background-color: #ffffff !important;
+            min-height: 38px !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+            display: flex !important;
+            align-items: center !important;
+            transition: all 0.15s ease-in-out !important;
+        }
+        .ts-wrapper.focus .ts-control {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        }
+        .ts-dropdown {
+            border-radius: 0.875rem !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 15px 30px -5px rgba(15, 23, 42, 0.15) !important;
+            padding: 0.35rem !important;
+            font-size: 0.8125rem !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            z-index: 9999 !important;
+            background-color: #ffffff !important;
+        }
+        .ts-dropdown .option {
+            border-radius: 0.5rem !important;
+            padding: 0.45rem 0.75rem !important;
+            color: #334155 !important;
+            cursor: pointer !important;
+        }
+        .ts-dropdown .option.active, .ts-dropdown .option:hover {
+            background-color: #eff6ff !important;
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
+        .ts-dropdown .option.selected {
+            background-color: #dbeafe !important;
+            color: #1e40af !important;
+            font-weight: 700 !important;
+        }
     </style>
+    <!-- Tom Select CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.default.min.css" rel="stylesheet">
     @stack('styles')
 </head>
 <body class="h-full flex flex-col text-slate-800 antialiased selection:bg-blue-600 selection:text-white bg-slate-50">
@@ -167,33 +214,33 @@
                     <div class="w-8 h-0.5 bg-indigo-200 rounded mx-auto group-hover/sidebar:hidden"></div>
                 </div>
 
-                <!-- Item 3: Kelola User -->
+                <!-- Item 3: Kelola User & Role -->
                 <a href="{{ route('admin.users.index') }}" 
                     class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.users.*') ? 'bg-gradient-to-r from-blue-700 to-indigo-600 text-white shadow-md shadow-blue-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
-                    title="Manajemen Pengguna">
+                    title="Manajemen Pengguna & Multi-Role">
                     <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
                     </div>
                     <div class="sidebar-text">
-                        <span class="text-sm block leading-tight">Kelola User</span>
-                        <span class="text-[10px] opacity-75 block font-normal">Semua Pengguna & Akses</span>
+                        <span class="text-sm block leading-tight">Kelola User & Role</span>
+                        <span class="text-[10px] opacity-75 block font-normal">Semua Pengguna, Juri & Akses</span>
                     </div>
                 </a>
 
-                <!-- Item 4: Kelola Juri -->
+                <!-- Item 4: Penugasan Juri -->
                 <a href="{{ route('admin.judges.index') }}" 
                     class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.judges.*') ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
-                    title="Kelola Juri & Penugasan">
+                    title="Penugasan Kategori Juri">
                     <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                         </svg>
                     </div>
                     <div class="sidebar-text">
-                        <span class="text-sm block leading-tight">Kelola Juri</span>
-                        <span class="text-[10px] opacity-75 block font-normal">Daftar & Penugasan</span>
+                        <span class="text-sm block leading-tight">Penugasan Juri</span>
+                        <span class="text-[10px] opacity-75 block font-normal">Plotting Kategori Konvensi</span>
                     </div>
                 </a>
 
@@ -299,7 +346,7 @@
                 @csrf
                 <div class="relative">
                     <select name="year" onchange="this.form.submit()" 
-                        class="appearance-none bg-slate-100 text-slate-800 text-[11px] font-bold py-1 pl-2 pr-6 rounded-lg border border-slate-200 focus:outline-none">
+                        class="no-search appearance-none bg-slate-100 text-slate-800 text-[11px] font-bold py-1 pl-2 pr-6 rounded-lg border border-slate-200 focus:outline-none">
                         @foreach($availableYears as $yr)
                             <option value="{{ $yr }}" {{ (string)$activeYear === (string)$yr ? 'selected' : '' }}>
                                 {{ $yr }}
@@ -380,7 +427,7 @@
                         <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
-                        <span>Kelola User</span>
+                        <span>Kelola User & Role</span>
                     </a>
 
                     <a href="{{ route('admin.judges.index') }}" onclick="closeMobileSidebar()" 
@@ -388,7 +435,7 @@
                         <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                         </svg>
-                        <span>Kelola Juri</span>
+                        <span>Penugasan Juri</span>
                     </a>
 
                     <a href="{{ route('admin.criteria.index') }}" onclick="closeMobileSidebar()" 
@@ -456,7 +503,7 @@
                     <label for="desktopGlobalYearSelect" class="text-xs font-bold text-slate-500">Pilih Periode:</label>
                     <div class="relative">
                         <select id="desktopGlobalYearSelect" name="year" onchange="this.form.submit()" 
-                            class="appearance-none bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl border border-slate-300/80 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition shadow-2xs">
+                            class="no-search appearance-none bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl border border-slate-300/80 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition shadow-2xs">
                             @foreach($availableYears as $yr)
                                 <option value="{{ $yr }}" {{ (string)$activeYear === (string)$yr ? 'selected' : '' }}>
                                     Tahun {{ $yr }}
@@ -647,6 +694,56 @@
                     if (pinIcon) pinIcon.classList.add('rotate-180');
                 }
             }
+        });
+    </script>
+
+    <!-- Tom Select JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        /**
+         * Global Searchable Selects Initializer (TomSelect)
+         * Memberikan fitur live search pada semua dropdown <select> di aplikasi
+         */
+        window.initSearchableSelects = function(root = document) {
+            if (typeof TomSelect === 'undefined') return;
+
+            const selects = root.querySelectorAll('select:not(.no-search):not([data-no-search]):not(.tomselected)');
+            selects.forEach(select => {
+                // Jangan inisialisasi pada template kloning anggota tim
+                if (select.closest('#memberRowTemplate') || select.closest('.template-row')) {
+                    return;
+                }
+
+                // Kecualikan dropdown peran anggota jika berukuran kecil di baris tabel
+                if (select.name && select.name.includes('[role]')) {
+                    return;
+                }
+
+                try {
+                    const placeholder = select.getAttribute('placeholder') || 
+                                       (select.options.length > 0 && select.options[0].value === '' ? select.options[0].text : 'Cari / pilih...');
+
+                    const ts = new TomSelect(select, {
+                        create: false,
+                        maxOptions: 500,
+                        placeholder: placeholder,
+                        allowEmptyOption: true,
+                        plugins: ['clear_button'],
+                        onChange: function(val) {
+                            if (typeof select.onchange === 'function') {
+                                select.onchange();
+                            }
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                } catch(err) {
+                    console.debug('TomSelect init skipped:', err);
+                }
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            window.initSearchableSelects();
         });
     </script>
 

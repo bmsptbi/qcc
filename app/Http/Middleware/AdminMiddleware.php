@@ -20,7 +20,7 @@ class AdminMiddleware
             return redirect()->guest(route('login'))->with('error', 'Silakan masuk dengan akun Administrator terlebih dahulu untuk mengakses menu ini.');
         }
 
-        if ($request->user()->role !== 'admin') {
+        if (! $request->user()->isAdmin()) {
             return redirect()->route('qcc.index')->with('error', 'Akses ditolak. Anda tidak memiliki izin Administrator untuk mengakses halaman ini.');
         }
 

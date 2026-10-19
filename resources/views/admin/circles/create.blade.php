@@ -26,7 +26,7 @@
                     Pendaftaran Gugus QCC Baru
                 </h1>
                 <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-                    Masukkan data gugus mutu, tema perbaikan, jadwal presentasi, dan susunan anggota tim.
+                    Masukkan data utama gugus mutu, departemen, dan susunan anggota tim.
                 </p>
             </div>
         </div>
@@ -76,32 +76,11 @@
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tahun Periode <span class="text-rose-500">*</span></label>
-                    <select name="year" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
-                        @foreach($availableYears as $yr)
-                            <option value="{{ $yr }}" {{ (old('year', $activeYear) == $yr) ? 'selected' : '' }}>
-                                Tahun {{ $yr }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kategori Circle <span class="text-rose-500">*</span></label>
-                    <select name="circle_category_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat->id }}" {{ old('circle_category_id') == $cat->id ? 'selected' : '' }}>
-                                {{ $cat->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Departemen <span class="text-rose-500">*</span></label>
-                    <select name="department_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
+                    <select name="department_id" required class="searchable-select w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
+                        <option value="">-- Pilih Departemen --</option>
                         @foreach($departments as $dept)
                             <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>
                                 {{ $dept->name }}
@@ -111,22 +90,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Periode Konvensi</label>
-                    <select name="assessment_period_id" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
-                        <option value="">-- Otomatis Sesuai Tahun --</option>
-                        @foreach($periods as $per)
-                            <option value="{{ $per->id }}" {{ old('assessment_period_id') == $per->id ? 'selected' : '' }}>
-                                {{ $per->name }} ({{ $per->year }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fasilitator Pendamping</label>
-                    <select name="facilitator_id" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
+                    <select name="facilitator_id" class="searchable-select w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
                         <option value="">-- Pilih Fasilitator (Opsional) --</option>
                         @foreach($facilitators as $fac)
                             <option value="{{ $fac->id }}" {{ old('facilitator_id') == $fac->id ? 'selected' : '' }}>
@@ -138,8 +103,8 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Status Awal Gugus <span class="text-rose-500">*</span></label>
-                    <select name="status" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white font-semibold">
-                        <option value="scheduled" {{ old('status') == 'scheduled' ? 'selected' : '' }}>Terjadwal Siap Presentasi (Scheduled)</option>
+                    <select name="status" required class="searchable-select w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white font-semibold">
+                        <option value="scheduled" {{ old('status', 'scheduled') == 'scheduled' ? 'selected' : '' }}>Terjadwal Siap Presentasi (Scheduled)</option>
                         <option value="verified" {{ old('status') == 'verified' ? 'selected' : '' }}>Terverifikasi (Verified)</option>
                         <option value="submitted" {{ old('status') == 'submitted' ? 'selected' : '' }}>Terkirim (Submitted)</option>
                         <option value="draft" {{ old('status') == 'draft' ? 'selected' : '' }}>Draft</option>
@@ -148,55 +113,12 @@
             </div>
         </div>
 
-        <!-- 2. Deskripsi Masalah & Sasaran -->
-        <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
-            <h2 class="text-base font-bold text-slate-900 tracking-tight border-b border-slate-100 pb-3 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
-                2. Uraian Masalah & Sasaran Perbaikan
-            </h2>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Latar Belakang Permasalahan</label>
-                <textarea name="problem_statement" rows="3" placeholder="Jelaskan kondisi sebelum perbaikan, data historis defect/loss, atau dampak biaya..."
-                    class="w-full p-3 rounded-2xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">{{ old('problem_statement') }}</textarea>
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sasaran & Target (SMART)</label>
-                <textarea name="target_statement" rows="3" placeholder="Tuliskan target mutu/efisiensi terukur (Specific, Measurable, Time-bound)..."
-                    class="w-full p-3 rounded-2xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">{{ old('target_statement') }}</textarea>
-            </div>
-        </div>
-
-        <!-- 3. Jadwal Presentasi & Ruangan -->
-        <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
-            <h2 class="text-base font-bold text-slate-900 tracking-tight border-b border-slate-100 pb-3 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                3. Jadwal & Ruangan Presentasi Konvensi
-            </h2>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Waktu Presentasi</label>
-                    <input type="datetime-local" name="presentation_schedule" value="{{ old('presentation_schedule', now()->addDays(1)->format('Y-m-d\TH:i')) }}"
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lokasi / Ruangan Konvensi</label>
-                    <input type="text" name="presentation_room" value="{{ old('presentation_room', 'Auditorium Lantai 2 / Hall A') }}"
-                        placeholder="Contoh: Auditorium Lantai 2 / Meeting Room Bima"
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                </div>
-            </div>
-        </div>
-
-        <!-- 4. Susunan Anggota Gugus Dinamis -->
+        <!-- 2. Susunan Anggota Gugus Dinamis -->
         <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
-                    4. Susunan Anggota Tim Gugus
+                    2. Susunan Anggota Tim Gugus
                 </h2>
                 <button type="button" onclick="addMemberRow()" class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold transition flex items-center gap-1">
                     + Tambah Anggota

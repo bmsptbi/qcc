@@ -360,7 +360,9 @@
         const toggleBtn = document.getElementById('toggle_all_judges_btn');
         if (toggleBtn) toggleBtn.innerText = 'Pilih Semua';
         updateGeneratedShareUrl();
-        document.getElementById('shareModal').classList.remove('hidden');
+        const modal = document.getElementById('shareModal');
+        modal.classList.remove('hidden');
+        if (window.initSearchableSelects) window.initSearchableSelects(modal);
     }
 
     function closeShareModal() {

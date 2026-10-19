@@ -321,8 +321,20 @@
         document.getElementById('edit_judge_email').value = judge.email || '';
         document.getElementById('edit_judge_nik').value = judge.nik || '';
         document.getElementById('edit_judge_phone').value = judge.phone || '';
-        document.getElementById('edit_judge_department_id').value = judge.department_id || '';
-        document.getElementById('editJudgeModal').classList.remove('hidden');
+
+        const modal = document.getElementById('editJudgeModal');
+        modal.classList.remove('hidden');
+
+        if (window.initSearchableSelects) {
+            window.initSearchableSelects(modal);
+        }
+
+        const dept = document.getElementById('edit_judge_department_id');
+        if (dept.tomselect) {
+            dept.tomselect.setValue(judge.department_id || '');
+        } else {
+            dept.value = judge.department_id || '';
+        }
     }
 
     function closeEditJudgeModal() {

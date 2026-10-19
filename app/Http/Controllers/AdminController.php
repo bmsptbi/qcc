@@ -72,21 +72,21 @@ class AdminController extends Controller
     }
 
     /**
-     * Tampilkan form pendaftaran circle baru
+     * Tampilkan form pendaftaran circle baru (Hanya Data Utama & Susunan Anggota)
      */
     public function createCircle(): View
     {
-        $periods = AssessmentPeriod::orderByDesc('year')->get();
-        $categories = CircleCategory::where('is_active', true)->get();
         $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
-        $facilitators = User::whereIn('role', ['facilitator', 'admin'])->get();
+        $facilitators = User::role('facilitator')->get();
+        if ($facilitators->isEmpty()) {
+            $facilitators = User::all();
+        }
 
-        // Rekomendasi kode gugus berikutnya (cth: QCC-2026-005)
+        $activeYear = session('active_year', (int) date('Y'));
         $latestId = Circle::max('id') + 1;
-        $year = date('Y');
-        $suggestedCode = sprintf('QCC-%s-%03d', $year, $latestId);
+        $suggestedCode = sprintf('QCC-%s-%03d', $activeYear, $latestId);
 
-        return view('admin.circles.create', compact('periods', 'categories', 'departments', 'facilitators', 'suggestedCode'));
+        return view('admin.circles.create', compact('departments', 'facilitators', 'suggestedCode', 'activeYear'));
     }
 
     /**
@@ -98,16 +98,12 @@ class AdminController extends Controller
             'circle_code' => ['required', 'string', 'max:50', 'unique:circles,circle_code'],
             'circle_name' => ['required', 'string', 'max:150'],
             'theme_title' => ['required', 'string', 'max:255'],
-            'year' => ['required', 'integer', 'min:2000', 'max:2099'],
-            'assessment_period_id' => ['nullable', 'exists:assessment_periods,id'],
-            'circle_category_id' => ['required', 'exists:circle_categories,id'],
             'department_id' => ['required', 'exists:departments,id'],
             'facilitator_id' => ['nullable', 'exists:users,id'],
-            'problem_statement' => ['nullable', 'string'],
-            'target_statement' => ['nullable', 'string'],
-            'presentation_schedule' => ['nullable', 'date'],
-            'presentation_room' => ['nullable', 'string', 'max:150'],
-            'status' => ['required', 'in:draft,submitted,verified,scheduled'],
+            'status' => ['nullable', 'in:draft,submitted,verified,scheduled'],
+            'year' => ['nullable', 'integer', 'min:2000', 'max:2099'],
+            'circle_category_id' => ['nullable', 'exists:circle_categories,id'],
+            'assessment_period_id' => ['nullable', 'exists:assessment_periods,id'],
             'members' => ['nullable', 'array'],
             'members.*.name' => ['required_with:members.*.nik', 'string', 'max:150'],
             'members.*.nik' => ['required_with:members.*.name', 'string', 'max:50'],
@@ -115,7 +111,7 @@ class AdminController extends Controller
             'members.*.email' => ['nullable', 'email'],
         ]);
 
-        $year = (int) $validated['year'];
+        $year = (int) ($validated['year'] ?? session('active_year', date('Y')));
         $periodId = $validated['assessment_period_id'] ?? null;
         if (! $periodId) {
             $period = AssessmentPeriod::firstOrCreate(
@@ -131,20 +127,18 @@ class AdminController extends Controller
             $periodId = $period->id;
         }
 
+        $categoryId = $validated['circle_category_id'] ?? CircleCategory::first()?->id;
+
         $circle = Circle::create([
             'assessment_period_id' => $periodId,
             'year' => $year,
-            'circle_category_id' => $validated['circle_category_id'],
+            'circle_category_id' => $categoryId,
             'department_id' => $validated['department_id'],
             'facilitator_id' => $validated['facilitator_id'] ?? null,
             'circle_code' => strtoupper($validated['circle_code']),
             'circle_name' => $validated['circle_name'],
             'theme_title' => $validated['theme_title'],
-            'problem_statement' => $validated['problem_statement'] ?? null,
-            'target_statement' => $validated['target_statement'] ?? null,
-            'presentation_schedule' => $validated['presentation_schedule'] ?? null,
-            'presentation_room' => $validated['presentation_room'] ?? null,
-            'status' => $validated['status'],
+            'status' => $validated['status'] ?? 'scheduled',
         ]);
 
         // Simpan anggota tim
@@ -283,7 +277,7 @@ class AdminController extends Controller
      */
     public function judgesIndex(): View
     {
-        $judges = User::where('role', 'judge')->with(['department', 'judgeAssignments.period', 'judgeAssignments.category'])->get();
+        $judges = User::role('judge')->with(['department', 'judgeAssignments.period', 'judgeAssignments.category'])->get();
         $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
         $periods = AssessmentPeriod::orderByDesc('year')->get();
         $categories = CircleCategory::where('is_active', true)->get();
@@ -310,6 +304,7 @@ class AdminController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password'] ?? 'password'),
             'role' => 'judge',
+            'roles' => ['judge'],
             'nik' => $validated['nik'] ?? null,
             'department_id' => $validated['department_id'] ?? null,
             'phone' => $validated['phone'] ?? null,
@@ -559,7 +554,7 @@ class AdminController extends Controller
         $query = User::with(['department']);
 
         if ($request->filled('role')) {
-            $query->where('role', $request->role);
+            $query->role($request->role);
         }
 
         if ($request->filled('department_id')) {
@@ -580,9 +575,10 @@ class AdminController extends Controller
 
         $stats = [
             'total_users' => User::count(),
-            'total_admins' => User::where('role', 'admin')->count(),
-            'total_judges' => User::where('role', 'judge')->count(),
-            'total_facilitators' => User::where('role', 'facilitator')->count(),
+            'total_admins' => User::role('admin')->count(),
+            'total_judges' => User::role('judge')->count(),
+            'total_facilitators' => User::role('facilitator')->count(),
+            'total_leaders' => User::role('circle_leader')->count(),
         ];
 
         return view('admin.users.index', compact('users', 'departments', 'stats'));
@@ -597,14 +593,38 @@ class AdminController extends Controller
             'name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
             'nik' => ['nullable', 'string', 'max:50'],
-            'role' => ['required', 'in:admin,judge,facilitator,member'],
+            'roles' => ['nullable', 'array'],
+            'roles.*' => ['string', 'in:admin,judge,facilitator,circle_leader,member'],
+            'role' => ['nullable', 'string'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'phone' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'string', 'min:6'],
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
-        $user = User::create($validated);
+        $roles = $validated['roles'] ?? [];
+        if (empty($roles) && ! empty($validated['role'])) {
+            $roles = [$validated['role']];
+        }
+        if (empty($roles)) {
+            $roles = ['member'];
+        }
+
+        $roles = array_values(array_unique($roles));
+        $primaryRole = in_array('admin', $roles, true) ? 'admin'
+            : (in_array('judge', $roles, true) ? 'judge'
+            : (in_array('facilitator', $roles, true) ? 'facilitator'
+            : (in_array('circle_leader', $roles, true) ? 'leader' : $roles[0])));
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'nik' => $validated['nik'] ?? null,
+            'role' => $primaryRole,
+            'roles' => $roles,
+            'department_id' => $validated['department_id'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'password' => Hash::make($validated['password']),
+        ]);
 
         return back()->with('success', "Pengguna [{$user->name}] berhasil ditambahkan!");
     }
@@ -618,19 +638,43 @@ class AdminController extends Controller
             'name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email,'.$user->id],
             'nik' => ['nullable', 'string', 'max:50'],
-            'role' => ['required', 'in:admin,judge,facilitator,member'],
+            'roles' => ['nullable', 'array'],
+            'roles.*' => ['string', 'in:admin,judge,facilitator,circle_leader,member'],
+            'role' => ['nullable', 'string'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'phone' => ['nullable', 'string', 'max:50'],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
-        if (! empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
+        $roles = $validated['roles'] ?? [];
+        if (empty($roles) && ! empty($validated['role'])) {
+            $roles = [$validated['role']];
+        }
+        if (empty($roles)) {
+            $roles = $user->roles ?: ['member'];
         }
 
-        $user->update($validated);
+        $roles = array_values(array_unique($roles));
+        $primaryRole = in_array('admin', $roles, true) ? 'admin'
+            : (in_array('judge', $roles, true) ? 'judge'
+            : (in_array('facilitator', $roles, true) ? 'facilitator'
+            : (in_array('circle_leader', $roles, true) ? 'leader' : $roles[0])));
+
+        $updateData = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'nik' => $validated['nik'] ?? null,
+            'role' => $primaryRole,
+            'roles' => $roles,
+            'department_id' => $validated['department_id'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+        ];
+
+        if (! empty($validated['password'])) {
+            $updateData['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($updateData);
 
         return back()->with('success', "Data pengguna [{$user->name}] berhasil diperbarui!");
     }
