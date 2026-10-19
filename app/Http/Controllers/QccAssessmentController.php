@@ -283,6 +283,23 @@ class QccAssessmentController extends Controller
             }
         }
 
+        // Jika Kirim Final, pastikan seluruh kriteria pada lingkup penilaian sudah dinilai lengkap
+        if ($isSubmit) {
+            $requiredCriteriaQuery = AssessmentCriterion::where('is_active', true);
+            $targetCategoryId = $request->input('category_id');
+            if ($targetCategoryId && $targetCategoryId !== 'all') {
+                $requiredCriteriaQuery->where('criteria_category_id', $targetCategoryId);
+            }
+            $requiredCriteria = $requiredCriteriaQuery->get();
+            $missingCriteria = $requiredCriteria->filter(fn ($c) => ! array_key_exists($c->id, $validScores));
+
+            if ($missingCriteria->isNotEmpty()) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Penilaian belum lengkap ('.$missingCriteria->count().' butir kriteria belum dinilai). Silakan lengkapi atau gunakan "Simpan Draft" untuk menyimpan sementara.');
+            }
+        }
+
         // Get or create Assessment record
         $assessment = Assessment::firstOrCreate(
             [

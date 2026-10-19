@@ -141,6 +141,7 @@
 
         <!-- Hidden input for active judge id -->
         <input type="hidden" name="judge_id" value="{{ $currentJudge?->id }}">
+        <input type="hidden" name="category_id" value="{{ $isStageLocked ? $lockedCategory?->id : '' }}">
 
         <!-- Stage Filter Navigation Tabs (Setup Tahap Yang Tampil) -->
         @if(! $isStageLocked)
@@ -213,9 +214,17 @@
 
         <!-- Progress Indicator -->
         <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs mb-6">
-            <div class="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
-                <span>Kelengkapan Penilaian:</span>
-                <span id="progressText">0 / 0 Kriteria Dinilai (0%)</span>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-bold text-slate-700 mb-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span>Kelengkapan Penilaian:</span>
+                    <button type="button" onclick="openIncompleteModal()" id="incompleteBadgeBtn" 
+                        class="hidden text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 px-2.5 py-0.5 rounded-lg border border-rose-200 transition items-center gap-1 shadow-2xs">
+                        <span>⚠️ Masih ada</span>
+                        <span id="incompleteCountText" class="underline font-black">0</span>
+                        <span>kriteria belum dinilai (Lihat &rarr;)</span>
+                    </button>
+                </div>
+                <span id="progressText" class="text-slate-600 font-mono">0 / 0 Kriteria Dinilai (0%)</span>
             </div>
             <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
                 <div id="progressBar" class="bg-gradient-to-r from-blue-600 to-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -260,10 +269,8 @@
                                 </span>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Criteria Items List -->
-                    <div class="p-4 sm:p-6 space-y-6 divide-y divide-slate-100">
+                                 <!-- Criteria Items List (Ultra-Compact Layout) -->
+                    <div class="p-3 sm:p-4 space-y-2.5">
                         @foreach($cat->criteria as $criterion)
                             @php
                                 $existingScore = $existingScores->get($criterion->id);
@@ -272,143 +279,137 @@
                                 $isRated = ($currentVal !== null && $currentVal !== '');
                             @endphp
 
-                            <div class="pt-6 first:pt-0 criterion-row" 
-                                data-criterion-id="{{ $criterion->id }}" 
-                                data-category-id="{{ $cat->id }}" 
-                                data-weight="{{ $criterion->effective_weight }}" 
+                            <div id="criterion_row_{{ $criterion->id }}"
+                                class="criterion-row p-3 rounded-2xl border transition-all duration-150 {{ $isRated ? 'bg-white border-blue-200/90 shadow-2xs' : 'bg-white border-slate-200/90 hover:border-slate-300' }}"
+                                data-criterion-id="{{ $criterion->id }}"
+                                data-criterion-code="{{ $criterion->code }}"
+                                data-criterion-title="{{ $criterion->title }}"
+                                data-category-id="{{ $cat->id }}"
+                                data-cat-name="{{ $cat->name }}"
+                                data-weight="{{ $criterion->effective_weight }}"
                                 data-cat-weight="{{ $cat->weight_percentage }}">
                                 
-                                <!-- Top Row: Code, Title & Weight -->
-                                <div class="flex items-start justify-between gap-3 mb-2">
-                                    <div class="flex items-start gap-2.5">
-                                        <span class="px-2 py-1 rounded-lg text-xs font-black bg-blue-50 text-blue-700 border border-blue-200/80 flex-shrink-0 mt-0.5">
+                                <!-- Main Row: Code, Title, Weight, Rubric Icon & Stepper Controls -->
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                    
+                                    <!-- Left: Code & Title -->
+                                    <div class="flex items-start gap-2 flex-1 min-w-0">
+                                        <span class="px-2 py-0.5 rounded-md text-xs font-black bg-blue-50 text-blue-700 border border-blue-200/70 flex-shrink-0 mt-0.5">
                                             {{ $criterion->code }}
                                         </span>
-                                        <div>
-                                            <h3 class="text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                                                {{ $criterion->title }}
-                                            </h3>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <h3 class="text-xs sm:text-sm font-bold text-slate-800 leading-snug">
+                                                    {{ $criterion->title }}
+                                                </h3>
+                                                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 flex-shrink-0" title="Bobot butir di tahap ini">
+                                                    Bobot: {{ number_format($criterion->effective_weight, 1) }}%
+                                                </span>
+                                                @if($criterion->guidelines)
+                                                    <button type="button" onclick="toggleRubric({{ $criterion->id }})" 
+                                                        class="inline-flex items-center gap-0.5 text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50/80 px-1.5 py-0.5 rounded-md hover:bg-blue-100 transition flex-shrink-0"
+                                                        title="Buka panduan rubrik penilaian">
+                                                        <span>📖 Rubrik</span>
+                                                    </button>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <!-- Weight & Weighted Score Preview -->
-                                    <div class="text-right flex-shrink-0">
-                                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded {{ $criterion->weight !== null ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/60' : 'bg-slate-100 text-slate-600' }} block mb-0.5" title="Bobot butir di tahap ini">
-                                            Bobot: {{ number_format($criterion->effective_weight, 1) }}% {{ $criterion->weight === null ? '(Auto)' : '' }}
-                                        </span>
-                                        <span class="text-[11px] font-bold {{ $isRated ? 'text-blue-600' : 'text-slate-400' }} weighted-subtotal-text" id="subtotal_{{ $criterion->id }}">
-                                            {{ $isRated ? 'Sub: ' . number_format(((float)$currentVal * $criterion->effective_weight) / 100, 2) : 'Sub: - (Belum)' }}
-                                        </span>
-                                    </div>
-                                </div>
+                                    <!-- Right: Touch Stepper & Score Controls -->
+                                    <div class="flex items-center justify-between sm:justify-end gap-1.5 flex-shrink-0">
+                                        <!-- Step Minus Button -->
+                                        <button type="button" onclick="adjustScore({{ $criterion->id }}, -5)"
+                                            class="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 active:scale-95 flex items-center justify-center font-black text-sm transition touch-action-manipulation shadow-2xs">
+                                            -
+                                        </button>
 
-                                <!-- Rubric Guidelines (Collapsible) -->
-                                @if($criterion->guidelines)
-                                    <details class="group mb-4">
-                                        <summary class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-blue-600 cursor-pointer select-none">
-                                            <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                            <span>Panduan Rubrik Penilaian</span>
-                                            <svg class="w-3 h-3 transition group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                            </svg>
-                                        </summary>
-                                        <div class="mt-2 p-3 bg-amber-50/70 border border-amber-200/60 rounded-xl text-xs text-amber-900 leading-relaxed">
-                                            {{ $criterion->guidelines }}
+                                        <!-- Direct Number Input -->
+                                        <div class="relative w-14 sm:w-16">
+                                            <input type="number"
+                                                id="score_input_{{ $criterion->id }}"
+                                                name="scores[{{ $criterion->id }}]"
+                                                value="{{ $isRated ? (float)$currentVal : '' }}"
+                                                min="0" max="100" step="1"
+                                                placeholder="-"
+                                                oninput="syncFromInput({{ $criterion->id }})"
+                                                class="score-input w-full text-center h-8 px-1 bg-white rounded-xl border {{ $isRated ? 'border-blue-500 font-black text-slate-900 ring-1 ring-blue-500/20' : 'border-slate-300 font-semibold text-slate-400' }} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs">
                                         </div>
-                                    </details>
-                                @endif
 
-                                <!-- Touch-Friendly Interactive Score Input Controls (Default Blank / Null) -->
-                                <div class="bg-slate-50/80 rounded-2xl p-3.5 sm:p-4 border border-slate-200/70 space-y-3">
-                                    
-                                    <!-- Stepper & Direct Value Display -->
-                                    <div class="flex items-center justify-between gap-3">
-                                        <div class="text-xs font-semibold text-slate-500">
-                                            Skor (0 - 100):
-                                            <span id="score_status_{{ $criterion->id }}" class="ml-1 text-[11px] {{ $isRated ? 'text-emerald-600 font-bold' : 'text-slate-400' }}">
-                                                {{ $isRated ? '✓ Terisi' : '(Kosong)' }}
+                                        <!-- Step Plus Button -->
+                                        <button type="button" onclick="adjustScore({{ $criterion->id }}, 5)"
+                                            class="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 active:scale-95 flex items-center justify-center font-black text-sm transition touch-action-manipulation shadow-2xs">
+                                            +
+                                        </button>
+
+                                        <!-- Subtotal / Status -->
+                                        <div class="w-16 sm:w-20 text-right">
+                                            <span class="text-[11px] font-extrabold {{ $isRated ? 'text-blue-600' : 'text-slate-400' }} weighted-subtotal-text block truncate" id="subtotal_{{ $criterion->id }}">
+                                                {{ $isRated ? 'Sub: ' . number_format(((float)$currentVal * $criterion->effective_weight) / 100, 2) : 'Belum' }}
                                             </span>
                                         </div>
 
-                                        <div class="flex items-center gap-1.5 sm:gap-2">
-                                            <!-- Step Minus Button -->
-                                            <button type="button" onclick="adjustScore({{ $criterion->id }}, -5)" 
-                                                class="w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 active:scale-95 flex items-center justify-center font-black text-lg transition touch-action-manipulation shadow-xs">
-                                                -
-                                            </button>
-
-                                            <!-- Direct Number Input (Default Null / Blank) -->
-                                            <div class="relative w-24">
-                                                <input type="number" 
-                                                    id="score_input_{{ $criterion->id }}" 
-                                                    name="scores[{{ $criterion->id }}]" 
-                                                    value="{{ $isRated ? (float)$currentVal : '' }}" 
-                                                    min="0" max="100" step="1"
-                                                    placeholder="-"
-                                                    oninput="syncFromInput({{ $criterion->id }})"
-                                                    class="score-input w-full text-center py-1.5 px-1 bg-white rounded-xl border {{ $isRated ? 'border-blue-500 font-black text-slate-900' : 'border-slate-300 font-normal text-slate-400' }} text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs">
-                                            </div>
-
-                                            <!-- Step Plus Button -->
-                                            <button type="button" onclick="adjustScore({{ $criterion->id }}, 5)" 
-                                                class="w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 active:scale-95 flex items-center justify-center font-black text-lg transition touch-action-manipulation shadow-xs">
-                                                +
-                                            </button>
-
-                                            <!-- Clear / Reset to Null Button -->
-                                            <button type="button" onclick="clearScore({{ $criterion->id }})" 
-                                                class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Kosongkan nilai butir ini">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
-                                            </button>
-                                        </div>
+                                        <!-- Clear Button -->
+                                        <button type="button" onclick="clearScore({{ $criterion->id }})"
+                                            class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition flex items-center justify-center flex-shrink-0"
+                                            title="Kosongkan nilai butir ini">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
                                     </div>
 
-                                    <!-- Range Slider -->
-                                    <div class="pt-1">
-                                        <input type="range" 
-                                            id="score_slider_{{ $criterion->id }}" 
-                                            value="{{ $isRated ? (float)$currentVal : 0 }}" 
-                                            min="0" max="100" step="1"
-                                            oninput="syncFromSlider({{ $criterion->id }})"
-                                            class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer touch-action-manipulation {{ $isRated ? 'accent-blue-600' : 'opacity-50' }}">
-                                        <div class="flex justify-between text-[10px] text-slate-400 font-bold px-0.5 mt-1">
-                                            <span>0 (Kurang)</span>
-                                            <span>60 (Cukup)</span>
-                                            <span>80 (Baik)</span>
-                                            <span>100 (Istimewa)</span>
-                                        </div>
-                                    </div>
+                                </div>
 
-                                    <!-- Fast Preset Pills for Easy One-Tap Scoring -->
-                                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1">
-                                        <span class="text-[10px] font-semibold text-slate-400 mr-1 hidden sm:inline">Pilihan Cepat:</span>
-                                        @foreach([65, 75, 80, 85, 90, 95] as $presetVal)
+                                <!-- Sub-Row: Micro Presets & Note Button -->
+                                <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                                    <div class="flex items-center gap-1 flex-shrink-0">
+                                        <span class="text-[10px] text-slate-400 font-semibold mr-0.5">Pilihan:</span>
+                                        @foreach([60, 70, 75, 80, 85, 90, 100] as $presetVal)
                                             <button type="button" onclick="setPresetScore({{ $criterion->id }}, {{ $presetVal }})"
-                                                class="px-2.5 py-1 rounded-lg text-xs font-bold transition touch-action-manipulation {{ ($isRated && (float)$currentVal == $presetVal) ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' }}">
+                                                id="preset_{{ $criterion->id }}_{{ $presetVal }}"
+                                                class="preset-pill-{{ $criterion->id }} px-2 py-0.5 rounded-md text-[10px] font-bold transition touch-action-manipulation {{ ($isRated && (float)$currentVal == $presetVal) ? 'bg-blue-600 text-white shadow-2xs' : 'bg-slate-50 border border-slate-200/80 text-slate-600 hover:bg-slate-100' }}">
                                                 {{ $presetVal }}
                                             </button>
                                         @endforeach
                                     </div>
 
-                                    <!-- Optional Note per Criterion -->
-                                    <div class="pt-1">
-                                        <input type="text" 
-                                            name="notes[{{ $criterion->id }}]" 
-                                            value="{{ $currentNote }}" 
-                                            placeholder="Catatan khusus butir ini (opsional)..."
-                                            class="w-full px-3 py-1.5 text-xs bg-white rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
-                                    </div>
+                                    <!-- Note toggle button -->
+                                    <button type="button" onclick="toggleNoteInput({{ $criterion->id }})" 
+                                        id="note_btn_{{ $criterion->id }}"
+                                        class="text-[10px] font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1 flex-shrink-0 px-1.5 py-0.5 rounded-md hover:bg-slate-100 transition {{ !empty($currentNote) ? 'text-blue-600 bg-blue-50/70' : '' }}">
+                                        <span>📝</span>
+                                        <span id="note_label_{{ $criterion->id }}">{{ !empty($currentNote) ? 'Catatan (Ada)' : '+ Catatan' }}</span>
+                                    </button>
+                                </div>
 
+                                <!-- Collapsible Rubric Guidelines -->
+                                @if($criterion->guidelines)
+                                    <div id="rubric_box_{{ $criterion->id }}" class="hidden mt-2 p-2.5 bg-amber-50/80 border border-amber-200/70 rounded-xl text-xs text-amber-900 leading-relaxed">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div>
+                                                <strong class="font-bold block text-[11px] text-amber-950 mb-0.5">Panduan Rubrik Penilaian:</strong>
+                                                <span>{{ $criterion->guidelines }}</span>
+                                            </div>
+                                            <button type="button" onclick="toggleRubric({{ $criterion->id }})" class="text-amber-700 hover:text-amber-900 font-black text-sm">&times;</button>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <!-- Note Input (Hidden by default unless filled) -->
+                                <div id="note_box_{{ $criterion->id }}" class="{{ empty($currentNote) ? 'hidden' : '' }} mt-2 pt-1">
+                                    <input type="text"
+                                        id="note_input_{{ $criterion->id }}"
+                                        name="notes[{{ $criterion->id }}]"
+                                        value="{{ $currentNote }}"
+                                        oninput="updateNoteState({{ $criterion->id }})"
+                                        placeholder="Tulis catatan khusus untuk butir ini..."
+                                        class="w-full px-3 py-1.5 text-xs bg-slate-50 focus:bg-white rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 shadow-inner">
                                 </div>
 
                             </div>
                         @endforeach
                     </div>
-
                 </div>
             @endforeach
         </div>
@@ -741,6 +742,54 @@
 </div>
 @endif
 
+<!-- Modal Kriteria Belum Lengkap (Mencegah Kirim Final & Menampilkan Daftar Butir yang Belum Diisi) -->
+<div id="incompleteModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl font-black flex-shrink-0">
+                    ⚠️
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-900">
+                        Penilaian Belum Lengkap
+                    </h3>
+                    <p class="text-xs text-rose-600 font-bold" id="incompleteModalSubtitle">
+                        Masih ada butir penilaian yang belum diisi nilainya
+                    </p>
+                </div>
+            </div>
+            <button type="button" onclick="closeIncompleteModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold leading-none">&times;</button>
+        </div>
+
+        <div class="p-3 bg-rose-50/80 border border-rose-200/70 rounded-2xl text-xs text-rose-950 leading-relaxed flex-shrink-0">
+            <p>
+                <strong>Perhatian:</strong> Untuk dapat melakukan <strong>Kirim Final</strong>, seluruh butir penilaian pada tahap ini wajib dinilai lengkap (0 - 100).
+                Jika Anda ingin menyimpan penilaian sementara dan melanjutkannya nanti, silakan gunakan <strong>Simpan Draft</strong>.
+            </p>
+        </div>
+
+        <div class="flex items-center justify-between text-xs font-bold text-slate-700 pt-0.5 flex-shrink-0">
+            <span>Daftar Butir yang Belum Diisi:</span>
+            <span class="text-[11px] text-slate-400 font-medium hidden sm:inline">Klik nama butir untuk langsung mengisi</span>
+        </div>
+
+        <!-- Scrollable list of missing items -->
+        <div id="incompleteItemsList" class="space-y-1.5 overflow-y-auto flex-1 pr-1 max-h-64">
+            <!-- populated by JS -->
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 flex-shrink-0">
+            <button type="button" onclick="closeIncompleteModal()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition text-center">
+                Tutup & Lengkapi Nilai
+            </button>
+            <button type="button" onclick="saveAsDraftFromIncomplete()" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-md shadow-blue-600/20 text-center">
+                Simpan Draft Saja
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Confirmation Modal for Final Submit -->
 <div id="submitModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
@@ -805,24 +854,166 @@
         recalculateScores();
     }
 
-    // Real-time Score Calculation Script (Default NULL aware)
-    function recalculateScores() {
+    // Compact UI Helpers: Rubric & Note Toggles
+    function toggleRubric(id) {
+        const box = document.getElementById('rubric_box_' + id);
+        if (box) box.classList.toggle('hidden');
+    }
+
+    function toggleNoteInput(id) {
+        const box = document.getElementById('note_box_' + id);
+        const input = document.getElementById('note_input_' + id);
+        if (box) {
+            box.classList.toggle('hidden');
+            if (!box.classList.contains('hidden') && input) {
+                input.focus();
+            }
+        }
+    }
+
+    function updateNoteState(id) {
+        const input = document.getElementById('note_input_' + id);
+        const btn = document.getElementById('note_btn_' + id);
+        const label = document.getElementById('note_label_' + id);
+        if (input && btn && label) {
+            if (input.value.trim() !== '') {
+                btn.className = 'text-[10px] font-bold flex items-center gap-1 flex-shrink-0 px-1.5 py-0.5 rounded-md transition text-blue-600 bg-blue-50/70';
+                label.innerText = 'Catatan (Ada)';
+            } else {
+                btn.className = 'text-[10px] font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1 flex-shrink-0 px-1.5 py-0.5 rounded-md hover:bg-slate-100 transition';
+                label.innerText = '+ Catatan';
+            }
+        }
+    }
+
+    // Criteria Completeness Inspection
+    function getIncompleteCriteria() {
         const isLocked = @json($isStageLocked);
         const lockedCatId = @json($lockedCategory?->id);
 
-        const rows = Array.from(document.querySelectorAll('.criterion-row')).filter(row => {
+        const targetRows = Array.from(document.querySelectorAll('.criterion-row')).filter(row => {
             const catId = row.getAttribute('data-category-id');
             if (isLocked && lockedCatId) {
                 return catId == lockedCatId;
             }
-            if (activeStageTab && activeStageTab !== 'all') {
-                return catId == activeStageTab;
-            }
             return true;
         });
 
-        let filledCount = 0;
-        const totalCount = rows.length;
+        const incomplete = [];
+        targetRows.forEach(row => {
+            const id = row.getAttribute('data-criterion-id');
+            const code = row.getAttribute('data-criterion-code') || id;
+            const title = row.getAttribute('data-criterion-title') || ('Kriteria ' + code);
+            const catName = row.getAttribute('data-cat-name') || '';
+            const categoryId = row.getAttribute('data-category-id');
+            const input = document.getElementById('score_input_' + id);
+            const val = input ? input.value.trim() : '';
+
+            if (val === '' || isNaN(val)) {
+                incomplete.push({ id, code, title, catName, categoryId, row });
+            }
+        });
+
+        return {
+            incomplete,
+            total: targetRows.length,
+            filled: targetRows.length - incomplete.length
+        };
+    }
+
+    // Modal Incomplete Handlers
+    function openIncompleteModal() {
+        const status = getIncompleteCriteria();
+        const listEl = document.getElementById('incompleteItemsList');
+        const subtitleEl = document.getElementById('incompleteModalSubtitle');
+
+        if (subtitleEl) {
+            subtitleEl.innerText = `${status.incomplete.length} dari ${status.total} butir belum dinilai (${status.filled} sudah diisi)`;
+        }
+
+        if (listEl) {
+            if (status.incomplete.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-6 text-emerald-600 font-bold text-xs bg-emerald-50 rounded-2xl border border-emerald-200">
+                        ✓ Luar biasa! Seluruh kriteria (${status.total} butir) sudah lengkap terisi nilai.
+                    </div>
+                `;
+            } else {
+                listEl.innerHTML = status.incomplete.map((item, idx) => `
+                    <button type="button" onclick="jumpToCriterion(${item.id}, ${item.categoryId})"
+                        class="w-full text-left p-2.5 rounded-xl border border-slate-200/90 hover:border-blue-400 bg-white hover:bg-blue-50/50 transition flex items-center justify-between gap-2.5 shadow-2xs group">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="w-5 h-5 rounded-md bg-rose-100 text-rose-700 font-black text-[11px] flex items-center justify-center flex-shrink-0">
+                                ${idx + 1}
+                            </span>
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-black bg-blue-50 text-blue-700 border border-blue-200/60 flex-shrink-0">
+                                ${item.code}
+                            </span>
+                            <div class="min-w-0">
+                                <span class="text-xs font-bold text-slate-800 block truncate group-hover:text-blue-700">
+                                    ${item.title}
+                                </span>
+                                <span class="text-[10px] text-slate-400 block truncate">
+                                    ${item.catName}
+                                </span>
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold text-blue-600 group-hover:translate-x-0.5 transition flex-shrink-0 flex items-center gap-1">
+                            Isi &rarr;
+                        </span>
+                    </button>
+                `).join('');
+            }
+        }
+
+        document.getElementById('incompleteModal').classList.remove('hidden');
+    }
+
+    function closeIncompleteModal() {
+        document.getElementById('incompleteModal').classList.add('hidden');
+    }
+
+    function saveAsDraftFromIncomplete() {
+        closeIncompleteModal();
+        const form = document.getElementById('assessmentForm');
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'draft';
+        form.appendChild(actionInput);
+        form.submit();
+    }
+
+    function jumpToCriterion(criterionId, categoryId) {
+        closeIncompleteModal();
+
+        if (!@json($isStageLocked) && activeStageTab !== 'all' && activeStageTab != categoryId) {
+            selectStageTab(categoryId);
+        }
+
+        setTimeout(() => {
+            const row = document.getElementById('criterion_row_' + criterionId);
+            const input = document.getElementById('score_input_' + criterionId);
+            if (row) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                row.classList.add('ring-4', 'ring-amber-400', 'border-amber-500', 'bg-amber-50/60');
+                setTimeout(() => {
+                    row.classList.remove('ring-4', 'ring-amber-400', 'border-amber-500', 'bg-amber-50/60');
+                }, 3000);
+            }
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        }, 150);
+    }
+
+    // Real-time Score Calculation Script
+    function recalculateScores() {
+        const isLocked = @json($isStageLocked);
+        const lockedCatId = @json($lockedCategory?->id);
+
+        const status = getIncompleteCriteria();
 
         // Group subtotals & counts by category
         const catSubtotals = {};
@@ -836,9 +1027,7 @@
             const weight = parseFloat(row.getAttribute('data-weight')) || 1.0;
             const catWeight = parseFloat(row.getAttribute('data-cat-weight')) || 100.0;
             const input = document.getElementById('score_input_' + id);
-            const slider = document.getElementById('score_slider_' + id);
             const subEl = document.getElementById('subtotal_' + id);
-            const statusEl = document.getElementById('score_status_' + id);
 
             if (catSubtotals[catId] === undefined) {
                 catSubtotals[catId] = 0;
@@ -854,9 +1043,6 @@
                     if (val < 0) val = 0;
                     if (val > 100) val = 100;
 
-                    if (rows.includes(row)) {
-                        filledCount++;
-                    }
                     catRatedCounts[catId]++;
 
                     // Subtotal point in category
@@ -865,31 +1051,34 @@
 
                     if (subEl) {
                         subEl.innerText = 'Sub: ' + subInCat.toFixed(2);
-                        subEl.className = 'text-[11px] font-bold text-blue-600 weighted-subtotal-text';
+                        subEl.className = 'text-[11px] font-extrabold text-blue-600 weighted-subtotal-text block truncate';
                     }
-                    if (statusEl) {
-                        statusEl.innerText = '✓ ' + val;
-                        statusEl.className = 'ml-1 text-[11px] text-emerald-600 font-bold';
-                    }
-                    if (slider) {
-                        slider.classList.remove('opacity-50');
-                        slider.classList.add('accent-blue-600');
-                    }
-                    input.className = 'score-input w-full text-center py-1.5 px-1 bg-white rounded-xl border border-blue-500 font-black text-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs';
+                    input.className = 'score-input w-full text-center h-8 px-1 bg-white rounded-xl border border-blue-500 font-black text-slate-900 ring-1 ring-blue-500/20 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs';
+                    row.className = 'criterion-row p-3 rounded-2xl border transition-all duration-150 bg-white border-blue-200/90 shadow-2xs';
+
+                    // Update preset pill active states
+                    const pills = row.querySelectorAll('[class*="preset-pill-"]');
+                    pills.forEach(pill => {
+                        const pVal = parseFloat(pill.innerText.trim());
+                        if (pVal === val) {
+                            pill.className = `preset-pill-${id} px-2 py-0.5 rounded-md text-[10px] font-bold transition touch-action-manipulation bg-blue-600 text-white shadow-2xs`;
+                        } else {
+                            pill.className = `preset-pill-${id} px-2 py-0.5 rounded-md text-[10px] font-bold transition touch-action-manipulation bg-slate-50 border border-slate-200/80 text-slate-600 hover:bg-slate-100`;
+                        }
+                    });
                 } else {
                     if (subEl) {
-                        subEl.innerText = 'Sub: - (Belum)';
-                        subEl.className = 'text-[11px] font-semibold text-slate-400 weighted-subtotal-text';
+                        subEl.innerText = 'Belum';
+                        subEl.className = 'text-[11px] font-semibold text-slate-400 weighted-subtotal-text block truncate';
                     }
-                    if (statusEl) {
-                        statusEl.innerText = '(Kosong)';
-                        statusEl.className = 'ml-1 text-[11px] text-slate-400';
-                    }
-                    if (slider) {
-                        slider.classList.add('opacity-50');
-                        slider.classList.remove('accent-blue-600');
-                    }
-                    input.className = 'score-input w-full text-center py-1.5 px-1 bg-white rounded-xl border border-slate-300 font-normal text-lg text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs';
+                    input.className = 'score-input w-full text-center h-8 px-1 bg-white rounded-xl border border-slate-300 font-semibold text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs';
+                    row.className = 'criterion-row p-3 rounded-2xl border transition-all duration-150 bg-white border-slate-200/90 hover:border-slate-300';
+
+                    // Clear preset pills
+                    const pills = row.querySelectorAll('[class*="preset-pill-"]');
+                    pills.forEach(pill => {
+                        pill.className = `preset-pill-${id} px-2 py-0.5 rounded-md text-[10px] font-bold transition touch-action-manipulation bg-slate-50 border border-slate-200/80 text-slate-600 hover:bg-slate-100`;
+                    });
                 }
             }
         });
@@ -917,17 +1106,31 @@
             modalScoreEl.innerText = grandTotalWeighted.toFixed(2);
         }
 
-        // Update Progress Bar
+        // Update Progress Bar & Incomplete Badge Button
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
-        const pct = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
+        const incompleteBadgeBtn = document.getElementById('incompleteBadgeBtn');
+        const incompleteCountText = document.getElementById('incompleteCountText');
+
+        const pct = status.total > 0 ? Math.round((status.filled / status.total) * 100) : 0;
         if (progressBar) progressBar.style.width = pct + '%';
-        if (progressText) progressText.innerText = filledCount + ' / ' + totalCount + ' Kriteria Dinilai (' + pct + '%)';
+        if (progressText) progressText.innerText = status.filled + ' / ' + status.total + ' Kriteria Dinilai (' + pct + '%)';
+
+        if (incompleteBadgeBtn) {
+            if (status.incomplete.length > 0) {
+                incompleteBadgeBtn.classList.remove('hidden');
+                incompleteBadgeBtn.classList.add('inline-flex');
+                if (incompleteCountText) incompleteCountText.innerText = status.incomplete.length;
+            } else {
+                incompleteBadgeBtn.classList.add('hidden');
+                incompleteBadgeBtn.classList.remove('inline-flex');
+            }
+        }
 
         // Update Medal Preview
         const medalBadge = document.getElementById('medalBadge');
         if (medalBadge) {
-            if (filledCount === 0) {
+            if (status.filled === 0) {
                 medalBadge.className = 'px-3 py-1 rounded-full text-xs font-semibold shadow-xs bg-slate-100 text-slate-500';
                 medalBadge.innerText = 'Belum Dinilai';
             } else if (grandTotalWeighted >= 90) {
@@ -951,7 +1154,6 @@
 
     function syncFromInput(id) {
         const input = document.getElementById('score_input_' + id);
-        const slider = document.getElementById('score_slider_' + id);
         if (input) {
             const raw = input.value.trim();
             if (raw !== '') {
@@ -959,17 +1161,7 @@
                 if (isNaN(val)) val = 0;
                 if (val < 0) val = 0;
                 if (val > 100) val = 100;
-                if (slider) slider.value = val;
             }
-        }
-        recalculateScores();
-    }
-
-    function syncFromSlider(id) {
-        const input = document.getElementById('score_input_' + id);
-        const slider = document.getElementById('score_slider_' + id);
-        if (input && slider) {
-            input.value = slider.value;
         }
         recalculateScores();
     }
@@ -995,9 +1187,7 @@
 
     function clearScore(id) {
         const input = document.getElementById('score_input_' + id);
-        const slider = document.getElementById('score_slider_' + id);
         if (input) input.value = '';
-        if (slider) slider.value = 0;
         recalculateScores();
     }
 
@@ -1010,16 +1200,37 @@
             alert('Silakan pilih identitas juri Anda terlebih dahulu.');
             return false;
         }
+
+        const submitter = e?.submitter;
+        const isSubmitAction = submitter && submitter.value === 'submit';
+        if (isSubmitAction) {
+            const status = getIncompleteCriteria();
+            if (status.incomplete.length > 0) {
+                if (e) e.preventDefault();
+                openIncompleteModal();
+                return false;
+            }
+        }
         return true;
     }
 
     function confirmSubmit() {
+        // 1. Check judge selection
         const judgeInput = document.querySelector('input[name="judge_id"]');
         if (!judgeInput || !judgeInput.value) {
             openJudgeModal();
             alert('Silakan pilih identitas juri Anda terlebih dahulu.');
             return;
         }
+
+        // 2. Check complete criteria: If incomplete, do not allow Kirim Final & show incomplete items modal
+        const status = getIncompleteCriteria();
+        if (status.incomplete.length > 0) {
+            openIncompleteModal();
+            return;
+        }
+
+        // 3. All complete -> open confirmation modal
         document.getElementById('submitModal').classList.remove('hidden');
     }
 
@@ -1035,6 +1246,14 @@
             alert('Silakan pilih identitas juri Anda terlebih dahulu sebelum menyimpan penilaian.');
             return;
         }
+
+        const status = getIncompleteCriteria();
+        if (status.incomplete.length > 0) {
+            closeModal();
+            openIncompleteModal();
+            return;
+        }
+
         const form = document.getElementById('assessmentForm');
         const actionInput = document.createElement('input');
         actionInput.type = 'hidden';
