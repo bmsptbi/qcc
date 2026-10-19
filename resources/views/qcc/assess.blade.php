@@ -461,26 +461,27 @@
         <div class="fixed bottom-0 left-0 md:left-20 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl px-4 py-3 sm:py-4 transition-[left] duration-300">
             <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
                 
-                <!-- Live Total Score Display -->
+                <!-- Live Stage-Relative Score Display (Nilai Tertimbang Terhadap Parent Tahap) -->
                 <div class="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
                     <div>
-                        <span class="text-[10px] uppercase font-bold text-slate-400 block" id="floatingScoreLabel">
-                            {{ ($isStageLocked && $lockedCategory) ? 'Nilai Tahap (' . $lockedCategory->name . ')' : 'Total Nilai Tertimbang (Grand Score)' }}
-                        </span>
-                        <div class="flex items-baseline gap-1.5">
-                            <span id="floatingTotalScore" class="text-2xl sm:text-3xl font-black text-slate-900 leading-none">0.00</span>
-                            <span class="text-xs font-semibold text-slate-400">/ 10</span>
-                        </div>
-                        <span id="floatingScoreSub" class="text-[10px] text-slate-500 font-semibold block {{ ($isStageLocked && $lockedCategory) ? '' : 'hidden' }}">
+                        <span class="text-[10px] uppercase font-extrabold text-slate-500 tracking-wider block" id="floatingScoreLabel">
                             @if($isStageLocked && $lockedCategory)
-                                Bobot Tahap: {{ number_format($lockedCategory->weight_percentage, 0) }}% | Kontribusi: 0.00
+                                Nilai Tahap ({{ $lockedCategory->name }})
+                            @else
+                                Nilai Tertimbang Tahap
                             @endif
                         </span>
-                    </div>
-
-                    <!-- Medal Preview Badge -->
-                    <div id="medalBadge" class="px-3 py-1 rounded-full text-xs font-black shadow-xs bg-slate-100 text-slate-600">
-                        Belum Dinilai
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="floatingTotalScore" class="text-2xl sm:text-3xl font-black text-emerald-600 leading-none">0.00</span>
+                            <span class="text-xs font-bold text-slate-400">/ 10</span>
+                        </div>
+                        <span id="floatingScoreSub" class="text-[10px] text-slate-500 font-medium block">
+                            @if($isStageLocked && $lockedCategory)
+                                Bobot Tahap: {{ number_format($lockedCategory->weight_percentage, 0) }}% | Kontribusi: 0.00
+                            @else
+                                Nilai tertimbang terhadap parent (tahap)
+                            @endif
+                        </span>
                     </div>
                 </div>
 
@@ -897,10 +898,14 @@
         'name' => $c->name,
         'weight' => (float) $c->weight_percentage,
     ]]));
+    let currentActiveCatId = lockedCatId || (activeStageTab !== 'all' ? activeStageTab : null);
 
     // Tab Stage Switcher
     function selectStageTab(stageId) {
         activeStageTab = stageId;
+        if (stageId !== 'all') {
+            currentActiveCatId = stageId;
+        }
         const cards = document.querySelectorAll('.category-stage-card');
         const tabBtns = document.querySelectorAll('.stage-tab-btn');
 
@@ -1175,20 +1180,27 @@
             targetCatId = lockedCatId;
         } else if (activeStageTab && activeStageTab !== 'all') {
             targetCatId = activeStageTab;
+        } else if (currentActiveCatId && categoriesMeta[currentActiveCatId]) {
+            targetCatId = currentActiveCatId;
+        } else {
+            // Pick category with rated criteria, or the first available category
+            const ratedCatIds = Object.keys(catRatedCounts).filter(cid => catRatedCounts[cid] > 0);
+            if (ratedCatIds.length > 0) {
+                targetCatId = ratedCatIds[ratedCatIds.length - 1];
+            } else {
+                targetCatId = Object.keys(categoriesMeta)[0] || null;
+            }
         }
 
-        // Update Floating Score
+        // Update Floating Score (Nilai Tertimbang Terhadap Parent Tahap)
         const floatingEl = document.getElementById('floatingTotalScore');
         const floatingLabel = document.getElementById('floatingScoreLabel');
         const floatingSub = document.getElementById('floatingScoreSub');
-        const medalBadge = document.getElementById('medalBadge');
-
-        let displayScore = grandTotalWeighted;
 
         if (targetCatId && categoriesMeta[targetCatId]) {
             const catMeta = categoriesMeta[targetCatId];
             const stageScore = catSubtotals[targetCatId] !== undefined ? catSubtotals[targetCatId] : 0;
-            displayScore = stageScore;
+            const contribution = (stageScore * catMeta.weight) / 100;
 
             if (floatingLabel) {
                 floatingLabel.innerText = 'Nilai Tahap (' + catMeta.name + ')';
@@ -1197,19 +1209,17 @@
                 floatingEl.innerText = stageScore.toFixed(2);
             }
             if (floatingSub) {
-                const contribution = (stageScore * catMeta.weight) / 100;
-                floatingSub.innerText = 'Bobot Tahap: ' + catMeta.weight + '% | Kontribusi: ' + contribution.toFixed(2);
-                floatingSub.classList.remove('hidden');
+                floatingSub.innerText = 'Bobot Tahap: ' + catMeta.weight + '% | Kontribusi ke Nilai Akhir: ' + contribution.toFixed(2);
             }
         } else {
             if (floatingLabel) {
-                floatingLabel.innerText = 'Total Nilai Tertimbang (Grand Score)';
+                floatingLabel.innerText = 'Nilai Tertimbang Tahap';
             }
             if (floatingEl) {
                 floatingEl.innerText = grandTotalWeighted.toFixed(2);
             }
             if (floatingSub) {
-                floatingSub.classList.add('hidden');
+                floatingSub.innerText = 'Nilai tertimbang terhadap parent (tahap)';
             }
         }
 
@@ -1313,30 +1323,6 @@
                 incompleteBadgeBtn.classList.remove('inline-flex');
             }
         }
-
-        // Update Medal Preview (Skala 0 - 10)
-        if (medalBadge) {
-            const scoreForMedal = displayScore;
-            if (status.filled === 0) {
-                medalBadge.className = 'px-3 py-1 rounded-full text-xs font-semibold shadow-xs bg-slate-100 text-slate-500';
-                medalBadge.innerText = 'Belum Dinilai';
-            } else if (scoreForMedal >= 9.0) {
-                medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-cyan-500 to-blue-600 text-white';
-                medalBadge.innerText = '★ Diamond (' + scoreForMedal.toFixed(2) + ')';
-            } else if (scoreForMedal >= 8.5) {
-                medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-slate-300 to-slate-500 text-white';
-                medalBadge.innerText = '★ Platinum (' + scoreForMedal.toFixed(2) + ')';
-            } else if (scoreForMedal >= 8.0) {
-                medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-amber-400 to-amber-600 text-white';
-                medalBadge.innerText = '★ Gold (' + scoreForMedal.toFixed(2) + ')';
-            } else if (scoreForMedal >= 7.5) {
-                medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-slate-200 to-slate-400 text-slate-800';
-                medalBadge.innerText = '★ Silver (' + scoreForMedal.toFixed(2) + ')';
-            } else {
-                medalBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs bg-gradient-to-r from-amber-700 to-amber-900 text-amber-100';
-                medalBadge.innerText = '★ Bronze (' + scoreForMedal.toFixed(2) + ')';
-            }
-        }
     }
 
     let scoreWarningTimer = null;
@@ -1356,7 +1342,18 @@
         }
     }
 
+    function syncActiveCategoryByCriterion(id) {
+        const row = document.querySelector(`.criterion-row[data-criterion-id="${id}"]`);
+        if (row) {
+            const catId = row.getAttribute('data-category-id');
+            if (catId) {
+                currentActiveCatId = catId;
+            }
+        }
+    }
+
     function handleScoreInput(id) {
+        syncActiveCategoryByCriterion(id);
         const input = document.getElementById('score_input_' + id);
         if (!input) return;
 
@@ -1393,6 +1390,7 @@
     }
 
     function adjustScore(id, delta) {
+        syncActiveCategoryByCriterion(id);
         const input = document.getElementById('score_input_' + id);
         if (input) {
             let current = parseFloat(input.value);
@@ -1412,6 +1410,7 @@
     }
 
     function setPresetScore(id, val) {
+        syncActiveCategoryByCriterion(id);
         const input = document.getElementById('score_input_' + id);
         if (input) {
             input.value = Math.min(10, Math.max(0, val));
@@ -1420,10 +1419,34 @@
     }
 
     function clearScore(id) {
+        syncActiveCategoryByCriterion(id);
         const input = document.getElementById('score_input_' + id);
         if (input) input.value = '';
         recalculateScores();
     }
+
+    // Auto-detect Active Stage when user focuses/clicks on any criterion
+    document.addEventListener('focusin', function(e) {
+        const row = e.target.closest('.criterion-row');
+        if (row) {
+            const catId = row.getAttribute('data-category-id');
+            if (catId && catId !== currentActiveCatId) {
+                currentActiveCatId = catId;
+                recalculateScores();
+            }
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        const row = e.target.closest('.criterion-row');
+        if (row) {
+            const catId = row.getAttribute('data-category-id');
+            if (catId && catId !== currentActiveCatId) {
+                currentActiveCatId = catId;
+                recalculateScores();
+            }
+        }
+    });
 
     // Validation & Submit Handlers
     function validateBeforeSubmit(e) {
