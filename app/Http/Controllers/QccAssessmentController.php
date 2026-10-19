@@ -279,7 +279,13 @@ class QccAssessmentController extends Controller
         $validScores = [];
         foreach ($scoresInput as $criterionId => $scoreVal) {
             if ($scoreVal !== null && $scoreVal !== '' && is_numeric($scoreVal)) {
-                $validScores[$criterionId] = max(0, min(100, (float) $scoreVal));
+                $scoreNum = (float) $scoreVal;
+                if ($scoreNum > 100 || $scoreNum < 0) {
+                    return back()
+                        ->withInput()
+                        ->with('error', 'Nilai butir penilaian tidak boleh lebih dari 100 atau kurang dari 0.');
+                }
+                $validScores[$criterionId] = $scoreNum;
             }
         }
 

@@ -269,7 +269,9 @@
                                 </span>
                             </div>
                         </div>
-                                 <!-- Criteria Items List (Ultra-Compact Layout) -->
+                    </div>
+
+                    <!-- Criteria Items List (Ultra-Compact Layout) -->
                     <div class="p-3 sm:p-4 space-y-2.5">
                         @foreach($cat->criteria as $criterion)
                             @php
@@ -307,9 +309,9 @@
                                                 </span>
                                                 @if($criterion->guidelines)
                                                     <button type="button" onclick="toggleRubric({{ $criterion->id }})" 
-                                                        class="inline-flex items-center gap-0.5 text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50/80 px-1.5 py-0.5 rounded-md hover:bg-blue-100 transition flex-shrink-0"
-                                                        title="Buka panduan rubrik penilaian">
-                                                        <span>📖 Rubrik</span>
+                                                        class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50/80 px-2 py-0.5 rounded-md hover:bg-blue-100 transition flex-shrink-0"
+                                                        title="Buka petunjuk dan pedoman penilaian butir ini">
+                                                        <span>📋 Petunjuk Nilai</span>
                                                     </button>
                                                 @endif
                                             </div>
@@ -332,7 +334,7 @@
                                                 value="{{ $isRated ? (float)$currentVal : '' }}"
                                                 min="0" max="100" step="1"
                                                 placeholder="-"
-                                                oninput="syncFromInput({{ $criterion->id }})"
+                                                oninput="handleScoreInput({{ $criterion->id }})"
                                                 class="score-input w-full text-center h-8 px-1 bg-white rounded-xl border {{ $isRated ? 'border-blue-500 font-black text-slate-900 ring-1 ring-blue-500/20' : 'border-slate-300 font-semibold text-slate-400' }} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs">
                                         </div>
 
@@ -385,13 +387,15 @@
 
                                 <!-- Collapsible Rubric Guidelines -->
                                 @if($criterion->guidelines)
-                                    <div id="rubric_box_{{ $criterion->id }}" class="hidden mt-2 p-2.5 bg-amber-50/80 border border-amber-200/70 rounded-xl text-xs text-amber-900 leading-relaxed">
+                                    <div id="rubric_box_{{ $criterion->id }}" class="hidden mt-2 p-3 bg-amber-50/90 border border-amber-200/80 rounded-xl text-xs text-amber-950 leading-relaxed shadow-2xs">
                                         <div class="flex items-start justify-between gap-2">
                                             <div>
-                                                <strong class="font-bold block text-[11px] text-amber-950 mb-0.5">Panduan Rubrik Penilaian:</strong>
-                                                <span>{{ $criterion->guidelines }}</span>
+                                                <strong class="font-bold flex items-center gap-1.5 text-xs text-amber-900 mb-1">
+                                                    <span>📌</span> Petunjuk / Pedoman Penilaian Butir Ini:
+                                                </strong>
+                                                <span class="text-slate-700 leading-relaxed">{{ $criterion->guidelines }}</span>
                                             </div>
-                                            <button type="button" onclick="toggleRubric({{ $criterion->id }})" class="text-amber-700 hover:text-amber-900 font-black text-sm">&times;</button>
+                                            <button type="button" onclick="toggleRubric({{ $criterion->id }})" class="text-amber-700 hover:text-amber-900 font-black text-sm p-1 leading-none">&times;</button>
                                         </div>
                                     </div>
                                 @endif
@@ -439,6 +443,14 @@
                 <textarea name="feedback_improvements" rows="3" 
                     placeholder="Tuliskan masukan untuk peningkatan standarisasi, analisis risiko, atau langkah perbaikan berikutnya..."
                     class="w-full p-3 rounded-2xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">{{ old('feedback_improvements', $existingAssessment?->feedback_improvements ?? '') }}</textarea>
+            </div>
+        </div>
+
+        <!-- Floating Toast Warning for Score Validation -->
+        <div id="scoreWarningToast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 opacity-0 pointer-events-none -translate-y-4 max-w-md w-[92%] sm:w-auto">
+            <div class="bg-rose-600 text-white text-xs sm:text-sm font-bold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 border border-rose-400/50">
+                <span class="text-base sm:text-lg">⚠️</span>
+                <span id="scoreWarningMessage">Nilai maksimal adalah 100!</span>
             </div>
         </div>
 
@@ -1152,18 +1164,57 @@
         }
     }
 
-    function syncFromInput(id) {
-        const input = document.getElementById('score_input_' + id);
-        if (input) {
-            const raw = input.value.trim();
-            if (raw !== '') {
-                let val = parseInt(raw);
-                if (isNaN(val)) val = 0;
-                if (val < 0) val = 0;
-                if (val > 100) val = 100;
-            }
+    let scoreWarningTimer = null;
+    function showScoreWarning(message) {
+        const toast = document.getElementById('scoreWarningToast');
+        const msgEl = document.getElementById('scoreWarningMessage');
+        if (msgEl) msgEl.innerText = message;
+        if (toast) {
+            toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            if (scoreWarningTimer) clearTimeout(scoreWarningTimer);
+            scoreWarningTimer = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-4');
+            }, 3000);
         }
+    }
+
+    function handleScoreInput(id) {
+        const input = document.getElementById('score_input_' + id);
+        if (!input) return;
+
+        const raw = input.value.trim();
+        if (raw === '') {
+            recalculateScores();
+            return;
+        }
+
+        let val = parseFloat(raw);
+        if (isNaN(val)) {
+            input.value = '';
+            recalculateScores();
+            return;
+        }
+
+        if (val > 100) {
+            input.value = 100;
+            showScoreWarning('Nilai tidak boleh lebih dari 100! (Skala nilai: 0 - 100)');
+            input.classList.add('ring-2', 'ring-rose-500', 'border-rose-500');
+            setTimeout(() => {
+                input.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500');
+            }, 1500);
+        } else if (val < 0) {
+            input.value = 0;
+            showScoreWarning('Nilai minimal adalah 0! (Skala nilai: 0 - 100)');
+        }
+
         recalculateScores();
+    }
+
+    function syncFromInput(id) {
+        handleScoreInput(id);
     }
 
     function adjustScore(id, delta) {
@@ -1171,17 +1222,25 @@
         if (input) {
             let current = parseInt(input.value);
             if (isNaN(current)) current = 75; // Starting point if adjusting from blank
-            let next = Math.max(0, Math.min(100, current + delta));
-            input.value = next;
-            syncFromInput(id);
+            let next = current + delta;
+            if (next > 100) {
+                input.value = 100;
+                showScoreWarning('Nilai sudah mencapai batas maksimal 100!');
+            } else if (next < 0) {
+                input.value = 0;
+                showScoreWarning('Nilai minimal adalah 0!');
+            } else {
+                input.value = next;
+            }
+            recalculateScores();
         }
     }
 
     function setPresetScore(id, val) {
         const input = document.getElementById('score_input_' + id);
         if (input) {
-            input.value = val;
-            syncFromInput(id);
+            input.value = Math.min(100, Math.max(0, val));
+            recalculateScores();
         }
     }
 
