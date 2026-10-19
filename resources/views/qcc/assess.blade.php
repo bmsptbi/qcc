@@ -522,17 +522,33 @@
             @endif
         </div>
 
-        <p class="text-xs text-slate-600 font-medium">
-            Silakan klik nama Anda untuk membuka & mengisi formulir penilaian:
-        </p>
+        <!-- Search Input Field -->
+        <div class="relative">
+            <input type="text"
+                id="searchJudgeInput"
+                oninput="filterJudgesList()"
+                placeholder="Cari nama juri, NIK, atau departemen..."
+                class="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition shadow-inner">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <button type="button" 
+                onclick="clearJudgeSearch()" 
+                id="clearJudgeSearchBtn" 
+                class="hidden text-slate-400 hover:text-slate-600 absolute right-2.5 top-2.5 text-base font-bold w-5 h-5 flex items-center justify-center">
+                &times;
+            </button>
+        </div>
 
-        <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+        <div class="space-y-2 max-h-72 overflow-y-auto pr-1" id="judgeListContainer">
             @forelse($selectableJudges as $j)
                 @php
                     $isAssessed = in_array($j->id, $assessedJudgeIds ?? []);
+                    $searchData = strtolower($j->name . ' ' . ($j->nik ?? '') . ' ' . ($j->department->name ?? ''));
                 @endphp
                 <button type="button" onclick="selectJudge({{ $j->id }})" 
-                    class="w-full text-left p-3 rounded-2xl border transition flex items-center justify-between gap-3 {{ $currentJudge?->id == $j->id ? 'bg-blue-50/80 border-blue-400 text-blue-950 font-bold shadow-xs' : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-blue-50/60 hover:border-blue-300' }}">
+                    data-search="{{ $searchData }}"
+                    class="judge-item-btn w-full text-left p-3 rounded-2xl border transition flex items-center justify-between gap-3 {{ $currentJudge?->id == $j->id ? 'bg-blue-50/80 border-blue-400 text-blue-950 font-bold shadow-xs' : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-blue-50/60 hover:border-blue-300' }}">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
                             {{ strtoupper(substr($j->name, 0, 1)) }}
@@ -560,6 +576,11 @@
                     Tidak ada juri yang cocok dengan penugasan link ini.
                 </div>
             @endforelse
+
+            <div id="noJudgesFound" class="hidden text-center py-6 text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">
+                <span class="text-base block mb-1">🔍</span>
+                Tidak ada juri yang cocok dengan pencarian "<span id="searchKeywordDisplay" class="font-bold text-slate-800"></span>".
+            </div>
         </div>
 
         @if(! $mustSelectJudge)
@@ -1344,9 +1365,65 @@
         openJudgeModal();
     }
 
-    // Judge Switcher Modal Handlers
+    // Judge Switcher Modal & Search Handlers
+    function filterJudgesList() {
+        const input = document.getElementById('searchJudgeInput');
+        const clearBtn = document.getElementById('clearJudgeSearchBtn');
+        const noResults = document.getElementById('noJudgesFound');
+        const keywordDisplay = document.getElementById('searchKeywordDisplay');
+        
+        if (!input) return;
+        const query = input.value.trim().toLowerCase();
+        
+        if (clearBtn) {
+            if (query.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+        }
+
+        const items = document.querySelectorAll('.judge-item-btn');
+        let visibleCount = 0;
+
+        items.forEach(item => {
+            const searchText = item.getAttribute('data-search') || '';
+            if (query === '' || searchText.includes(query)) {
+                item.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                item.classList.add('hidden');
+            }
+        });
+
+        if (noResults) {
+            if (visibleCount === 0 && query !== '') {
+                noResults.classList.remove('hidden');
+                if (keywordDisplay) keywordDisplay.innerText = input.value.trim();
+            } else {
+                noResults.classList.add('hidden');
+            }
+        }
+    }
+
+    function clearJudgeSearch() {
+        const input = document.getElementById('searchJudgeInput');
+        if (input) {
+            input.value = '';
+            input.focus();
+            filterJudgesList();
+        }
+    }
+
     function openJudgeModal() {
-        document.getElementById('judgeModal').classList.remove('hidden');
+        const modal = document.getElementById('judgeModal');
+        if (modal) modal.classList.remove('hidden');
+        const input = document.getElementById('searchJudgeInput');
+        if (input) {
+            input.value = '';
+            filterJudgesList();
+            setTimeout(() => input.focus(), 150);
+        }
     }
 
     function closeJudgeModal() {
@@ -1456,6 +1533,14 @@
             selectStageTab(activeStageTab);
         }
         recalculateScores();
+
+        const judgeModal = document.getElementById('judgeModal');
+        if (judgeModal && !judgeModal.classList.contains('hidden')) {
+            const searchInput = document.getElementById('searchJudgeInput');
+            if (searchInput) {
+                setTimeout(() => searchInput.focus(), 250);
+            }
+        }
     });
 </script>
 @endpush
