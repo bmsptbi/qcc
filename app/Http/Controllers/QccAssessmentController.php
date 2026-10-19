@@ -139,7 +139,6 @@ class QccAssessmentController extends Controller
         $circle->load(['period', 'category', 'department', 'leader', 'facilitator', 'members']);
 
         $allJudges = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->get();
-        $mustSelectJudge = false;
         $allowedJudgeIds = [];
 
         // Deteksi jika link dikhususkan untuk multiple juri (?judges=1,3)
@@ -147,44 +146,7 @@ class QccAssessmentController extends Controller
             $allowedJudgeIds = array_values(array_map('intval', array_filter(explode(',', (string) $request->query('judges')))));
         }
 
-        // Check if judge_id is explicitly passed in query
-        if ($request->filled('judge_id')) {
-            $sharedJudge = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->find($request->query('judge_id'));
-            if ($sharedJudge) {
-                session(['active_judge_id' => $sharedJudge->id]);
-            }
-        } elseif (! empty($allowedJudgeIds)) {
-            if (count($allowedJudgeIds) === 1) {
-                $sharedJudge = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->find($allowedJudgeIds[0]);
-                if ($sharedJudge) {
-                    session(['active_judge_id' => $sharedJudge->id]);
-                }
-            } else {
-                // Link ditujukan ke multiple juri: wajib memilih nama saat buka form!
-                $sessionJudgeId = session('active_judge_id');
-                if (! $sessionJudgeId || ! in_array((int) $sessionJudgeId, $allowedJudgeIds, true) || $request->has('choose_judge')) {
-                    $mustSelectJudge = true;
-                    session()->forget('active_judge_id');
-                }
-            }
-        } elseif ($request->has('choose_judge')) {
-            $mustSelectJudge = true;
-        }
-
-        $currentJudgeId = session('active_judge_id', Auth::check() ? Auth::id() : null);
-        $currentJudge = $currentJudgeId ? User::find($currentJudgeId) : null;
-
-        // Jika belum ada juri terpilih, juri harus memilih nama terlebih dahulu
-        if (! $currentJudge) {
-            $mustSelectJudge = true;
-        }
-
-        // Tentukan daftar juri yang boleh dipilih pada form
-        $selectableJudges = ! empty($allowedJudgeIds)
-            ? $allJudges->whereIn('id', $allowedJudgeIds)
-            : $allJudges;
-
-        // Check if category_id or stage_id is passed in query (share stage setup)
+        // Setup Tahap Penilaian yang Aktif / Terkunci
         $activeCategoryId = $request->query('category_id') ?? $request->query('stage_id');
         if (! $activeCategoryId && $request->filled('stage')) {
             $stageName = $request->query('stage');
@@ -193,6 +155,43 @@ class QccAssessmentController extends Controller
                 $activeCategoryId = $matched->id;
             }
         }
+
+        $isStageLocked = false;
+        $lockedCategory = null;
+        if ($activeCategoryId && $activeCategoryId !== 'all') {
+            $lockedCategory = CriteriaCategory::with('criteria')->find($activeCategoryId);
+            if ($lockedCategory) {
+                $isStageLocked = true;
+            } else {
+                $activeCategoryId = 'all';
+            }
+        } else {
+            $activeCategoryId = 'all';
+        }
+
+        // Resolusi Juri Aktif:
+        // Selalu tampil memilih nama juri dulu saat membuka form (tidak mengambil dari cache session)
+        $currentJudge = null;
+        $mustSelectJudge = true;
+
+        if ($request->filled('judge_id')) {
+            $chosenJudge = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))
+                ->find($request->query('judge_id'));
+
+            if ($chosenJudge) {
+                $currentJudge = $chosenJudge;
+                $mustSelectJudge = false;
+                session(['active_judge_id' => $currentJudge->id]);
+            }
+        } else {
+            // Bersihkan session active_judge_id agar tidak memakai cache juri lama
+            session()->forget('active_judge_id');
+        }
+
+        // Tentukan daftar juri yang boleh dipilih pada form
+        $selectableJudges = ! empty($allowedJudgeIds)
+            ? $allJudges->whereIn('id', $allowedJudgeIds)
+            : $allJudges;
 
         // Get all criteria grouped by category
         $categoriesWithCriteria = CriteriaCategory::with(['criteria' => function ($q) {
@@ -205,7 +204,7 @@ class QccAssessmentController extends Controller
             }
         }
 
-        // Check if judge has an existing draft/submission
+        // Ambil data penilaian yang sudah pernah diisi oleh juri aktif
         $existingAssessment = $currentJudge
             ? Assessment::with('scores')
                 ->where('circle_id', $circle->id)
@@ -217,6 +216,29 @@ class QccAssessmentController extends Controller
             ? $existingAssessment->scores->keyBy('assessment_criterion_id')
             : collect();
 
+        // Cek apakah juri aktif sudah pernah menilai circle & tahap ini
+        $hasAlreadyAssessed = false;
+        if ($currentJudge && $existingAssessment) {
+            if ($isStageLocked && $lockedCategory) {
+                $lockedCriteriaIds = $lockedCategory->criteria->pluck('id');
+                $hasAlreadyAssessed = $lockedCriteriaIds->isNotEmpty()
+                    && $existingScores->keys()->intersect($lockedCriteriaIds)->isNotEmpty();
+            } else {
+                $hasAlreadyAssessed = ($existingAssessment->status === 'submitted') || $existingScores->isNotEmpty();
+            }
+        }
+
+        // Cari ID seluruh juri yang sudah pernah menilai gugus ini (dan tahap ini jika terkunci)
+        $lockedCriteriaIds = ($isStageLocked && $lockedCategory) ? $lockedCategory->criteria->pluck('id') : null;
+        $assessedJudgeIds = Assessment::where('circle_id', $circle->id)
+            ->whereHas('scores', function ($q) use ($lockedCriteriaIds) {
+                if ($lockedCriteriaIds && $lockedCriteriaIds->isNotEmpty()) {
+                    $q->whereIn('assessment_criterion_id', $lockedCriteriaIds);
+                }
+            })
+            ->pluck('judge_id')
+            ->toArray();
+
         return view('qcc.assess', compact(
             'circle',
             'currentJudge',
@@ -225,9 +247,13 @@ class QccAssessmentController extends Controller
             'existingScores',
             'allJudges',
             'activeCategoryId',
+            'isStageLocked',
+            'lockedCategory',
             'mustSelectJudge',
             'selectableJudges',
-            'allowedJudgeIds'
+            'allowedJudgeIds',
+            'hasAlreadyAssessed',
+            'assessedJudgeIds'
         ));
     }
 
@@ -237,7 +263,7 @@ class QccAssessmentController extends Controller
     public function storeAssessment(Request $request, Circle $circle): RedirectResponse
     {
         $judgeId = $request->input('judge_id') ?? session('active_judge_id', Auth::id());
-        $judge = User::find($judgeId) ?? User::where('role', 'judge')->first();
+        $judge = User::find($judgeId) ?? User::role('judge')->first();
 
         if (! $judge) {
             return back()->with('error', 'Juri penilai tidak ditemukan.');

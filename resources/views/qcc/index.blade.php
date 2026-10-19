@@ -242,7 +242,7 @@
                             </a>
 
                             <!-- Admin QR & Link Penilaian Button (Only visible for Admin) -->
-                            @if(Auth::check() && Auth::user()->role === 'admin')
+                            @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
                                 <button type="button" 
                                     onclick="openShareModalForCircle({{ $circle->id }}, '{{ addslashes($circle->circle_name) }}', '{{ $circle->circle_code }}', '{{ addslashes($circle->theme_title) }}')"
                                     class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-2xs"
@@ -279,7 +279,7 @@
 
 </div>
 
-@if(Auth::check() && Auth::user()->role === 'admin')
+@if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
 <!-- Modal Admin: Bagikan Link & QR Code Penilaian -->
 <div id="shareModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
@@ -441,9 +441,7 @@
         if (stageVal && stageVal !== 'all') {
             url.searchParams.set('category_id', stageVal);
         }
-        if (checkedJudges.length === 1) {
-            url.searchParams.set('judge_id', checkedJudges[0]);
-        } else if (checkedJudges.length > 1) {
+        if (checkedJudges.length > 0) {
             url.searchParams.set('judges', checkedJudges.join(','));
         }
 

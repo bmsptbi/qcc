@@ -77,7 +77,7 @@
             </button>
 
             <!-- Button Share Link Penilaian (Hanya untuk Admin) -->
-            @if(Auth::check() && Auth::user()->role === 'admin')
+            @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
                 <button type="button" onclick="openShareModal()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-950/20" title="Buat Link & QR Code Penilaian">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
@@ -136,13 +136,14 @@
     </div>
 
     <!-- Assessment Form Start -->
-    <form id="assessmentForm" method="POST" action="{{ route('qcc.circles.assess.store', $circle) }}">
+    <form id="assessmentForm" method="POST" action="{{ route('qcc.circles.assess.store', $circle) }}" onsubmit="return validateBeforeSubmit(event)">
         @csrf
 
         <!-- Hidden input for active judge id -->
         <input type="hidden" name="judge_id" value="{{ $currentJudge?->id }}">
 
         <!-- Stage Filter Navigation Tabs (Setup Tahap Yang Tampil) -->
+        @if(! $isStageLocked)
         <div class="mb-6">
             <div class="flex items-center justify-between gap-2 mb-2.5">
                 <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -174,6 +175,41 @@
                 @endforeach
             </div>
         </div>
+        @else
+        <!-- Locked Stage Banner (Tidak Menampilkan Pilihan Tahap Agar Tidak Bisa Pindah Tahap) -->
+        <div class="mb-6 p-4.5 rounded-3xl bg-gradient-to-r from-blue-50 via-indigo-50/60 to-slate-50 border border-blue-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-blue-500/20 flex-shrink-0">
+                    🎯
+                </div>
+                <div>
+                    <span class="text-[10px] font-black uppercase tracking-wider text-blue-600 block">Fokus Penilaian Tahap Tertentu</span>
+                    <h3 class="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                        {{ $lockedCategory?->name ?? 'Tahap Penilaian Khusus' }}
+                    </h3>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="px-3.5 py-1.5 rounded-xl bg-white text-blue-700 font-extrabold text-xs sm:text-sm shadow-2xs border border-blue-200">
+                    Bobot Tahap: {{ number_format($lockedCategory?->weight_percentage ?? 0, 0) }}%
+                </span>
+            </div>
+        </div>
+        @endif
+
+        <!-- Edit Mode Active Notification Banner -->
+        <div id="editModeBanner" class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-3 {{ ($hasAlreadyAssessed && request()->has('edit_confirmed')) ? '' : 'hidden' }}">
+            <div class="flex items-center gap-2.5">
+                <span class="text-xl">✏️</span>
+                <div>
+                    <strong class="font-bold block text-sm">Mode Edit Penilaian Aktif</strong>
+                    <span>Nilai yang telah tersimpan sebelumnya sudah dimuat ke form. Anda dapat melakukan perubahan penilaian dan menyimpan kembali.</span>
+                </div>
+            </div>
+            <button type="button" onclick="document.getElementById('editModeBanner').classList.add('hidden')" class="text-amber-600 hover:text-amber-800 font-bold text-base leading-none">
+                &times;
+            </button>
+        </div>
 
         <!-- Progress Indicator -->
         <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs mb-6">
@@ -189,8 +225,11 @@
         <!-- Loop PDCA Categories -->
         <div class="space-y-6">
             @foreach($categoriesWithCriteria as $categoryIndex => $cat)
+                @php
+                    $isCategoryHidden = $isStageLocked ? ($cat->id !== $lockedCategory?->id) : ($activeCategoryId && $activeCategoryId !== 'all' && $activeCategoryId != $cat->id);
+                @endphp
                 <div id="stage_card_{{ $cat->id }}" data-category-id="{{ $cat->id }}" 
-                    class="category-stage-card bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden {{ ($activeCategoryId && $activeCategoryId != 'all' && $activeCategoryId != $cat->id) ? 'hidden' : '' }}">
+                    class="category-stage-card bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden {{ $isCategoryHidden ? 'hidden' : '' }}">
                     
                     <!-- Category Header -->
                     <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-800 text-white p-4 sm:p-5 flex items-center justify-between">
@@ -473,6 +512,9 @@
 
         <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
             @forelse($selectableJudges as $j)
+                @php
+                    $isAssessed = in_array($j->id, $assessedJudgeIds ?? []);
+                @endphp
                 <button type="button" onclick="selectJudge({{ $j->id }})" 
                     class="w-full text-left p-3 rounded-2xl border transition flex items-center justify-between gap-3 {{ $currentJudge?->id == $j->id ? 'bg-blue-50/80 border-blue-400 text-blue-950 font-bold shadow-xs' : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-blue-50/60 hover:border-blue-300' }}">
                     <div class="flex items-center gap-2.5">
@@ -484,11 +526,18 @@
                             <span class="text-[10px] text-slate-400">{{ $j->nik ?? 'NIK: -' }} • {{ $j->department->name ?? 'Dewan Juri' }}</span>
                         </div>
                     </div>
-                    @if($currentJudge?->id == $j->id)
-                        <span class="text-xs font-black text-blue-600">Aktif</span>
-                    @else
-                        <span class="text-xs font-semibold text-blue-600">Pilih &rarr;</span>
-                    @endif
+                    <div class="flex items-center gap-2">
+                        @if($isAssessed)
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                                <span>✓</span> Sudah Menilai
+                            </span>
+                        @endif
+                        @if($currentJudge?->id == $j->id)
+                            <span class="text-xs font-black text-blue-600">Aktif</span>
+                        @else
+                            <span class="text-xs font-semibold text-blue-600">Pilih &rarr;</span>
+                        @endif
+                    </div>
                 </button>
             @empty
                 <div class="text-center py-6 text-xs text-slate-400">
@@ -507,8 +556,79 @@
     </div>
 </div>
 
+<!-- Popup Konfirmasi Edit Penilaian Jika Juri Sudah Pernah Menilai -->
+@if($hasAlreadyAssessed && !request()->has('edit_confirmed') && $currentJudge)
+<div id="alreadyAssessedModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-2xl mx-auto shadow-inner">
+            ⚠️
+        </div>
+
+        <div class="text-center space-y-2">
+            <h3 class="text-lg font-black text-slate-900">
+                Pemberitahuan: Penilaian Sudah Terisi
+            </h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Halo <strong class="text-slate-900">{{ $currentJudge->name }}</strong>, Anda tercatat <strong>sudah pernah mengisi penilaian</strong> untuk gugus <strong class="text-blue-700">{{ $circle->circle_name }}</strong>
+                @if($isStageLocked && $lockedCategory)
+                    pada tahap <strong class="text-indigo-700">{{ $lockedCategory->name }}</strong>
+                @endif.
+            </p>
+        </div>
+
+        <div class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 text-xs space-y-2">
+            <div class="flex items-center justify-between text-slate-600">
+                <span>Status Penilaian:</span>
+                <span class="font-bold px-2 py-0.5 rounded-full {{ $existingAssessment?->status === 'submitted' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
+                    {{ $existingAssessment?->status === 'submitted' ? '✓ Final (Submitted)' : 'Draft Tersimpan' }}
+                </span>
+            </div>
+            <div class="flex items-center justify-between text-slate-600">
+                <span>Total Nilai Tersimpan:</span>
+                <span class="font-black text-blue-700 text-sm">
+                    {{ number_format($existingAssessment?->final_score ?? $existingAssessment?->weighted_score ?? $existingAssessment?->total_score ?? 0, 2) }} / 100
+                </span>
+            </div>
+            @if($existingAssessment?->submitted_at)
+                <div class="flex items-center justify-between text-slate-500 text-[11px]">
+                    <span>Waktu Submit:</span>
+                    <span>{{ $existingAssessment->submitted_at->format('d M Y, H:i') }} WIB</span>
+                </div>
+            @elseif($existingAssessment?->updated_at)
+                <div class="flex items-center justify-between text-slate-500 text-[11px]">
+                    <span>Terakhir Disimpan:</span>
+                    <span>{{ $existingAssessment->updated_at->format('d M Y, H:i') }} WIB</span>
+                </div>
+            @endif
+        </div>
+
+        <p class="text-center text-xs font-semibold text-slate-700">
+            Apakah Anda ingin mengedit penilaian yang sudah ada?
+        </p>
+
+        <div class="pt-1 space-y-2">
+            <button type="button" onclick="confirmEditAssessment()" 
+                class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs sm:text-sm shadow-md shadow-orange-500/25 transition flex items-center justify-center gap-2 touch-action-manipulation">
+                <span>✏️ Ya, Edit / Perbarui Penilaian</span>
+            </button>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="openJudgeModalFromAssessed()" 
+                    class="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition text-center">
+                    Ganti Juri Lain
+                </button>
+                <a href="{{ route('qcc.index') }}" 
+                    class="py-2.5 px-3 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition text-center">
+                    Ke Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 <!-- Modal Bagikan Link & QR Code Penilaian (Hanya untuk Admin) -->
-@if(Auth::check() && Auth::user()->role === 'admin')
+@if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
 <div id="shareModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
         
@@ -682,11 +802,25 @@
                 card.classList.add('hidden');
             }
         });
+        recalculateScores();
     }
 
     // Real-time Score Calculation Script (Default NULL aware)
     function recalculateScores() {
-        const rows = document.querySelectorAll('.criterion-row');
+        const isLocked = @json($isStageLocked);
+        const lockedCatId = @json($lockedCategory?->id);
+
+        const rows = Array.from(document.querySelectorAll('.criterion-row')).filter(row => {
+            const catId = row.getAttribute('data-category-id');
+            if (isLocked && lockedCatId) {
+                return catId == lockedCatId;
+            }
+            if (activeStageTab && activeStageTab !== 'all') {
+                return catId == activeStageTab;
+            }
+            return true;
+        });
+
         let filledCount = 0;
         const totalCount = rows.length;
 
@@ -695,7 +829,8 @@
         const catWeights = {};
         const catRatedCounts = {};
 
-        rows.forEach(row => {
+        const allRows = document.querySelectorAll('.criterion-row');
+        allRows.forEach(row => {
             const id = row.getAttribute('data-criterion-id');
             const catId = row.getAttribute('data-category-id');
             const weight = parseFloat(row.getAttribute('data-weight')) || 1.0;
@@ -719,7 +854,9 @@
                     if (val < 0) val = 0;
                     if (val > 100) val = 100;
 
-                    filledCount++;
+                    if (rows.includes(row)) {
+                        filledCount++;
+                    }
                     catRatedCounts[catId]++;
 
                     // Subtotal point in category
@@ -864,8 +1001,25 @@
         recalculateScores();
     }
 
-    // Modal Handlers
+    // Validation & Submit Handlers
+    function validateBeforeSubmit(e) {
+        const judgeInput = document.querySelector('input[name="judge_id"]');
+        if (!judgeInput || !judgeInput.value) {
+            if (e) e.preventDefault();
+            openJudgeModal();
+            alert('Silakan pilih identitas juri Anda terlebih dahulu.');
+            return false;
+        }
+        return true;
+    }
+
     function confirmSubmit() {
+        const judgeInput = document.querySelector('input[name="judge_id"]');
+        if (!judgeInput || !judgeInput.value) {
+            openJudgeModal();
+            alert('Silakan pilih identitas juri Anda terlebih dahulu.');
+            return;
+        }
         document.getElementById('submitModal').classList.remove('hidden');
     }
 
@@ -874,7 +1028,9 @@
     }
 
     function submitFinalForm() {
-        if (!@json($currentJudge?->id)) {
+        const judgeInput = document.querySelector('input[name="judge_id"]');
+        if (!judgeInput || !judgeInput.value) {
+            closeModal();
             openJudgeModal();
             alert('Silakan pilih identitas juri Anda terlebih dahulu sebelum menyimpan penilaian.');
             return;
@@ -886,6 +1042,25 @@
         actionInput.value = 'submit';
         form.appendChild(actionInput);
         form.submit();
+    }
+
+    // Modal Sudah Menilai & Konfirmasi Edit
+    function confirmEditAssessment() {
+        const modal = document.getElementById('alreadyAssessedModal');
+        if (modal) modal.classList.add('hidden');
+        const banner = document.getElementById('editModeBanner');
+        if (banner) banner.classList.remove('hidden');
+
+        // Update URL parameter tanpa reload agar mode edit tetap aktif jika refresh
+        const url = new URL(window.location.href);
+        url.searchParams.set('edit_confirmed', '1');
+        window.history.replaceState({}, '', url);
+    }
+
+    function openJudgeModalFromAssessed() {
+        const modal = document.getElementById('alreadyAssessedModal');
+        if (modal) modal.classList.add('hidden');
+        openJudgeModal();
     }
 
     // Judge Switcher Modal Handlers
@@ -902,6 +1077,7 @@
         let url = new URL(window.location.href);
         url.searchParams.set('judge_id', judgeId);
         url.searchParams.delete('choose_judge');
+        url.searchParams.delete('edit_confirmed');
         if (activeStageTab && activeStageTab !== 'all') {
             url.searchParams.set('category_id', activeStageTab);
         }
@@ -940,9 +1116,7 @@
         if (stageVal && stageVal !== 'all') {
             url.searchParams.set('category_id', stageVal);
         }
-        if (checkedJudges.length === 1) {
-            url.searchParams.set('judge_id', checkedJudges[0]);
-        } else if (checkedJudges.length > 1) {
+        if (checkedJudges.length > 0) {
             url.searchParams.set('judges', checkedJudges.join(','));
         }
 
