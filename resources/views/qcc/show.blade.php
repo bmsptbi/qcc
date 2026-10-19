@@ -308,68 +308,71 @@
     </div>
 
     <!-- Summary & Matriks Penilaian Dewan Juri per Tahap (Format Excel Mockup) -->
-    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs mb-8 space-y-6">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+    <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs mb-8 space-y-4">
+        <!-- Top Row: Title & Nilai Keseluruhan -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
-                <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+                <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                     Summary & Matriks Penilaian Dewan Juri per Tahap
                 </h2>
-                <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+                <p class="text-xs text-slate-500 mt-0.5">
                     Tampilan butir kriteria penilaian, skor masing-masing dewan juri per tahap, statistik deviasi, dan nilai tertimbang.
                 </p>
             </div>
 
-            <div class="flex items-center gap-2.5 flex-wrap">
-                <!-- Nilai Keseluruhan di Header -->
-                <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-slate-900 to-indigo-950 text-white shadow-sm border border-slate-800">
-                    <div class="text-right">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-300 block">Nilai Keseluruhan</span>
-                    </div>
-                    <span class="px-2.5 py-0.5 bg-yellow-300 border border-yellow-400 font-mono font-black text-slate-950 text-base rounded shadow-2xs" title="Total Nilai Akhir Keseluruhan Gugus">
-                        {{ number_format($circle->final_score ?? $calculatedFinalScore, 4) }}
-                    </span>
-                </div>
+            <!-- Nilai Keseluruhan di Header -->
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 text-white shadow-xs border border-slate-800 self-start sm:self-auto flex-shrink-0">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Nilai Keseluruhan:</span>
+                <span class="px-2.5 py-0.5 bg-yellow-300 border border-yellow-400 font-mono font-black text-slate-950 text-sm sm:text-base rounded shadow-2xs" title="Total Nilai Akhir Keseluruhan Gugus">
+                    {{ number_format($circle->final_score ?? $calculatedFinalScore, 4) }}
+                </span>
+            </div>
+        </div>
 
+        <!-- Controls Row: Stage Navigation Tabs & Action Buttons -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+            <!-- Stage Navigation Tabs -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 text-xs font-bold scrollbar-none">
+                <button type="button" onclick="selectMatrixStageTab('all')" data-tab-id="all" 
+                    class="matrix-tab-btn px-3 py-1.5 rounded-lg bg-blue-600 text-white transition shadow-2xs whitespace-nowrap">
+                    Semua Tahap Penilaian
+                </button>
+                @foreach($stagesMatrix as $stageId => $stageData)
+                    <button type="button" onclick="selectMatrixStageTab('{{ $stageId }}')" data-tab-id="{{ $stageId }}" 
+                        class="matrix-tab-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition whitespace-nowrap">
+                        {{ $stageData['category']->name }} ({{ number_format($stageData['weight'], 0) }}%)
+                    </button>
+                @endforeach
+            </div>
+
+            <!-- Action Buttons Toolbar -->
+            <div class="flex items-center gap-2 flex-shrink-0 self-start md:self-auto flex-wrap">
                 <!-- Global Toggle Expand/Collapse Semua Detail Butir -->
                 <button type="button" onclick="toggleAllCriteriaDetails()" id="btn_toggle_all_details" 
-                    class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs">
-                    <svg class="w-3.5 h-3.5 text-slate-600 transition-transform duration-200" id="icon_toggle_all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap">
+                    <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200" id="icon_toggle_all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
                     <span id="text_toggle_all">Sembunyikan Semua Detail</span>
                 </button>
 
                 <!-- Unduh Excel (CSV) -->
-                <a href="{{ route('qcc.circles.export', $circle) }}" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition inline-flex items-center gap-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('qcc.circles.export', $circle) }}" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
-                    <span>Unduh Excel (CSV)</span>
+                    <span>Unduh Excel</span>
                 </a>
 
                 <!-- Print Button -->
-                <button type="button" onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button type="button" onclick="window.print()" class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap">
+                    <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
                     <span>Cetak</span>
                 </button>
             </div>
-        </div>
-
-        <!-- Stage Navigation Tabs -->
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-100 text-xs font-bold">
-            <button type="button" onclick="selectMatrixStageTab('all')" data-tab-id="all" 
-                class="matrix-tab-btn px-4 py-2 rounded-xl bg-blue-600 text-white transition shadow-xs whitespace-nowrap">
-                Semua Tahap Penilaian
-            </button>
-            @foreach($stagesMatrix as $stageId => $stageData)
-                <button type="button" onclick="selectMatrixStageTab('{{ $stageId }}')" data-tab-id="{{ $stageId }}" 
-                    class="matrix-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition whitespace-nowrap">
-                    {{ $stageData['category']->name }} ({{ number_format($stageData['weight'], 0) }}%)
-                </button>
-            @endforeach
         </div>
 
         <!-- Stage Panels Loop -->
