@@ -320,4 +320,103 @@ class AdminController extends Controller
 
         return back()->with('success', "Kriteria {$code} berhasil dihapus.");
     }
+
+    /**
+     * Halaman Manajemen Pengguna (User Management)
+     */
+    public function usersIndex(Request $request): View
+    {
+        $query = User::with(['department']);
+
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('nik', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->orderBy('name', 'asc')->get();
+        $departments = Department::where('is_active', true)->get();
+
+        $stats = [
+            'total_users' => User::count(),
+            'total_admins' => User::where('role', 'admin')->count(),
+            'total_judges' => User::where('role', 'judge')->count(),
+            'total_facilitators' => User::where('role', 'facilitator')->count(),
+        ];
+
+        return view('admin.users.index', compact('users', 'departments', 'stats'));
+    }
+
+    /**
+     * Simpan pengguna baru
+     */
+    public function storeUser(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'email' => ['required', 'email', 'max:150', 'unique:users,email'],
+            'nik' => ['nullable', 'string', 'max:50'],
+            'role' => ['required', 'in:admin,judge,facilitator,member'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'password' => ['required', 'string', 'min:6'],
+        ]);
+
+        $validated['password'] = Hash::make($validated['password']);
+        $user = User::create($validated);
+
+        return back()->with('success', "Pengguna [{$user->name}] berhasil ditambahkan!");
+    }
+
+    /**
+     * Perbarui data pengguna
+     */
+    public function updateUser(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'email' => ['required', 'email', 'max:150', 'unique:users,email,'.$user->id],
+            'nik' => ['nullable', 'string', 'max:50'],
+            'role' => ['required', 'in:admin,judge,facilitator,member'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'password' => ['nullable', 'string', 'min:6'],
+        ]);
+
+        if (! empty($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
+
+        $user->update($validated);
+
+        return back()->with('success', "Data pengguna [{$user->name}] berhasil diperbarui!");
+    }
+
+    /**
+     * Hapus akun pengguna
+     */
+    public function destroyUser(User $user): RedirectResponse
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif digunakan!');
+        }
+
+        $name = $user->name;
+        $user->delete();
+
+        return back()->with('success', "Akun pengguna [{$name}] telah berhasil dihapus.");
+    }
 }

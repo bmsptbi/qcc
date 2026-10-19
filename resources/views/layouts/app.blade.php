@@ -167,7 +167,22 @@
                     <div class="w-8 h-0.5 bg-indigo-200 rounded mx-auto group-hover/sidebar:hidden"></div>
                 </div>
 
-                <!-- Item 3: Kelola Juri -->
+                <!-- Item 3: Kelola User -->
+                <a href="{{ route('admin.users.index') }}" 
+                    class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.users.*') ? 'bg-gradient-to-r from-blue-700 to-indigo-600 text-white shadow-md shadow-blue-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
+                    title="Manajemen Pengguna">
+                    <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <div class="sidebar-text">
+                        <span class="text-sm block leading-tight">Kelola User</span>
+                        <span class="text-[10px] opacity-75 block font-normal">Semua Pengguna & Akses</span>
+                    </div>
+                </a>
+
+                <!-- Item 4: Kelola Juri -->
                 <a href="{{ route('admin.judges.index') }}" 
                     class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.judges.*') ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
                     title="Kelola Juri & Penugasan">
@@ -339,6 +354,14 @@
                 <div class="pt-4 border-t border-slate-100 my-2">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-500 block px-2 mb-1">Administrasi</span>
                     
+                    <a href="{{ route('admin.users.index') }}" onclick="closeMobileSidebar()" 
+                        class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('admin.users.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50' }}">
+                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <span>Kelola User</span>
+                    </a>
+
                     <a href="{{ route('admin.judges.index') }}" onclick="closeMobileSidebar()" 
                         class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('admin.judges.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50' }}">
                         <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

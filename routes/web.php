@@ -20,6 +20,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Protected Admin Routes (Hanya dapat diakses setelah Sign In dengan role Admin)
 Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
+    // User Management Routes
+    Route::get('/users', [AdminController::class, 'usersIndex'])->name('users.index');
+    Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
+    Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
+    Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
+
     Route::get('/circles/create', [AdminController::class, 'createCircle'])->name('circles.create');
     Route::post('/circles', [AdminController::class, 'storeCircle'])->name('circles.store');
     Route::get('/judges', [AdminController::class, 'judgesIndex'])->name('judges.index');

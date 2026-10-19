@@ -221,6 +221,19 @@
                                 Detail Risalah
                             </a>
 
+                            <!-- Admin QR & Link Penilaian Button (Only visible for Admin) -->
+                            @if(Auth::check() && Auth::user()->role === 'admin')
+                                <button type="button" 
+                                    onclick="openShareModalForCircle({{ $circle->id }}, '{{ addslashes($circle->circle_name) }}', '{{ $circle->circle_code }}', '{{ addslashes($circle->theme_title) }}')"
+                                    class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-2xs"
+                                    title="Buat Link & QR Code Penilaian Juri">
+                                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                                    </svg>
+                                    <span>QR & Link</span>
+                                </button>
+                            @endif
+
                             <!-- Assess Button (Primary CTA for Judge) -->
                             <a href="{{ route('qcc.circles.assess', $circle) }}" class="px-5 py-2.5 text-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-600/25 transition inline-flex items-center justify-center gap-1.5 touch-action-manipulation">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,4 +258,190 @@
     </div>
 
 </div>
+
+@if(Auth::check() && Auth::user()->role === 'admin')
+<!-- Modal Admin: Bagikan Link & QR Code Penilaian -->
+<div id="shareModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base font-bold shadow-2xs">
+                    📱
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">QR Code & Link Penilaian Juri</h3>
+                    <p class="text-[11px] text-slate-500">Pilih tahap penilaian dan scan QR untuk langsung mengisi</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeShareModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        </div>
+
+        <!-- Target Circle Info -->
+        <div class="p-3 bg-blue-50/70 border border-blue-100 rounded-2xl">
+            <span class="text-[10px] font-bold text-blue-600 uppercase block tracking-wider">Target Gugus:</span>
+            <div id="share_circle_name" class="font-bold text-sm text-slate-900">Nama Gugus</div>
+            <div id="share_circle_theme" class="text-xs text-slate-600 italic">"Tema Inovasi"</div>
+        </div>
+
+        <!-- Setup Form: Tahap & Juri -->
+        <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
+            <!-- 1. Setup Tahap yang Ditampilkan -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Tahap yang Ditampilkan ke Juri:
+                </label>
+                <select id="share_stage_select" onchange="updateGeneratedShareUrl()" 
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold text-slate-800 focus:outline-none focus:border-blue-500">
+                    <option value="all">Semua Tahap Penilaian (Lengkap)</option>
+                    @foreach($categories as $cat)
+                        <option value="{{ $cat->id }}">
+                            Tahap: {{ $cat->name }} (Bobot: {{ number_format($cat->weight_percentage, 0) }}%)
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- 2. Setup Juri Penerima (Opsional) -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Ditujukan Khusus Untuk Juri (Opsional):
+                </label>
+                <select id="share_judge_select" onchange="updateGeneratedShareUrl()" 
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold text-slate-800 focus:outline-none focus:border-blue-500">
+                    <option value="">Umum (Juri Memilih Sendiri di Form)</option>
+                    @foreach($allJudges as $j)
+                        <option value="{{ $j->id }}">
+                            {{ $j->name }} ({{ ucfirst($j->role) }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <!-- QR Code Display Box -->
+        <div class="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
+            <div class="p-2.5 bg-white rounded-2xl border border-slate-100 shadow-md">
+                <img id="share_qr_image" src="" alt="QR Code Penilaian" class="w-44 h-44 sm:w-48 sm:h-48 rounded-xl object-contain">
+            </div>
+            <span class="text-[11px] font-semibold text-slate-500 mt-2.5 text-center flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                </svg>
+                Arahkan kamera smartphone juri untuk scan langsung
+            </span>
+            <a id="download_qr_btn" href="" target="_blank" download="qr-penilaian-qcc.png" 
+                class="mt-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Buka / Download Gambar QR
+            </a>
+        </div>
+
+        <!-- Link Preview Box -->
+        <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Link URL Penilaian:</label>
+            <div class="flex items-center gap-2">
+                <input type="text" id="share_url_display" readonly 
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs font-mono text-slate-800 select-all focus:outline-none">
+                <button type="button" onclick="copyShareUrl()" id="copy_btn" 
+                    class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex-shrink-0 shadow-sm flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                    </svg>
+                    <span id="copy_btn_text">Salin Link</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Share to WhatsApp -->
+        <div class="pt-2 flex items-center gap-2">
+            <button type="button" onclick="shareToWhatsApp()" 
+                class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-14.416c-6.627 0-12 5.373-12 12 0 2.152.569 4.174 1.564 5.922l-1.564 5.706 5.86-1.538c1.705.932 3.659 1.472 5.74 1.472 6.627 0 12-5.373 12-12s-5.373-12-12-12z"/>
+                </svg>
+                <span>Bagikan ke WhatsApp</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    let currentCircle = null;
+
+    function openShareModalForCircle(id, name, code, theme) {
+        currentCircle = { id, name, code, theme };
+        document.getElementById('share_circle_name').innerText = name + ' (' + code + ')';
+        document.getElementById('share_circle_theme').innerText = '"' + theme + '"';
+        updateGeneratedShareUrl();
+        document.getElementById('shareModal').classList.remove('hidden');
+    }
+
+    function closeShareModal() {
+        document.getElementById('shareModal').classList.add('hidden');
+    }
+
+    function updateGeneratedShareUrl() {
+        if (!currentCircle) return;
+        const stageVal = document.getElementById('share_stage_select').value;
+        const judgeVal = document.getElementById('share_judge_select').value;
+        
+        let url = new URL(window.location.origin + '/circles/' + currentCircle.id + '/assess');
+        if (stageVal && stageVal !== 'all') {
+            url.searchParams.set('category_id', stageVal);
+        }
+        if (judgeVal) {
+            url.searchParams.set('judge_id', judgeVal);
+        }
+
+        const fullUrl = url.toString();
+        document.getElementById('share_url_display').value = fullUrl;
+        
+        // Update QR Code Image
+        const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=' + encodeURIComponent(fullUrl);
+        const qrImg = document.getElementById('share_qr_image');
+        if (qrImg) qrImg.src = qrUrl;
+        const downloadQrBtn = document.getElementById('download_qr_btn');
+        if (downloadQrBtn) downloadQrBtn.href = qrUrl;
+
+        document.getElementById('copy_btn_text').innerText = 'Salin Link';
+    }
+
+    function copyShareUrl() {
+        const input = document.getElementById('share_url_display');
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value).then(() => {
+            document.getElementById('copy_btn_text').innerText = '✓ Tersalin!';
+            setTimeout(() => {
+                document.getElementById('copy_btn_text').innerText = 'Salin Link';
+            }, 2500);
+        });
+    }
+
+    function shareToWhatsApp() {
+        if (!currentCircle) return;
+        const url = document.getElementById('share_url_display').value;
+        const stageSelect = document.getElementById('share_stage_select');
+        const stageName = stageSelect.options[stageSelect.selectedIndex].text;
+        const judgeSelect = document.getElementById('share_judge_select');
+        const judgeName = judgeSelect.value ? judgeSelect.options[judgeSelect.selectedIndex].text : 'Bapak/Ibu Juri';
+
+        const text = `*FORM PENILAIAN QCC 2026*\n` +
+            `Halo ${judgeName},\n` +
+            `Berikut link penilaian untuk:\n` +
+            `• *Gugus:* ${currentCircle.name} (${currentCircle.code})\n` +
+            `• *Tema:* ${currentCircle.theme}\n` +
+            `• *Tahap:* ${stageName}\n\n` +
+            `Silakan scan QR Code atau akses link di bawah ini:\n${url}`;
+
+        window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
+    }
+</script>
+@endpush
+@endif
 @endsection
