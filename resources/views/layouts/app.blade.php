@@ -750,7 +750,7 @@
 
                     const ts = new TomSelect(select, {
                         create: false,
-                        maxOptions: 500,
+                        maxOptions: null,
                         placeholder: placeholder,
                         allowEmptyOption: true,
                         plugins: ['clear_button'],

@@ -76,10 +76,7 @@ class AdminController extends Controller
     public function createCircle(): View
     {
         $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
-        $facilitators = User::role('facilitator')->get();
-        if ($facilitators->isEmpty()) {
-            $facilitators = User::all();
-        }
+        $facilitators = User::orderBy('name', 'asc')->get();
 
         $activeYear = session('active_year', (int) date('Y'));
 
@@ -188,7 +185,7 @@ class AdminController extends Controller
         $circle->load(['members', 'department', 'facilitator']);
         $periods = AssessmentPeriod::orderByDesc('year')->get();
         $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
-        $facilitators = User::whereIn('role', ['facilitator', 'admin'])->get();
+        $facilitators = User::orderBy('name', 'asc')->get();
 
         return view('admin.circles.edit', compact('circle', 'periods', 'departments', 'facilitators'));
     }
