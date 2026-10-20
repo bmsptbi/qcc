@@ -54,15 +54,9 @@
                     <span class="px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider bg-blue-100 text-blue-800">
                         {{ $circle->circle_code }}
                     </span>
-                    <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                        {{ $circle->category->name ?? 'Manufacturing' }}
-                    </span>
-                    <span class="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200">
-                        {{ $circle->department->name ?? '-' }}
-                    </span>
-                    @if($circle->award_level)
-                        <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-xs">
-                            ★ {{ $circle->award_level }}
+                    @if($circle->category)
+                        <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
+                            {{ $circle->category->name }}
                         </span>
                     @endif
                 </div>
@@ -86,53 +80,12 @@
                 </span>
             </div>
         </div>
-
-        <!-- Schedule & Room Bar -->
-        <div class="mt-6 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <span class="text-slate-400 font-semibold block uppercase text-[10px]">Jadwal Presentasi</span>
-                <span class="text-slate-800 font-bold text-sm">
-                    {{ $circle->presentation_schedule ? $circle->presentation_schedule->translatedFormat('d M Y, H:i') . ' WIB' : 'Belum Dijadwalkan' }}
-                </span>
-            </div>
-            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <span class="text-slate-400 font-semibold block uppercase text-[10px]">Lokasi / Ruangan</span>
-                <span class="text-slate-800 font-bold text-sm">
-                    {{ $circle->presentation_room ?? 'Ruang Konvensi Utama' }}
-                </span>
-            </div>
-            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <span class="text-slate-400 font-semibold block uppercase text-[10px]">Fasilitator Pendamping</span>
-                <span class="text-slate-800 font-bold text-sm">
-                    {{ $circle->facilitator->name ?? 'Agus Gunawan' }}
-                </span>
-            </div>
-        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         
-        <!-- Left: Project Details & Background (2 Cols) -->
+        <!-- Left: Rekap Penilaian per Tahapan (2 Cols) -->
         <div class="lg:col-span-2 space-y-6">
-            <!-- Problem Statement -->
-            <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs space-y-4">
-                <h2 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                    1. Latar Belakang & Identifikasi Masalah
-                </h2>
-                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 text-slate-700 text-xs sm:text-sm leading-relaxed">
-                    {{ $circle->problem_statement ?? 'Belum ada deskripsi masalah.' }}
-                </div>
-
-                <h2 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 pt-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    2. Sasaran Mutu & Target Perbaikan
-                </h2>
-                <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/60 text-emerald-900 text-xs sm:text-sm leading-relaxed">
-                    {{ $circle->target_statement ?? 'Belum ada target perbaikan.' }}
-                </div>
-            </div>
-
             <!-- Rekap Penilaian per Tahapan (Per Stage Per Judge) -->
             <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -198,7 +151,23 @@
         </div>
 
         <!-- Right: Circle Members & Team Structure (1 Col) -->
-        <div class="space-y-6">
+        <div class="space-y-4">
+            <!-- Fasilitator Pendamping -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-100 to-indigo-100 text-purple-700 font-black text-sm flex items-center justify-center shadow-2xs">
+                        {{ strtoupper(substr($circle->facilitator->name ?? 'F', 0, 1)) }}
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-tight">Fasilitator Pendamping</span>
+                        <div class="font-extrabold text-xs sm:text-sm text-slate-900">{{ $circle->facilitator->name ?? 'Belum Ditentukan' }}</div>
+                    </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800">
+                    Fasilitator
+                </span>
+            </div>
+
             <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs">
                 <h2 class="text-base font-bold text-slate-900 tracking-tight mb-4 flex items-center gap-2">
                     <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
@@ -305,13 +274,14 @@
                 @endforeach
             </div>
 
-            <!-- Action Buttons Toolbar -->
-            <div class="flex items-center gap-2 flex-shrink-0 self-start md:self-auto flex-wrap">
+            <!-- Action Buttons Toolbar (Icon Only for Compact & Mobile Friendly Layout) -->
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 self-start md:self-auto">
                 <!-- Tombol Tampilkan / Sembunyikan Nama Juri (Password Admin Protected) -->
                 <button type="button" onclick="handleToggleJudgeNames()" id="btn_toggle_judge_names"
-                    class="px-2.5 py-1.5 rounded-lg {{ $isJudgeUnlocked ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300' : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' }} font-bold text-xs border transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap"
-                    title="{{ $isJudgeUnlocked ? 'Klik untuk menyembunyikan kembali nama juri' : 'Klik untuk membuka nama juri (Verifikasi Password Admin)' }}">
-                    <svg class="w-3.5 h-3.5 {{ $isJudgeUnlocked ? 'text-amber-700' : 'text-slate-500' }}" id="icon_toggle_judge_names" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="p-2 sm:p-2.5 rounded-xl {{ $isJudgeUnlocked ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300' : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' }} border transition inline-flex items-center justify-center shadow-2xs"
+                    title="{{ $isJudgeUnlocked ? 'Sembunyikan Nama Juri' : 'Tampilkan Nama Juri (Verifikasi Password Admin)' }}"
+                    aria-label="{{ $isJudgeUnlocked ? 'Sembunyikan Nama Juri' : 'Tampilkan Nama Juri' }}">
+                    <svg class="w-4 h-4 {{ $isJudgeUnlocked ? 'text-amber-700' : 'text-slate-600' }}" id="icon_toggle_judge_names" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         @if($isJudgeUnlocked)
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -319,32 +289,36 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                         @endif
                     </svg>
-                    <span id="text_toggle_judge_names">{{ $isJudgeUnlocked ? 'Sembunyikan Nama Juri' : 'Tampilkan Nama Juri' }}</span>
                 </button>
 
                 <!-- Global Toggle Expand/Collapse Semua Detail Butir -->
                 <button type="button" onclick="toggleAllCriteriaDetails()" id="btn_toggle_all_details" 
-                    class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap">
-                    <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200" id="icon_toggle_all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="p-2 sm:p-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition inline-flex items-center justify-center shadow-2xs"
+                    title="Sembunyikan / Buka Semua Detail Kriteria"
+                    aria-label="Toggle Detail Kriteria">
+                    <svg class="w-4 h-4 text-slate-600 transition-transform duration-200" id="icon_toggle_all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
-                    <span id="text_toggle_all">Sembunyikan Semua Detail</span>
                 </button>
 
                 <!-- Unduh Excel (CSV) -->
-                <a href="{{ route('qcc.circles.export', $circle) }}" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition inline-flex items-center gap-1.5 whitespace-nowrap">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('qcc.circles.export', $circle) }}" 
+                    class="p-2 sm:p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition inline-flex items-center justify-center"
+                    title="Unduh Excel (CSV)"
+                    aria-label="Unduh Excel">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
-                    <span>Unduh Excel</span>
                 </a>
 
                 <!-- Print Button -->
-                <button type="button" onclick="window.print()" class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap">
-                    <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button type="button" onclick="window.print()" 
+                    class="p-2 sm:p-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition inline-flex items-center justify-center shadow-2xs"
+                    title="Cetak Halaman"
+                    aria-label="Cetak Halaman">
+                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
-                    <span>Cetak</span>
                 </button>
             </div>
         </div>
@@ -702,6 +676,7 @@
                 </label>
                 <select id="share_stage_select" onchange="updateGeneratedShareUrl()" 
                     class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold text-slate-800 focus:outline-none focus:border-blue-500">
+                    <option value="" selected>-- Pilih Tahap Penilaian (Belum Dipilih) --</option>
                     <option value="all">Semua Tahap Penilaian (Lengkap)</option>
                     @foreach($criteriaStages as $cat)
                         <option value="{{ $cat->id }}">
@@ -796,6 +771,9 @@
     const baseUrl = @json(route('qcc.circles.assess', $circle));
 
     function openShareModal() {
+        const stageSelect = document.getElementById('share_stage_select');
+        if (stageSelect) stageSelect.value = '';
+
         document.querySelectorAll('.share-judge-cb').forEach(cb => cb.checked = false);
         const toggleBtn = document.getElementById('toggle_all_judges_btn');
         if (toggleBtn) toggleBtn.innerText = 'Pilih Semua';
@@ -860,7 +838,9 @@
     function shareToWhatsApp() {
         const url = document.getElementById('share_url_display').value;
         const stageSelect = document.getElementById('share_stage_select');
-        const stageName = stageSelect.options[stageSelect.selectedIndex].text;
+        const stageName = (stageSelect && stageSelect.value && stageSelect.selectedIndex >= 0)
+            ? stageSelect.options[stageSelect.selectedIndex].text
+            : 'Semua Tahap Penilaian (Belum Spesifik)';
         
         const checkedJudges = Array.from(document.querySelectorAll('.share-judge-cb:checked'));
         let judgeName = 'Bapak/Ibu Dewan Juri';
@@ -947,7 +927,10 @@
             }
         });
 
-        if (text) text.innerText = allDetailsExpanded ? 'Sembunyikan Semua Detail' : 'Buka Semua Detail';
+        const allBtn = document.getElementById('btn_toggle_all_details');
+        if (allBtn) {
+            allBtn.title = allDetailsExpanded ? 'Sembunyikan Semua Detail' : 'Buka Semua Detail';
+        }
         if (icon) icon.style.transform = allDetailsExpanded ? 'rotate(0deg)' : 'rotate(-90deg)';
     }
 
@@ -1054,24 +1037,23 @@
         const anonSpans = document.querySelectorAll('.judge-anon-name');
         const realSpans = document.querySelectorAll('.judge-real-name');
         const toggleBtn = document.getElementById('btn_toggle_judge_names');
-        const toggleText = document.getElementById('text_toggle_judge_names');
         const toggleIcon = document.getElementById('icon_toggle_judge_names');
 
         anonSpans.forEach(el => el.classList.toggle('hidden', revealed));
         realSpans.forEach(el => el.classList.toggle('hidden', !revealed));
 
-        if (toggleBtn && toggleText && toggleIcon) {
+        if (toggleBtn && toggleIcon) {
             if (revealed) {
-                toggleText.innerText = 'Sembunyikan Nama Juri';
-                toggleBtn.className = 'px-2.5 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold text-xs transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap';
-                toggleBtn.title = 'Klik untuk menyembunyikan kembali nama juri';
-                toggleIcon.className = 'w-3.5 h-3.5 text-amber-700';
+                toggleBtn.className = 'p-2 sm:p-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition inline-flex items-center justify-center shadow-2xs';
+                toggleBtn.title = 'Sembunyikan Nama Juri';
+                toggleBtn.setAttribute('aria-label', 'Sembunyikan Nama Juri');
+                toggleIcon.className = 'w-4 h-4 text-amber-700';
                 toggleIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
             } else {
-                toggleText.innerText = 'Tampilkan Nama Juri';
-                toggleBtn.className = 'px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap';
-                toggleBtn.title = 'Klik untuk membuka nama juri (Verifikasi Password Admin)';
-                toggleIcon.className = 'w-3.5 h-3.5 text-slate-500';
+                toggleBtn.className = 'p-2 sm:p-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition inline-flex items-center justify-center shadow-2xs';
+                toggleBtn.title = 'Tampilkan Nama Juri (Verifikasi Password Admin)';
+                toggleBtn.setAttribute('aria-label', 'Tampilkan Nama Juri');
+                toggleIcon.className = 'w-4 h-4 text-slate-600';
                 toggleIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>`;
             }
         }
