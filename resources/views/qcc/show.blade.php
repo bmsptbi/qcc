@@ -124,10 +124,12 @@
                                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">
                                             Belum Dinilai
                                         </span>
-                                        <a href="{{ route('qcc.circles.assess', [$circle, 'category_id' => $cat->id]) }}" class="text-xs text-blue-600 hover:text-blue-800 font-bold hover:underline inline-flex items-center gap-1">
-                                            <span>Beri Nilai</span>
-                                            <span>&rarr;</span>
-                                        </a>
+                                        @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
+                                            <a href="{{ route('qcc.circles.assess', [$circle, 'category_id' => $cat->id]) }}" class="text-xs text-blue-600 hover:text-blue-800 font-bold hover:underline inline-flex items-center gap-1">
+                                                <span>Beri Nilai</span>
+                                                <span>&rarr;</span>
+                                            </a>
+                                        @endif
                                     </div>
                                 @endif
                             </div>
@@ -293,30 +295,32 @@
 
             <!-- Action Buttons Toolbar (Icon Only for Compact & Mobile Friendly Layout) -->
             <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 self-start md:self-auto">
-                <!-- Tombol Hapus Penilaian (Verifikasi Password Admin) -->
-                <button type="button" onclick="openDeleteAssessmentModal()" id="btn_delete_assessments"
-                    class="p-2 sm:p-2.5 rounded-xl bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-300 transition inline-flex items-center justify-center shadow-2xs group"
-                    title="Hapus Penilaian Dewan Juri (Verifikasi Password Admin)"
-                    aria-label="Hapus Penilaian">
-                    <svg class="w-4 h-4 text-slate-500 group-hover:text-rose-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
+                @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
+                    <!-- Tombol Hapus Penilaian (Hanya untuk Admin) -->
+                    <button type="button" onclick="openDeleteAssessmentModal()" id="btn_delete_assessments"
+                        class="p-2 sm:p-2.5 rounded-xl bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-300 transition inline-flex items-center justify-center shadow-2xs group"
+                        title="Hapus Penilaian Dewan Juri (Verifikasi Password Admin)"
+                        aria-label="Hapus Penilaian">
+                        <svg class="w-4 h-4 text-slate-500 group-hover:text-rose-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
 
-                <!-- Tombol Tampilkan / Sembunyikan Nama Juri (Password Admin Protected) -->
-                <button type="button" onclick="handleToggleJudgeNames()" id="btn_toggle_judge_names"
-                    class="p-2 sm:p-2.5 rounded-xl {{ $isJudgeUnlocked ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300' : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' }} border transition inline-flex items-center justify-center shadow-2xs"
-                    title="{{ $isJudgeUnlocked ? 'Sembunyikan Nama Juri' : 'Tampilkan Nama Juri (Verifikasi Password Admin)' }}"
-                    aria-label="{{ $isJudgeUnlocked ? 'Sembunyikan Nama Juri' : 'Tampilkan Nama Juri' }}">
-                    <svg class="w-4 h-4 {{ $isJudgeUnlocked ? 'text-amber-700' : 'text-slate-600' }}" id="icon_toggle_judge_names" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        @if($isJudgeUnlocked)
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        @else
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        @endif
-                    </svg>
-                </button>
+                    <!-- Tombol Tampilkan / Sembunyikan Nama Juri (Hanya untuk Admin) -->
+                    <button type="button" onclick="handleToggleJudgeNames()" id="btn_toggle_judge_names"
+                        class="p-2 sm:p-2.5 rounded-xl {{ $isJudgeUnlocked ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300' : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' }} border transition inline-flex items-center justify-center shadow-2xs"
+                        title="{{ $isJudgeUnlocked ? 'Sembunyikan Nama Juri' : 'Tampilkan Nama Juri (Verifikasi Password Admin)' }}"
+                        aria-label="{{ $isJudgeUnlocked ? 'Sembunyikan Nama Juri' : 'Tampilkan Nama Juri' }}">
+                        <svg class="w-4 h-4 {{ $isJudgeUnlocked ? 'text-amber-700' : 'text-slate-600' }}" id="icon_toggle_judge_names" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            @if($isJudgeUnlocked)
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            @else
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            @endif
+                        </svg>
+                    </button>
+                @endif
 
                 <!-- Global Toggle Expand/Collapse Semua Detail Butir -->
                 <button type="button" onclick="toggleAllCriteriaDetails()" id="btn_toggle_all_details" 
@@ -606,12 +610,14 @@
                             <span class="text-2xl block">📋</span>
                             <p class="text-sm font-bold text-slate-700">Tahap ini belum dinilai oleh dewan juri</p>
                             <p class="text-xs text-slate-500">Nilai akan otomatis muncul di matriks ini setelah juri mengirimkan penilaian.</p>
-                            <div class="pt-2">
-                                <a href="{{ route('qcc.circles.assess', [$circle, 'category_id' => $cat->id]) }}" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition">
-                                    <span>Buka Form Penilaian Tahap Ini</span>
-                                    <span>&rarr;</span>
-                                </a>
-                            </div>
+                            @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
+                                <div class="pt-2">
+                                    <a href="{{ route('qcc.circles.assess', [$circle, 'category_id' => $cat->id]) }}" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition">
+                                        <span>Buka Form Penilaian Tahap Ini</span>
+                                        <span>&rarr;</span>
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     @endif
 
