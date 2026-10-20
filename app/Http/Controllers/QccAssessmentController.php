@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -957,5 +958,193 @@ class QccAssessmentController extends Controller
             'success' => true,
             'revealed' => false,
         ]);
+    }
+
+    /**
+     * Hapus penilaian dewan juri berdasarkan tahap dan/atau juri tertentu dengan verifikasi password admin.
+     */
+    public function deleteAssessments(Request $request, Circle $circle): RedirectResponse
+    {
+        $request->validate([
+            'stage_id' => 'required',
+            'judge_id' => 'required',
+            'admin_password' => 'required|string',
+        ]);
+
+        $password = $request->input('admin_password');
+
+        // Verifikasi password admin
+        $isAdminValid = false;
+        if (Auth::check() && Auth::user()->isAdmin()) {
+            $isAdminValid = Hash::check($password, Auth::user()->password);
+        } else {
+            $adminUsers = User::role('admin')->get();
+            foreach ($adminUsers as $admin) {
+                if (Hash::check($password, $admin->password)) {
+                    $isAdminValid = true;
+                    break;
+                }
+            }
+        }
+
+        if (! $isAdminValid) {
+            return back()->with('error', 'Password Administrator salah. Tindakan penghapusan penilaian dibatalkan.');
+        }
+
+        $stageId = $request->input('stage_id');
+        $judgeId = $request->input('judge_id');
+
+        DB::beginTransaction();
+        try {
+            $deletedDescription = '';
+
+            // 1. Semua Tahap & Semua Juri
+            if ($stageId === 'all' && $judgeId === 'all') {
+                $assessmentIds = Assessment::where('circle_id', $circle->id)->pluck('id');
+                AssessmentScore::whereIn('assessment_id', $assessmentIds)->delete();
+                Assessment::where('circle_id', $circle->id)->delete();
+                $deletedDescription = "seluruh penilaian (semua tahapan dan seluruh dewan juri) pada gugus {$circle->circle_name}";
+            }
+            // 2. Semua Tahap, tapi Juri Tertentu
+            elseif ($stageId === 'all' && $judgeId !== 'all') {
+                $judge = User::find($judgeId);
+                $judgeName = $judge?->name ?? "Juri (ID: {$judgeId})";
+                $assessmentIds = Assessment::where('circle_id', $circle->id)
+                    ->where('judge_id', $judgeId)
+                    ->pluck('id');
+                AssessmentScore::whereIn('assessment_id', $assessmentIds)->delete();
+                Assessment::where('circle_id', $circle->id)
+                    ->where('judge_id', $judgeId)
+                    ->delete();
+                $deletedDescription = "seluruh penilaian dari {$judgeName} di semua tahapan pada gugus {$circle->circle_name}";
+            }
+            // 3. Tahap Tertentu, Semua Juri
+            elseif ($stageId !== 'all' && $judgeId === 'all') {
+                $category = CriteriaCategory::with('criteria')->findOrFail($stageId);
+                $criteriaIds = $category->criteria->pluck('id');
+
+                $assessments = Assessment::where('circle_id', $circle->id)->get();
+                foreach ($assessments as $ass) {
+                    AssessmentScore::where('assessment_id', $ass->id)
+                        ->whereIn('assessment_criterion_id', $criteriaIds)
+                        ->delete();
+
+                    if ($ass->scores()->count() === 0) {
+                        $ass->delete();
+                    } else {
+                        $this->recalculateSingleAssessment($ass);
+                    }
+                }
+                $deletedDescription = "penilaian pada tahap {$category->name} untuk seluruh dewan juri pada gugus {$circle->circle_name}";
+            }
+            // 4. Tahap Tertentu & Juri Tertentu
+            else {
+                $category = CriteriaCategory::with('criteria')->findOrFail($stageId);
+                $criteriaIds = $category->criteria->pluck('id');
+                $judge = User::find($judgeId);
+                $judgeName = $judge?->name ?? "Juri (ID: {$judgeId})";
+
+                $ass = Assessment::where('circle_id', $circle->id)
+                    ->where('judge_id', $judgeId)
+                    ->first();
+
+                if ($ass) {
+                    AssessmentScore::where('assessment_id', $ass->id)
+                        ->whereIn('assessment_criterion_id', $criteriaIds)
+                        ->delete();
+
+                    if ($ass->scores()->count() === 0) {
+                        $ass->delete();
+                    } else {
+                        $this->recalculateSingleAssessment($ass);
+                    }
+                }
+                $deletedDescription = "penilaian tahap {$category->name} dari {$judgeName} pada gugus {$circle->circle_name}";
+            }
+
+            // Hitung ulang nilai akhir gugus dan perbarui status
+            $this->recalculateCircleScoreAndStatus($circle);
+
+            DB::commit();
+
+            return back()->with('success', "Berhasil menghapus {$deletedDescription}.");
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return back()->with('error', 'Terjadi kesalahan sistem saat menghapus penilaian: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Hitung ulang skor total dan skor tertimbang untuk satu baris assessment
+     */
+    protected function recalculateSingleAssessment(Assessment $assessment): void
+    {
+        $scores = AssessmentScore::with('criterion.category')->where('assessment_id', $assessment->id)->get();
+        if ($scores->isEmpty()) {
+            $assessment->delete();
+
+            return;
+        }
+
+        $totalScoreRaw = 0;
+        $totalWeightedScore = 0;
+        $countScored = $scores->count();
+
+        foreach ($scores as $item) {
+            $crit = $item->criterion;
+            $score = (float) $item->score;
+            $weightInParent = $crit ? (float) $crit->effective_weight : 1.0;
+            $catWeight = $crit?->category ? (float) $crit->category->weight_percentage : 100.0;
+
+            $totalScoreRaw += $score;
+            $globalContribution = ($score * $weightInParent / 100) * ($catWeight / 100);
+            $totalWeightedScore += $globalContribution;
+        }
+
+        $averageRawScore = $countScored > 0 ? ($totalScoreRaw / $countScored) : 0;
+
+        $assessment->update([
+            'total_score' => round($averageRawScore, 2),
+            'weighted_score' => round($totalWeightedScore, 2),
+        ]);
+    }
+
+    /**
+     * Hitung ulang skor akhir (final score), peringkat/award level, dan status gugus
+     */
+    protected function recalculateCircleScoreAndStatus(Circle $circle): void
+    {
+        $categories = CriteriaCategory::with(['criteria' => function ($q) {
+            $q->where('is_active', true)->orderBy('display_order', 'asc');
+        }])->orderBy('display_order', 'asc')->get();
+
+        $matrixData = $this->buildAssessmentMatrix($circle, $categories);
+        $finalScore = $matrixData['final_score'];
+        $circle->final_score = $finalScore;
+
+        if ($finalScore >= 9.0) {
+            $circle->award_level = 'Diamond';
+        } elseif ($finalScore >= 8.5) {
+            $circle->award_level = 'Platinum';
+        } elseif ($finalScore >= 8.0) {
+            $circle->award_level = 'Gold';
+        } elseif ($finalScore >= 7.5) {
+            $circle->award_level = 'Silver';
+        } elseif ($finalScore > 0) {
+            $circle->award_level = 'Bronze';
+        } else {
+            $circle->award_level = null;
+        }
+
+        $hasSubmitted = Assessment::where('circle_id', $circle->id)->where('status', 'submitted')->exists();
+        if ($hasSubmitted) {
+            $circle->status = 'evaluated';
+        } elseif (Assessment::where('circle_id', $circle->id)->exists()) {
+            $circle->status = 'under_assessment';
+        } else {
+            $circle->status = 'scheduled';
+        }
+        $circle->save();
     }
 }

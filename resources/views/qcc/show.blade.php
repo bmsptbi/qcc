@@ -293,6 +293,16 @@
 
             <!-- Action Buttons Toolbar (Icon Only for Compact & Mobile Friendly Layout) -->
             <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 self-start md:self-auto">
+                <!-- Tombol Hapus Penilaian (Verifikasi Password Admin) -->
+                <button type="button" onclick="openDeleteAssessmentModal()" id="btn_delete_assessments"
+                    class="p-2 sm:p-2.5 rounded-xl bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-300 transition inline-flex items-center justify-center shadow-2xs group"
+                    title="Hapus Penilaian Dewan Juri (Verifikasi Password Admin)"
+                    aria-label="Hapus Penilaian">
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-rose-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+
                 <!-- Tombol Tampilkan / Sembunyikan Nama Juri (Password Admin Protected) -->
                 <button type="button" onclick="handleToggleJudgeNames()" id="btn_toggle_judge_names"
                     class="p-2 sm:p-2.5 rounded-xl {{ $isJudgeUnlocked ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300' : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' }} border transition inline-flex items-center justify-center shadow-2xs"
@@ -662,6 +672,170 @@
                     </svg>
                 </button>
             </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Hapus Penilaian Dewan Juri (Verifikasi Password Admin) -->
+<div id="deleteAssessmentModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
+        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base font-bold shadow-2xs">
+                    <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight">Hapus Penilaian Dewan Juri</h3>
+                    <p class="text-xs text-slate-500 font-medium">Gugus: <span class="font-bold text-slate-800">{{ $circle->circle_name }}</span> ({{ $circle->circle_code }})</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeDeleteAssessmentModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 leading-none">&times;</button>
+        </div>
+
+        <form id="form_delete_assessment" method="POST" action="{{ route('qcc.circles.delete-assessments', $circle) }}" class="space-y-4">
+            @csrf
+
+            <!-- STEP 1: Pilih Tahap & Dewan Juri -->
+            <div id="del_step_1" class="space-y-4">
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Pilih lingkup tahap penilaian dan dewan juri yang ingin Anda hapus. Anda dapat menghapus seluruh tahap sekaligus atau memilih tahap & juri tertentu.
+                </p>
+
+                <!-- 1. Pilihan Tahap -->
+                <div>
+                    <label for="del_stage_select" class="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                        1. Pilih Tahap Penilaian: <span class="text-rose-500">*</span>
+                    </label>
+                    <select id="del_stage_select" name="stage_id" onchange="onDeleteStageChange()"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition">
+                        <option value="all" selected>Semua Tahap Penilaian (Lengkap Seluruh Tahap)</option>
+                        @foreach($criteriaStages as $cat)
+                            <option value="{{ $cat->id }}">
+                                Tahap: {{ $cat->name }} (Bobot: {{ number_format($cat->weight_percentage, 0) }}%)
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- 2. Pilihan Dewan Juri -->
+                <div>
+                    <label for="del_judge_select" class="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                        2. Pilih Dewan Juri: <span class="text-rose-500">*</span>
+                    </label>
+                    <select id="del_judge_select" name="judge_id" onchange="updateDeleteSummary()"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition">
+                        <option value="all" selected>Semua Dewan Juri (Semua Penilai pada Tahap Ini)</option>
+                        @foreach($allEvaluatingJudges as $idx => $j)
+                            <option value="{{ $j->id }}">
+                                Juri {{ $idx + 1 }}{{ $j->name ? ' - ' . $j->name : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Petunjuk / Help Text -->
+                <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
+                    <div class="font-bold text-slate-700 flex items-center gap-1.5">
+                        <span>💡 Opsi yang Tersedia:</span>
+                    </div>
+                    <ul class="list-disc list-inside space-y-0.5 text-slate-500">
+                        <li><strong>Semua Tahap & Semua Juri:</strong> Menghapus bersih seluruh skor gugus kembali ke status awal.</li>
+                        <li><strong>Tahap Tertentu & Semua Juri:</strong> Hanya menghapus penilaian di tahap tersebut dari semua juri.</li>
+                        <li><strong>Juri Tertentu:</strong> Hanya menghapus penilaian dari satu juri yang dipilih.</li>
+                    </ul>
+                </div>
+
+                <!-- Footer Step 1 -->
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeDeleteAssessmentModal()" 
+                        class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
+                        Batal
+                    </button>
+                    <button type="button" onclick="goToDeleteStep2()" 
+                        class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5">
+                        <span>Lanjut (Next)</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: Konfirmasi Ringkasan & Password Admin -->
+            <div id="del_step_2" class="space-y-4 hidden">
+                <!-- Ringkasan Target Penghapusan -->
+                <div class="p-3.5 rounded-2xl bg-rose-50/80 border border-rose-200/80 text-xs text-rose-950 space-y-2">
+                    <div class="font-bold text-rose-900 flex items-center gap-1.5">
+                        <span class="text-sm">⚠️</span>
+                        <span>Konfirmasi Tindakan Penghapusan:</span>
+                    </div>
+                    <div class="space-y-1 text-xs">
+                        <div class="flex items-start justify-between py-0.5 border-b border-rose-100">
+                            <span class="text-rose-700 font-medium">Gugus Target:</span>
+                            <span class="font-bold text-slate-900">{{ $circle->circle_name }} ({{ $circle->circle_code }})</span>
+                        </div>
+                        <div class="flex items-start justify-between py-0.5 border-b border-rose-100">
+                            <span class="text-rose-700 font-medium">Tahap Penilaian:</span>
+                            <span id="del_summary_stage" class="font-bold text-rose-800 text-right">Semua Tahap Penilaian</span>
+                        </div>
+                        <div class="flex items-start justify-between py-0.5">
+                            <span class="text-rose-700 font-medium">Dewan Juri:</span>
+                            <span id="del_summary_judge" class="font-bold text-rose-800 text-right">Semua Dewan Juri</span>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-rose-600 italic pt-1">
+                        * Nilai yang dihapus tidak dapat dipulihkan. Skor akhir dan status gugus akan otomatis dihitung ulang.
+                    </p>
+                </div>
+
+                <!-- Input Password Admin -->
+                <div>
+                    <label for="del_admin_password" class="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                        Masukkan Password Administrator: <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="password" id="del_admin_password" name="admin_password" placeholder="Ketik password admin..."
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition pr-10">
+                        <button type="button" onclick="togglePasswordVisibility('del_admin_password', 'icon_del_pwd_toggle')" 
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <svg class="w-4 h-4" id="icon_del_pwd_toggle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="del_pwd_error" class="text-xs text-rose-600 font-semibold mt-1.5 hidden"></div>
+                </div>
+
+                <!-- Footer Step 2 -->
+                <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="goToDeleteStep1()" 
+                        class="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        <span>Kembali</span>
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="closeDeleteAssessmentModal()" 
+                            class="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
+                            Batal
+                        </button>
+                        <button type="submit" id="btn_submit_delete_assessment"
+                            class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shadow-sm hover:shadow-md shadow-rose-600/25 flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <span>Hapus Penilaian Sekarang</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </form>
     </div>
 </div>
@@ -1143,6 +1317,140 @@
             }
         }
     }
+
+    // Mapping dewan juri yang menilai pada masing-masing tahap
+    const deleteStageJudgesMap = {
+        'all': [
+            @foreach($allEvaluatingJudges as $idx => $j)
+                { id: {{ $j->id }}, name: @json($j->name ?? ('Juri ' . ($idx + 1))) },
+            @endforeach
+        ],
+        @foreach($stagesMatrix as $sId => $sData)
+        '{{ $sId }}': [
+            @foreach($sData['judges'] as $idx => $j)
+                { id: {{ $j->id }}, name: @json($j->name ?? ('Juri ' . ($idx + 1))) },
+            @endforeach
+        ],
+        @endforeach
+    };
+
+    function openDeleteAssessmentModal() {
+        const modal = document.getElementById('deleteAssessmentModal');
+        goToDeleteStep1();
+        const stageSelect = document.getElementById('del_stage_select');
+        if (stageSelect) stageSelect.value = 'all';
+        onDeleteStageChange();
+        const pwdInput = document.getElementById('del_admin_password');
+        if (pwdInput) pwdInput.value = '';
+        const errBox = document.getElementById('del_pwd_error');
+        if (errBox) { errBox.innerText = ''; errBox.classList.add('hidden'); }
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeDeleteAssessmentModal() {
+        const modal = document.getElementById('deleteAssessmentModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function goToDeleteStep1() {
+        const s1 = document.getElementById('del_step_1');
+        const s2 = document.getElementById('del_step_2');
+        if (s1 && s2) {
+            s1.classList.remove('hidden');
+            s2.classList.add('hidden');
+        }
+    }
+
+    function goToDeleteStep2() {
+        updateDeleteSummary();
+        const s1 = document.getElementById('del_step_1');
+        const s2 = document.getElementById('del_step_2');
+        if (s1 && s2) {
+            s1.classList.add('hidden');
+            s2.classList.remove('hidden');
+        }
+        const pwdInput = document.getElementById('del_admin_password');
+        if (pwdInput) {
+            setTimeout(() => pwdInput.focus(), 100);
+        }
+    }
+
+    function onDeleteStageChange() {
+        const stageSelect = document.getElementById('del_stage_select');
+        const judgeSelect = document.getElementById('del_judge_select');
+        if (!stageSelect || !judgeSelect) return;
+
+        const stageId = stageSelect.value;
+        const availableJudges = deleteStageJudgesMap[stageId] || [];
+
+        judgeSelect.innerHTML = '';
+
+        const optAll = document.createElement('option');
+        optAll.value = 'all';
+        optAll.textContent = (stageId === 'all') 
+            ? 'Semua Dewan Juri (Semua Tahapan)' 
+            : (availableJudges.length > 0 
+                ? `Semua Dewan Juri pada Tahap ini (${availableJudges.length} Juri)` 
+                : 'Semua Dewan Juri (Belum ada juri yang menilai tahap ini)');
+        judgeSelect.appendChild(optAll);
+
+        availableJudges.forEach((j, idx) => {
+            const opt = document.createElement('option');
+            opt.value = j.id;
+            opt.textContent = `Juri ${idx + 1} - ${j.name}`;
+            judgeSelect.appendChild(opt);
+        });
+
+        updateDeleteSummary();
+    }
+
+    function updateDeleteSummary() {
+        const stageSelect = document.getElementById('del_stage_select');
+        const judgeSelect = document.getElementById('del_judge_select');
+        const summaryStage = document.getElementById('del_summary_stage');
+        const summaryJudge = document.getElementById('del_summary_judge');
+
+        if (stageSelect && summaryStage) {
+            summaryStage.textContent = (stageSelect.selectedIndex >= 0) 
+                ? stageSelect.options[stageSelect.selectedIndex].text 
+                : 'Semua Tahap Penilaian';
+        }
+        if (judgeSelect && summaryJudge) {
+            summaryJudge.textContent = (judgeSelect.selectedIndex >= 0) 
+                ? judgeSelect.options[judgeSelect.selectedIndex].text 
+                : 'Semua Dewan Juri';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const formDelete = document.getElementById('form_delete_assessment');
+        if (formDelete) {
+            formDelete.addEventListener('submit', function(e) {
+                const pwdInput = document.getElementById('del_admin_password');
+                const errBox = document.getElementById('del_pwd_error');
+                if (!pwdInput || !pwdInput.value.trim()) {
+                    e.preventDefault();
+                    if (errBox) {
+                        errBox.textContent = 'Password Administrator wajib diisi untuk verifikasi.';
+                        errBox.classList.remove('hidden');
+                    }
+                    if (pwdInput) pwdInput.focus();
+                    return false;
+                }
+                const btnSubmit = document.getElementById('btn_submit_delete_assessment');
+                if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = `
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>Menghapus...</span>
+                    `;
+                }
+            });
+        }
+    });
 </script>
 @endpush
 

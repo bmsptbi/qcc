@@ -16,6 +16,7 @@ Route::post('/switch-judge', [QccAssessmentController::class, 'switchJudge'])->n
 Route::post('/switch-year', [QccAssessmentController::class, 'switchYear'])->name('qcc.switch-year');
 Route::post('/verify-admin-password', [QccAssessmentController::class, 'verifyAdminPassword'])->name('qcc.circles.verify-admin-password');
 Route::post('/hide-judges', [QccAssessmentController::class, 'hideJudgeNames'])->name('qcc.circles.hide-judges');
+Route::post('/circles/{circle}/delete-assessments', [QccAssessmentController::class, 'deleteAssessments'])->name('qcc.circles.delete-assessments');
 
 // Authentication Routes (Admin Sign In / Out)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
