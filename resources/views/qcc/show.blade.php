@@ -3,6 +3,9 @@
 @section('title', 'Detail Risalah - ' . $circle->circle_name)
 
 @section('content')
+@php
+    $isJudgeUnlocked = (bool) session('admin_unlocked_judges', false);
+@endphp
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
 
     <!-- Breadcrumb & Top Actions -->
@@ -140,98 +143,54 @@
                     <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 self-start sm:self-auto">
                         {{ collect($stagesMatrix)->filter(fn($s) => count($s['judges']) > 0)->count() }} dari {{ count($stagesMatrix) }} Tahap Dinilai
                     </span>
-                </div>
-
-                <div class="space-y-4">
+                </div>                <div class="space-y-2.5">
                     @foreach($stagesMatrix as $stageId => $stageData)
                         @php
                             $cat = $stageData['category'];
                             $stageJudges = $stageData['judges'];
                             $hasJudges = count($stageJudges) > 0;
                         @endphp
-                        <div class="p-4 rounded-2xl border {{ $hasJudges ? 'border-slate-200/80 bg-slate-50/50' : 'border-dashed border-slate-200 bg-white' }}">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5 mb-3">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2.5 h-2.5 rounded-full {{ $hasJudges ? 'bg-blue-600' : 'bg-slate-300' }}"></span>
-                                    <h3 class="font-bold text-sm text-slate-900">{{ $cat->name }}</h3>
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
-                                        Bobot {{ number_format($stageData['weight'], 0) }}%
+                        <div class="p-3.5 sm:p-4 rounded-2xl border {{ $hasJudges ? 'border-slate-200/80 bg-slate-50/60' : 'border-dashed border-slate-200 bg-white' }} flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition hover:border-slate-300">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-2.5 h-2.5 rounded-full shrink-0 {{ $hasJudges ? 'bg-blue-600 ring-4 ring-blue-100' : 'bg-slate-300' }}"></span>
+                                <h3 class="font-bold text-sm text-slate-900">{{ $cat->name }}</h3>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                                    Bobot {{ number_format($stageData['weight'], 0) }}%
+                                </span>
+                                @if(!empty($stageData['adjustments']))
+                                    <span class="text-[9px] font-bold uppercase text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded shadow-2xs" title="Menggunakan nilai {{ end($stageData['adjustments'])['name'] }}">
+                                        {{ end($stageData['adjustments'])['name'] }}
                                     </span>
-                                </div>
-
-                                <div class="flex items-center gap-3">
-                                    @if($hasJudges)
-                                        <div class="text-right">
-                                            <span class="text-[10px] font-semibold text-slate-500 uppercase block">Rata-rata Tahap</span>
-                                            <span class="text-sm font-black text-blue-700">
-                                                {{ number_format($stageData['stage_stats']['average'], 2) }}
-                                                <span class="text-[10px] font-medium text-slate-500">/ 10</span>
-                                            </span>
-                                        </div>
-                                        <div class="text-right pl-3 border-l border-slate-200">
-                                            <span class="text-[10px] font-semibold text-slate-500 uppercase block">Kontribusi</span>
-                                            <span class="text-sm font-black text-emerald-700">
-                                                +{{ number_format($stageData['stage_contribution'], 2) }}
-                                            </span>
-                                        </div>
-                                    @else
-                                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
-                                            Belum Dinilai
-                                        </span>
-                                    @endif
-                                </div>
+                                @endif
                             </div>
 
-                            @if($hasJudges)
-                                <div class="space-y-2">
-                                    <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-                                        Dewan Juri Penilai Tahap Ini ({{ count($stageJudges) }} Juri):
-                                    </span>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                        @foreach($stageJudges as $judge)
-                                            @php
-                                                $jScore = $stageData['judge_stage_scores'][$judge->id] ?? null;
-                                                $jFb = $stageData['judge_feedback'][$judge->id] ?? null;
-                                            @endphp
-                                            <div class="p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-                                                <div class="flex items-start justify-between gap-2">
-                                                    <div>
-                                                        <div class="font-bold text-xs sm:text-sm text-slate-800">{{ $judge->name }}</div>
-                                                        <div class="text-[10px] text-slate-400">{{ $judge->department->name ?? ($judge->nik ?? 'Dewan Juri') }}</div>
-                                                    </div>
-                                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold {{ ($jFb['status'] ?? '') === 'submitted' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
-                                                        {{ ucfirst($jFb['status'] ?? 'Draft') }}
-                                                    </span>
-                                                </div>
-                                                <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
-                                                    <span class="text-[11px] text-slate-500 font-medium">Skor Tahap:</span>
-                                                    <span class="text-sm font-black text-slate-900">
-                                                        {{ $jScore !== null ? number_format($jScore, 2) : '-' }}
-                                                    </span>
-                                                </div>
-                                                @if(!empty($jFb['strengths']) || !empty($jFb['improvements']))
-                                                    <div class="mt-1.5 pt-1 text-[10px] text-slate-500 space-y-0.5">
-                                                        @if(!empty($jFb['strengths']))
-                                                            <div class="line-clamp-1"><strong class="text-emerald-700">Kelebihan:</strong> {{ $jFb['strengths'] }}</div>
-                                                        @endif
-                                                        @if(!empty($jFb['improvements']))
-                                                            <div class="line-clamp-1"><strong class="text-amber-700">Perbaikan:</strong> {{ $jFb['improvements'] }}</div>
-                                                        @endif
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        @endforeach
+                            <div class="flex items-center gap-3 justify-between sm:justify-end">
+                                @if($hasJudges)
+                                    <div class="text-right">
+                                        <span class="text-[10px] font-semibold text-slate-500 uppercase block leading-tight">Rata-rata Tahap</span>
+                                        <span class="text-sm font-black text-blue-700">
+                                            {{ number_format($stageData['stage_stats']['average'], 2) }}
+                                            <span class="text-[10px] font-medium text-slate-400">/ 10</span>
+                                        </span>
                                     </div>
-                                </div>
-                            @else
-                                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-400 py-1">
-                                    <span>Belum ada dewan juri yang memberikan penilaian untuk tahap ini.</span>
-                                    <a href="{{ route('qcc.circles.assess', [$circle, 'category_id' => $cat->id]) }}" class="text-blue-600 hover:text-blue-800 font-bold hover:underline inline-flex items-center gap-1">
-                                        <span>Beri Nilai Tahap Ini</span>
-                                        <span>&rarr;</span>
-                                    </a>
-                                </div>
-                            @endif
+                                    <div class="text-right pl-3 border-l border-slate-200">
+                                        <span class="text-[10px] font-semibold text-slate-500 uppercase block leading-tight">Kontribusi</span>
+                                        <span class="text-sm font-black text-emerald-700">
+                                            +{{ number_format($stageData['stage_contribution'], 2) }}
+                                        </span>
+                                    </div>
+                                @else
+                                    <div class="flex items-center gap-2.5">
+                                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">
+                                            Belum Dinilai
+                                        </span>
+                                        <a href="{{ route('qcc.circles.assess', [$circle, 'category_id' => $cat->id]) }}" class="text-xs text-blue-600 hover:text-blue-800 font-bold hover:underline inline-flex items-center gap-1">
+                                            <span>Beri Nilai</span>
+                                            <span>&rarr;</span>
+                                        </a>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -348,6 +307,21 @@
 
             <!-- Action Buttons Toolbar -->
             <div class="flex items-center gap-2 flex-shrink-0 self-start md:self-auto flex-wrap">
+                <!-- Tombol Tampilkan / Sembunyikan Nama Juri (Password Admin Protected) -->
+                <button type="button" onclick="handleToggleJudgeNames()" id="btn_toggle_judge_names"
+                    class="px-2.5 py-1.5 rounded-lg {{ $isJudgeUnlocked ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300' : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' }} font-bold text-xs border transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap"
+                    title="{{ $isJudgeUnlocked ? 'Klik untuk menyembunyikan kembali nama juri' : 'Klik untuk membuka nama juri (Verifikasi Password Admin)' }}">
+                    <svg class="w-3.5 h-3.5 {{ $isJudgeUnlocked ? 'text-amber-700' : 'text-slate-500' }}" id="icon_toggle_judge_names" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        @if($isJudgeUnlocked)
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        @else
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        @endif
+                    </svg>
+                    <span id="text_toggle_judge_names">{{ $isJudgeUnlocked ? 'Sembunyikan Nama Juri' : 'Tampilkan Nama Juri' }}</span>
+                </button>
+
                 <!-- Global Toggle Expand/Collapse Semua Detail Butir -->
                 <button type="button" onclick="toggleAllCriteriaDetails()" id="btn_toggle_all_details" 
                     class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap">
@@ -447,8 +421,9 @@
                                             Item Penilaian
                                         </th>
                                         @foreach($stageJudges as $judge)
-                                            <th class="p-3 text-center border-r border-slate-200 whitespace-nowrap">
-                                                {{ $judge->name }}
+                                            <th class="p-3 text-center border-r border-slate-200 whitespace-nowrap font-bold">
+                                                <span class="judge-anon-name {{ $isJudgeUnlocked ? 'hidden' : '' }}">Juri {{ $loop->iteration }}</span>
+                                                <span class="judge-real-name {{ $isJudgeUnlocked ? '' : 'hidden' }}">{{ $judge->name }}</span>
                                             </th>
                                         @endforeach
                                         <th class="p-3 text-center border-r border-slate-200">Max</th>
@@ -644,6 +619,60 @@
         </div>
     </div>
 
+</div>
+
+<!-- Modal Verifikasi Password Admin untuk Menampilkan Nama Juri -->
+<div id="modal_admin_auth" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-base font-bold shadow-2xs">
+                    🔒
+                </div>
+                <div>
+                    <h3 class="text-sm sm:text-base font-bold text-slate-900">Verifikasi Hak Akses Admin</h3>
+                    <p class="text-[11px] text-slate-500">Buka nama asli dewan juri penilai</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeAdminAuthModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 leading-none">&times;</button>
+        </div>
+
+        <form id="form_admin_auth" onsubmit="submitAdminAuth(event)" class="space-y-4">
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Untuk menjaga independensi penilaian, nama dewan juri disamarkan sebagai <strong>Juri 1, Juri 2, dst</strong>. Masukkan password akun Administrator untuk membuka nama asli dewan juri.
+            </p>
+
+            <div>
+                <label for="admin_auth_password" class="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                    Password Administrator:
+                </label>
+                <div class="relative">
+                    <input type="password" id="admin_auth_password" name="password" required placeholder="Ketik password admin..."
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition pr-10">
+                    <button type="button" onclick="togglePasswordVisibility('admin_auth_password', 'icon_pwd_toggle')" 
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <svg class="w-4 h-4" id="icon_pwd_toggle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="admin_auth_error" class="text-xs text-rose-600 font-semibold mt-1.5 hidden"></div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button type="button" onclick="closeAdminAuthModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
+                    Batal
+                </button>
+                <button type="submit" id="btn_submit_auth" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5">
+                    <span id="btn_submit_auth_text">Buka Nama Juri</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Modal Bagikan Link & QR Code Penilaian (Hanya untuk Admin) -->
@@ -920,6 +949,132 @@
 
         if (text) text.innerText = allDetailsExpanded ? 'Sembunyikan Semua Detail' : 'Buka Semua Detail';
         if (icon) icon.style.transform = allDetailsExpanded ? 'rotate(0deg)' : 'rotate(-90deg)';
+    }
+
+    let isJudgeNamesRevealed = {{ $isJudgeUnlocked ? 'true' : 'false' }};
+
+    function handleToggleJudgeNames() {
+        if (isJudgeNamesRevealed) {
+            setJudgeNamesState(false);
+            fetch('{{ route('qcc.circles.hide-judges') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            });
+        } else {
+            openAdminAuthModal();
+        }
+    }
+
+    function openAdminAuthModal() {
+        const modal = document.getElementById('modal_admin_auth');
+        const pwd = document.getElementById('admin_auth_password');
+        const err = document.getElementById('admin_auth_error');
+        if (err) {
+            err.innerText = '';
+            err.classList.add('hidden');
+        }
+        if (pwd) pwd.value = '';
+        if (modal) modal.classList.remove('hidden');
+        setTimeout(() => {
+            if (pwd) pwd.focus();
+        }, 100);
+    }
+
+    function closeAdminAuthModal() {
+        const modal = document.getElementById('modal_admin_auth');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (!input) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            if (icon) {
+                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />`;
+            }
+        } else {
+            input.type = 'password';
+            if (icon) {
+                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+            }
+        }
+    }
+
+    async function submitAdminAuth(event) {
+        event.preventDefault();
+        const pwdInput = document.getElementById('admin_auth_password');
+        const errBox = document.getElementById('admin_auth_error');
+        const btnSubmit = document.getElementById('btn_submit_auth');
+        const btnText = document.getElementById('btn_submit_auth_text');
+
+        if (!pwdInput || !pwdInput.value) return;
+
+        errBox.classList.add('hidden');
+        btnSubmit.disabled = true;
+        btnText.innerText = 'Memverifikasi...';
+
+        try {
+            const response = await fetch('{{ route('qcc.circles.verify-admin-password') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ password: pwdInput.value })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                closeAdminAuthModal();
+                setJudgeNamesState(true);
+            } else {
+                errBox.innerText = data.message || 'Password Administrator tidak cocok.';
+                errBox.classList.remove('hidden');
+                pwdInput.select();
+            }
+        } catch (e) {
+            errBox.innerText = 'Terjadi kesalahan sistem saat verifikasi. Silakan coba lagi.';
+            errBox.classList.remove('hidden');
+        } finally {
+            btnSubmit.disabled = false;
+            btnText.innerText = 'Buka Nama Juri';
+        }
+    }
+
+    function setJudgeNamesState(revealed) {
+        isJudgeNamesRevealed = revealed;
+        const anonSpans = document.querySelectorAll('.judge-anon-name');
+        const realSpans = document.querySelectorAll('.judge-real-name');
+        const toggleBtn = document.getElementById('btn_toggle_judge_names');
+        const toggleText = document.getElementById('text_toggle_judge_names');
+        const toggleIcon = document.getElementById('icon_toggle_judge_names');
+
+        anonSpans.forEach(el => el.classList.toggle('hidden', revealed));
+        realSpans.forEach(el => el.classList.toggle('hidden', !revealed));
+
+        if (toggleBtn && toggleText && toggleIcon) {
+            if (revealed) {
+                toggleText.innerText = 'Sembunyikan Nama Juri';
+                toggleBtn.className = 'px-2.5 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold text-xs transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap';
+                toggleBtn.title = 'Klik untuk menyembunyikan kembali nama juri';
+                toggleIcon.className = 'w-3.5 h-3.5 text-amber-700';
+                toggleIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+            } else {
+                toggleText.innerText = 'Tampilkan Nama Juri';
+                toggleBtn.className = 'px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs transition inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap';
+                toggleBtn.title = 'Klik untuk membuka nama juri (Verifikasi Password Admin)';
+                toggleIcon.className = 'w-3.5 h-3.5 text-slate-500';
+                toggleIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>`;
+            }
+        }
     }
 </script>
 @endpush

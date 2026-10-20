@@ -14,6 +14,8 @@ Route::get('/circles/{circle}/export-assessment', [QccAssessmentController::clas
 Route::get('/leaderboard', [QccAssessmentController::class, 'leaderboard'])->name('qcc.leaderboard');
 Route::post('/switch-judge', [QccAssessmentController::class, 'switchJudge'])->name('qcc.switch-judge');
 Route::post('/switch-year', [QccAssessmentController::class, 'switchYear'])->name('qcc.switch-year');
+Route::post('/verify-admin-password', [QccAssessmentController::class, 'verifyAdminPassword'])->name('qcc.circles.verify-admin-password');
+Route::post('/hide-judges', [QccAssessmentController::class, 'hideJudgeNames'])->name('qcc.circles.hide-judges');
 
 // Authentication Routes (Admin Sign In / Out)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');

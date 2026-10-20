@@ -12,9 +12,11 @@ use App\Models\CircleCategory;
 use App\Models\CriteriaCategory;
 use App\Models\Department;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -833,9 +835,10 @@ class QccAssessmentController extends Controller
                 }
 
                 // Table Column Header Row: Item | Judges | Max | Min | Range | Average | Deviasi Max | Deviasi Min | Deviasi (%)
+                $showRealNames = (bool) session('admin_unlocked_judges', false);
                 $itemHeader = ['Item'];
-                foreach ($stageJudges as $judge) {
-                    $itemHeader[] = $judge->name;
+                foreach ($stageJudges as $idx => $judge) {
+                    $itemHeader[] = $showRealNames ? $judge->name : ('Juri '.($idx + 1));
                 }
                 $itemHeader = array_merge($itemHeader, ['Max', 'Min', 'Range', 'Average', 'Deviasi Max', 'Deviasi Min', 'Deviasi (%)']);
                 fputcsv($handle, $itemHeader);
@@ -902,5 +905,65 @@ class QccAssessmentController extends Controller
 
             fclose($handle);
         }, 200, $headers);
+    }
+
+    /**
+     * Verify Admin Password to unlock real judge names
+     */
+    public function verifyAdminPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        $password = $request->input('password');
+
+        // Jika user sedang login dan merupakan admin
+        if (Auth::check() && Auth::user()->isAdmin()) {
+            if (Hash::check($password, Auth::user()->password)) {
+                session(['admin_unlocked_judges' => true]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Identitas Administrator terverifikasi.',
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Password Administrator tidak cocok.',
+            ], 422);
+        }
+
+        // Cari semua akun admin di database untuk verifikasi password
+        $adminUsers = User::role('admin')->get();
+        foreach ($adminUsers as $admin) {
+            if (Hash::check($password, $admin->password)) {
+                session(['admin_unlocked_judges' => true]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Identitas Administrator terverifikasi.',
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Password Administrator tidak cocok atau Anda tidak memiliki akses admin.',
+        ], 422);
+    }
+
+    /**
+     * Re-hide judge names and remove unlock from session
+     */
+    public function hideJudgeNames(Request $request): JsonResponse
+    {
+        session()->forget('admin_unlocked_judges');
+
+        return response()->json([
+            'success' => true,
+            'revealed' => false,
+        ]);
     }
 }
