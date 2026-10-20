@@ -332,15 +332,25 @@ class AdminController extends Controller
                 'Judul Tema',
                 'Departemen',
                 'Tahun',
-                'Fasilitator',
+                'Email Fasilitator',
                 'Link SharePoint',
                 'Status',
                 'Susunan Anggota',
             ]);
 
             foreach ($circles as $c) {
-                $membersFormatted = $c->members->map(function ($m) {
-                    return "{$m->name}:{$m->nik}:{$m->role}";
+                // Urutkan anggota: Leader urutan 1, Secretary urutan 2, Member urutan 3 dst
+                $roleOrder = ['leader' => 1, 'secretary' => 2, 'member' => 3];
+                $sortedMembers = $c->members->sort(function ($a, $b) use ($roleOrder) {
+                    $orderA = $roleOrder[$a->role] ?? 4;
+                    $orderB = $roleOrder[$b->role] ?? 4;
+
+                    return $orderA <=> $orderB ?: $a->id <=> $b->id;
+                });
+
+                // Format: Nama*NIK
+                $membersFormatted = $sortedMembers->map(function ($m) {
+                    return "{$m->name}*{$m->nik}";
                 })->implode('; ');
 
                 fputcsv($handle, [
@@ -349,7 +359,7 @@ class AdminController extends Controller
                     $c->theme_title,
                     $c->department?->name ?? '',
                     $c->year,
-                    $c->facilitator?->name ?? '',
+                    $c->facilitator?->email ?? '',
                     $c->sharepoint_url ?? '',
                     $c->status,
                     $membersFormatted,
@@ -380,23 +390,24 @@ class AdminController extends Controller
                 'Judul Tema',
                 'Departemen',
                 'Tahun',
-                'Fasilitator',
+                'Email Fasilitator',
                 'Link SharePoint',
                 'Status',
                 'Susunan Anggota',
             ]);
 
             // Contoh 1: Edit gugus lama (menggunakan Kode Gugus yang sudah ada)
+            // Susunan Anggota format: Nama*NIK (urutan 1 = Leader, urutan 2 = Secretary, urutan 3 dst = Anggota)
             fputcsv($handle, [
                 'QCC-2026-001',
                 'TES CIRCLE EDIT',
                 'Optimalisasi Efisiensi Mesin Drawing Line 2',
                 'Manufacturing & Operations',
                 '2026',
-                'Iman Sugih Hartono',
+                'iman.sugih@bekaert.com',
                 'https://bekaert.sharepoint.com/:f:/r/teams/qcc-tes',
                 'scheduled',
-                'Budi Santoso:EMP-001:leader; Siti Aminah:EMP-002:secretary; Joko:EMP-003:member',
+                'Budi Santoso*10001; Siti Aminah*10002; Joko Widodo*10003',
             ]);
 
             // Contoh 2: Tambah gugus baru (Kode Gugus dikosongkan agar otomatis di-generate)
@@ -406,10 +417,10 @@ class AdminController extends Controller
                 'Pengurangan Scrap Wire Melalui Kaizen 5S',
                 'Engineering',
                 '2026',
-                'Antonius Aswin Sidharta',
+                'antonius.aswin@bekaert.com',
                 '',
                 'scheduled',
-                'Ahmad Dahlan:EMP-004:leader; Dewi Sartika:EMP-005:member',
+                'Ahmad Dahlan*10004; Dewi Sartika*10005',
             ]);
 
             fclose($handle);
@@ -502,7 +513,7 @@ class AdminController extends Controller
                 $colMap['dept'] = $idx;
             } elseif (str_contains($colClean, 'tahun') || $colClean === 'year') {
                 $colMap['year'] = $idx;
-            } elseif (str_contains($colClean, 'fasilitator') || $colClean === 'facilitator') {
+            } elseif (str_contains($colClean, 'fasilitator') || str_contains($colClean, 'facilitator') || str_contains($colClean, 'emailfasilitator')) {
                 $colMap['fac'] = $idx;
             } elseif (str_contains($colClean, 'sharepoint') || str_contains($colClean, 'link')) {
                 $colMap['sharepoint'] = $idx;
@@ -557,12 +568,12 @@ class AdminController extends Controller
                     $department = Department::first();
                 }
 
-                // Cari Fasilitator
+                // Cari Fasilitator berdasarkan Email (atau fallback NIK / Nama)
                 $facilitator = null;
                 if (! empty($facVal)) {
-                    $facilitator = User::where('nik', $facVal)
-                        ->orWhere('name', 'like', "%{$facVal}%")
-                        ->first();
+                    $facilitator = User::where('email', $facVal)->first()
+                        ?? User::where('nik', $facVal)->first()
+                        ?? User::where('name', 'like', "%{$facVal}%")->first();
                 }
 
                 // Periode
@@ -591,7 +602,7 @@ class AdminController extends Controller
                         'department_id' => $department->id,
                         'year' => $yearVal,
                         'assessment_period_id' => $period->id,
-                        'facilitator_id' => $facilitator?->id ?? $circle->facilitator_id,
+                        'facilitator_id' => $facilitator ? $facilitator->id : $circle->facilitator_id,
                         'sharepoint_url' => $spVal ?: $circle->sharepoint_url,
                         'status' => $statusVal,
                     ]);
@@ -627,37 +638,47 @@ class AdminController extends Controller
                 }
 
                 // Sinkronisasi Anggota jika kolom anggota terisi
+                // Format yang didukung: Nama*NIK dipisahkan ';'
+                // Posisi otomatis: Urutan ke-1 = Leader, Urutan ke-2 = Secretary, Urutan ke-3 dst = Member
                 if (! empty($membersVal)) {
                     $circle->members()->delete();
                     $memberItems = preg_split('/[;\n]+/', $membersVal);
+                    $memberIndex = 0;
+
                     foreach ($memberItems as $mItem) {
                         $mItem = trim($mItem);
                         if (empty($mItem)) {
                             continue;
                         }
 
+                        // Parse Nama*NIK (atau fallback : atau (NIK))
                         $mName = $mItem;
-                        $mNik = 'EMP-'.rand(1000, 9999);
-                        $mRole = 'member';
+                        $mNik = '';
 
-                        if (str_contains($mItem, ':')) {
+                        if (str_contains($mItem, '*')) {
+                            $parts = explode('*', $mItem);
+                            $mName = trim($parts[0] ?? '');
+                            $mNik = trim($parts[1] ?? '');
+                        } elseif (str_contains($mItem, ':')) {
                             $parts = explode(':', $mItem);
                             $mName = trim($parts[0] ?? '');
-                            $mNik = trim($parts[1] ?? $mNik);
-                            $mRole = strtolower(trim($parts[2] ?? 'member'));
+                            $mNik = trim($parts[1] ?? '');
                         } elseif (preg_match('/^(.*?)\s*\((.*?)\)$/', $mItem, $matches)) {
                             $mName = trim($matches[1]);
-                            $inside = trim($matches[2]);
-                            if (str_contains($inside, '-')) {
-                                $inParts = explode('-', $inside);
-                                $mNik = trim($inParts[0]);
-                                $mRole = strtolower(trim($inParts[1]));
-                            } else {
-                                $mNik = $inside;
-                            }
+                            $mNik = trim($matches[2]);
                         }
 
-                        if (! in_array($mRole, ['leader', 'secretary', 'facilitator', 'member'])) {
+                        if (empty($mNik)) {
+                            $mNik = 'EMP-'.rand(1000, 9999);
+                        }
+
+                        // Penentuan peran otomatis sesuai urutan:
+                        // 1 = Leader, 2 = Secretary, 3 dst = Member
+                        if ($memberIndex === 0) {
+                            $mRole = 'leader';
+                        } elseif ($memberIndex === 1) {
+                            $mRole = 'secretary';
+                        } else {
                             $mRole = 'member';
                         }
 
@@ -668,6 +689,7 @@ class AdminController extends Controller
                                 'nik' => $mNik,
                                 'role' => $mRole,
                             ]);
+                            $memberIndex++;
                         }
                     }
                 }

@@ -16,50 +16,57 @@
     </div>
 
     <!-- Header Banner -->
-    <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-blue-500/20">
+    <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm shadow-blue-500/20 flex-shrink-0">
                 🏢
             </div>
-            <div>
+            <div class="min-w-0">
                 <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60">
                         Admin Master Data
                     </span>
-                    <span class="text-xs text-slate-400">Total: {{ $stats['total'] }} Gugus</span>
+                    <span class="text-xs text-slate-400 font-medium">Total: {{ $stats['total'] }} Gugus</span>
                 </div>
-                <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5">
+                <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-0.5 truncate">
                     Kelola Gugus Mutu QCC
                 </h1>
-                <p class="text-xs sm:text-sm text-slate-500 font-medium">
+                <p class="text-xs text-slate-500 font-medium hidden sm:block">
                     Pusat administrasi gugus inovasi: tambah, edit informasi, jadwalkan presentasi, dan kelola data tim.
                 </p>
             </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <!-- Action Buttons in Compact Single Row -->
+        <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <!-- Unduh Excel (CSV) Button -->
-            <a href="{{ route('admin.circles.export', request()->query()) }}" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs" title="Unduh Data Seluruh Gugus ke Format Excel / CSV">
-                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="{{ route('admin.circles.export', request()->query()) }}" 
+                class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-95" 
+                title="Unduh Data Seluruh Gugus ke Format Excel / CSV">
+                <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
-                <span>Unduh Excel</span>
+                <span class="text-xs">Unduh</span>
             </a>
 
             <!-- Import Excel (CSV) Button -->
-            <button type="button" onclick="openImportModal()" class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs sm:text-sm border border-emerald-200 transition inline-flex items-center gap-1.5 shadow-2xs" title="Import / Bulk Update Data Gugus dari Excel (CSV)">
-                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="button" onclick="openImportModal()" 
+                class="px-2.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-200 transition inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-95" 
+                title="Import / Bulk Update Data Gugus dari Excel (CSV)">
+                <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                 </svg>
-                <span>Import Excel</span>
+                <span class="text-xs">Import</span>
             </button>
 
             <!-- Daftarkan Gugus Baru Button -->
-            <a href="{{ route('admin.circles.create') }}" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition shadow-md shadow-blue-600/25 flex items-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="{{ route('admin.circles.create') }}" 
+                class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition shadow-sm hover:shadow-md shadow-blue-600/20 active:scale-95 inline-flex items-center gap-1.5" 
+                title="Daftarkan Gugus Baru">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                <span>Daftarkan Gugus Baru</span>
+                <span>+ Gugus Baru</span>
             </a>
         </div>
     </div>
@@ -301,8 +308,9 @@
             </div>
             <ul class="list-disc list-inside space-y-1 text-[11px] text-blue-800">
                 <li><strong>Tambah Gugus Baru:</strong> Kosongkan kolom <em>Kode Gugus</em> agar sistem membuat kode otomatis (contoh: QCC-2026-xxx).</li>
-                <li><strong>Edit Gugus yang Ada:</strong> Isi kolom <em>Kode Gugus</em> sesuai data di tabel, maka sistem akan otomatis memperbarui gugus tersebut.</li>
-                <li><strong>Susunan Anggota:</strong> Format <code>Nama:NIK:Role</code> dipisahkan tanda titik koma (contoh: <code>Budi:EMP-001:leader; Siti:EMP-002:secretary</code>).</li>
+                <li><strong>Edit Gugus yang Ada:</strong> Isi kolom <em>Kode Gugus</em> sesuai data di tabel untuk memperbarui gugus tersebut.</li>
+                <li><strong>Fasilitator:</strong> Masukkan alamat <strong>Email</strong> fasilitator (contoh: <code>iman.sugih@bekaert.com</code>).</li>
+                <li><strong>Susunan Anggota:</strong> Format cukup <code>Nama*NIK</code> dipisahkan titik koma (contoh: <code>Budi Santoso*10001; Siti Aminah*10002; Joko Widodo*10003</code>). Urutan ke-1 = Leader, ke-2 = Secretary, ke-3 dst = Anggota.</li>
             </ul>
             <div class="pt-1.5">
                 <a href="{{ route('admin.circles.template') }}" class="inline-flex items-center gap-1.5 text-xs font-black text-blue-700 hover:text-blue-900 underline">
