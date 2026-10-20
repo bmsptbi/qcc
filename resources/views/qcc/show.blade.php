@@ -35,14 +35,6 @@
                     <span>Bagikan Link & QR</span>
                 </button>
             @endif
-
-            <!-- Quick Assess Button -->
-            <a href="{{ route('qcc.circles.assess', $circle) }}" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-600/20 transition inline-flex items-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                </svg>
-                <span>Form Nilai Juri</span>
-            </a>
         </div>
     </div>
 
@@ -715,22 +707,36 @@
 
         <!-- QR Code Display Box -->
         <div class="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
-            <div class="p-2.5 bg-white rounded-2xl border border-slate-100 shadow-md">
-                <img id="share_qr_image" src="" alt="QR Code Penilaian" class="w-44 h-44 sm:w-48 sm:h-48 rounded-xl object-contain">
+            <!-- Placeholder saat tahap belum dipilih -->
+            <div id="qr_placeholder_box" class="w-full py-8 px-4 flex flex-col items-center justify-center text-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70">
+                <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-2.5">
+                    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                    </svg>
+                </div>
+                <p class="text-xs font-bold text-slate-700">QR Code Belum Dibuat</p>
+                <p class="text-[11px] text-slate-400 mt-1 max-w-xs">Silakan pilih tahap penilaian di atas terlebih dahulu untuk membuat QR Code & link.</p>
             </div>
-            <span class="text-[11px] font-semibold text-slate-500 mt-2.5 text-center flex items-center gap-1.5">
-                <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                </svg>
-                Scan menggunakan kamera smartphone juri
-            </span>
-            <a id="download_qr_btn" href="" target="_blank" download="qr-penilaian-{{ $circle->circle_code }}.png" 
-                class="mt-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                </svg>
-                Buka / Download Gambar QR
-            </a>
+
+            <!-- Tampilan QR saat tahap sudah dipilih -->
+            <div id="qr_ready_box" class="hidden flex-col items-center justify-center w-full">
+                <div class="p-2.5 bg-white rounded-2xl border border-slate-100 shadow-md">
+                    <img id="share_qr_image" src="" alt="QR Code Penilaian" class="w-44 h-44 sm:w-48 sm:h-48 rounded-xl object-contain">
+                </div>
+                <span class="text-[11px] font-semibold text-slate-500 mt-2.5 text-center flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                    </svg>
+                    Scan menggunakan kamera smartphone juri
+                </span>
+                <a id="download_qr_btn" href="" target="_blank" download="qr-penilaian-{{ $circle->circle_code }}.png" 
+                    class="mt-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Buka / Download Gambar QR
+                </a>
+            </div>
         </div>
 
         <!-- Link Preview Box -->
@@ -738,9 +744,10 @@
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Link Penilaian Siap Dibagikan:</label>
             <div class="flex items-center gap-2">
                 <input type="text" id="share_url_display" readonly 
+                    placeholder="Pilih tahap penilaian di atas terlebih dahulu..."
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs font-mono text-slate-800 select-all focus:outline-none">
                 <button type="button" onclick="copyShareUrl()" id="copy_btn" 
-                    class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex-shrink-0 shadow-sm flex items-center gap-1.5">
+                    class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex-shrink-0 shadow-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
                     </svg>
@@ -751,8 +758,8 @@
 
         <!-- Quick Share to WhatsApp -->
         <div class="pt-2 flex items-center gap-2">
-            <button type="button" onclick="shareToWhatsApp()" 
-                class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+            <button type="button" id="whatsapp_share_btn" onclick="shareToWhatsApp()" 
+                class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-14.416c-6.627 0-12 5.373-12 12 0 2.152.569 4.174 1.564 5.922l-1.564 5.706 5.86-1.538c1.705.932 3.659 1.472 5.74 1.472 6.627 0 12-5.373 12-12s-5.373-12-12-12z"/>
                 </svg>
@@ -798,6 +805,41 @@
 
     function updateGeneratedShareUrl() {
         const stageVal = document.getElementById('share_stage_select').value;
+        const qrPlaceholderBox = document.getElementById('qr_placeholder_box');
+        const qrReadyBox = document.getElementById('qr_ready_box');
+        const shareUrlInput = document.getElementById('share_url_display');
+        const copyBtn = document.getElementById('copy_btn');
+        const waBtn = document.getElementById('whatsapp_share_btn');
+        const qrImg = document.getElementById('share_qr_image');
+        const downloadQrBtn = document.getElementById('download_qr_btn');
+
+        if (!stageVal) {
+            // Tahap belum dipilih: sembunyikan QR & link
+            if (qrPlaceholderBox) qrPlaceholderBox.classList.remove('hidden');
+            if (qrReadyBox) {
+                qrReadyBox.classList.add('hidden');
+                qrReadyBox.classList.remove('flex');
+            }
+            if (shareUrlInput) {
+                shareUrlInput.value = '';
+                shareUrlInput.placeholder = 'Pilih tahap penilaian di atas terlebih dahulu...';
+            }
+            if (copyBtn) copyBtn.disabled = true;
+            if (waBtn) waBtn.disabled = true;
+            if (qrImg) qrImg.src = '';
+            if (downloadQrBtn) downloadQrBtn.href = '#';
+            return;
+        }
+
+        // Tahap sudah dipilih: buat link & QR
+        if (qrPlaceholderBox) qrPlaceholderBox.classList.add('hidden');
+        if (qrReadyBox) {
+            qrReadyBox.classList.remove('hidden');
+            qrReadyBox.classList.add('flex');
+        }
+        if (copyBtn) copyBtn.disabled = false;
+        if (waBtn) waBtn.disabled = false;
+
         const checkedJudges = Array.from(document.querySelectorAll('.share-judge-cb:checked')).map(cb => cb.value);
         
         let url = new URL(baseUrl);
@@ -811,13 +853,14 @@
         }
 
         const fullUrl = url.toString();
-        document.getElementById('share_url_display').value = fullUrl;
+        if (shareUrlInput) {
+            shareUrlInput.value = fullUrl;
+            shareUrlInput.placeholder = '';
+        }
 
         // Update QR Code Image
         const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=' + encodeURIComponent(fullUrl);
-        const qrImg = document.getElementById('share_qr_image');
         if (qrImg) qrImg.src = qrUrl;
-        const downloadQrBtn = document.getElementById('download_qr_btn');
         if (downloadQrBtn) downloadQrBtn.href = qrUrl;
 
         document.getElementById('copy_btn_text').innerText = 'Salin Link';
@@ -825,6 +868,7 @@
 
     function copyShareUrl() {
         const input = document.getElementById('share_url_display');
+        if (!input.value) return;
         input.select();
         input.setSelectionRange(0, 99999);
         navigator.clipboard.writeText(input.value).then(() => {
@@ -838,9 +882,14 @@
     function shareToWhatsApp() {
         const url = document.getElementById('share_url_display').value;
         const stageSelect = document.getElementById('share_stage_select');
-        const stageName = (stageSelect && stageSelect.value && stageSelect.selectedIndex >= 0)
+        if (!stageSelect || !stageSelect.value || !url) {
+            alert('Silakan pilih tahap penilaian di atas terlebih dahulu!');
+            return;
+        }
+
+        const stageName = (stageSelect.selectedIndex >= 0)
             ? stageSelect.options[stageSelect.selectedIndex].text
-            : 'Semua Tahap Penilaian (Belum Spesifik)';
+            : 'Semua Tahap Penilaian';
         
         const checkedJudges = Array.from(document.querySelectorAll('.share-judge-cb:checked'));
         let judgeName = 'Bapak/Ibu Dewan Juri';
