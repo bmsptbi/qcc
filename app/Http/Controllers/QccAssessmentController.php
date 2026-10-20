@@ -750,12 +750,12 @@ class QccAssessmentController extends Controller
                 'adjustments' => $adjustments,
                 'is_adjusted' => $isAdjusted,
                 'max_deviation_threshold' => $maxDeviationThreshold,
-                'stage_contribution' => round($stageContribution, 2),
+                'stage_contribution' => round($stageContribution, 4),
                 'criteria_rows' => $criteriaRows,
             ];
         }
 
-        $calculatedFinalScore = round($overallWeightedSum, 2);
+        $calculatedFinalScore = round($overallWeightedSum, 4);
 
         return [
             'stages' => $stagesMatrix,

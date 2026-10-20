@@ -410,16 +410,28 @@
                                 </button>
                             @endif
 
-                            <div class="flex items-center gap-1.5 pl-1">
-                                <span class="text-xs font-black uppercase tracking-wider text-slate-500">Nilai Tertimbang:</span>
-                                <span class="px-3.5 py-1.5 bg-yellow-300 border border-yellow-400 font-mono font-black text-slate-950 text-base sm:text-lg rounded-md shadow-2xs tracking-wide" title="Nilai Rata-rata Tertimbang Tahap Ini (Skala 0 - 10)">
-                                    {{ $stageData['stage_stats']['average'] !== null ? number_format($stageData['stage_stats']['average'], 2) : '-' }}
-                                </span>
-                                @if(!empty($stageData['adjustments']))
-                                    <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300" title="Nilai tahap ini menggunakan hasil {{ end($stageData['adjustments'])['name'] }} karena deviasi awal melebihi {{ number_format($stageData['max_deviation_threshold'], 0) }}%">
-                                        {{ end($stageData['adjustments'])['name'] }}
+                            <div class="flex items-center gap-2 pl-1">
+                                <!-- Teks Nilai Tertimbang & Tanda Adjustment di bawahnya -->
+                                <div class="flex flex-col items-end justify-center">
+                                    <span class="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-500 leading-tight">
+                                        Nilai Tertimbang:
                                     </span>
-                                @endif
+                                    @if(!empty($stageData['adjustments']))
+                                        <span class="text-[9px] font-black uppercase text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded mt-0.5 shadow-2xs leading-none" title="Nilai tahap ini menggunakan hasil {{ end($stageData['adjustments'])['name'] }} karena deviasi awal melebihi {{ number_format($stageData['max_deviation_threshold'], 0) }}%">
+                                            {{ end($stageData['adjustments'])['name'] }}
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <!-- Box Skor Tertimbang & Nilai Sesuai Bobot (Font Lebih Kecil) -->
+                                <div class="flex flex-col items-center justify-center">
+                                    <span class="px-3 py-1 bg-yellow-300 border border-yellow-400 font-mono font-black text-slate-950 text-base sm:text-lg rounded-md shadow-2xs tracking-wide leading-tight" title="Nilai Rata-rata Tertimbang Tahap Ini (Skala 0 - 10)">
+                                        {{ $stageData['stage_stats']['average'] !== null ? number_format($stageData['stage_stats']['average'], 2) : '-' }}
+                                    </span>
+                                    <span class="text-[10px] font-bold text-slate-500 font-mono mt-0.5 leading-none" title="Nilai Sesuai Bobot Tahap ({{ number_format($stageData['weight'], 0) }}%) = {{ number_format($stageData['stage_stats']['average'], 2) }} × {{ number_format($stageData['weight'], 0) }}%">
+                                        Bobot: {{ number_format($stageData['stage_contribution'], 4) }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
