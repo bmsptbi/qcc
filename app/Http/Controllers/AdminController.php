@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
@@ -38,10 +39,6 @@ class AdminController extends Controller
 
         if ($request->filled('year') && $request->year !== 'all') {
             $query->where('year', $request->year);
-        }
-
-        if ($request->filled('category_id')) {
-            $query->where('circle_category_id', $request->category_id);
         }
 
         if ($request->filled('department_id')) {
@@ -98,6 +95,7 @@ class AdminController extends Controller
             'circle_code' => ['nullable', 'string', 'max:50'],
             'circle_name' => ['required', 'string', 'max:150'],
             'theme_title' => ['required', 'string', 'max:255'],
+            'sharepoint_url' => ['nullable', 'string', 'max:2000'],
             'department_id' => ['required', 'exists:departments,id'],
             'facilitator_id' => ['nullable', 'exists:users,id'],
             'status' => ['nullable', 'in:draft,submitted,verified,scheduled'],
@@ -156,6 +154,7 @@ class AdminController extends Controller
                 'circle_code' => $circleCode,
                 'circle_name' => $validated['circle_name'],
                 'theme_title' => $validated['theme_title'],
+                'sharepoint_url' => $validated['sharepoint_url'] ?? null,
                 'status' => $validated['status'] ?? 'scheduled',
             ]);
 
@@ -186,13 +185,12 @@ class AdminController extends Controller
      */
     public function editCircle(Circle $circle): View
     {
-        $circle->load(['members', 'category', 'department', 'facilitator']);
+        $circle->load(['members', 'department', 'facilitator']);
         $periods = AssessmentPeriod::orderByDesc('year')->get();
-        $categories = CircleCategory::where('is_active', true)->get();
         $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
         $facilitators = User::whereIn('role', ['facilitator', 'admin'])->get();
 
-        return view('admin.circles.edit', compact('circle', 'periods', 'categories', 'departments', 'facilitators'));
+        return view('admin.circles.edit', compact('circle', 'periods', 'departments', 'facilitators'));
     }
 
     /**
@@ -204,9 +202,10 @@ class AdminController extends Controller
             'circle_code' => ['required', 'string', 'max:50', 'unique:circles,circle_code,'.$circle->id],
             'circle_name' => ['required', 'string', 'max:150'],
             'theme_title' => ['required', 'string', 'max:255'],
+            'sharepoint_url' => ['nullable', 'string', 'max:2000'],
             'year' => ['required', 'integer', 'min:2000', 'max:2099'],
             'assessment_period_id' => ['nullable', 'exists:assessment_periods,id'],
-            'circle_category_id' => ['required', 'exists:circle_categories,id'],
+            'circle_category_id' => ['nullable', 'exists:circle_categories,id'],
             'department_id' => ['required', 'exists:departments,id'],
             'facilitator_id' => ['nullable', 'exists:users,id'],
             'problem_statement' => ['nullable', 'string'],
@@ -240,12 +239,13 @@ class AdminController extends Controller
         $circle->update([
             'assessment_period_id' => $periodId,
             'year' => $year,
-            'circle_category_id' => $validated['circle_category_id'],
+            'circle_category_id' => $validated['circle_category_id'] ?? $circle->circle_category_id ?? CircleCategory::first()?->id,
             'department_id' => $validated['department_id'],
             'facilitator_id' => $validated['facilitator_id'] ?? null,
             'circle_code' => strtoupper($validated['circle_code']),
             'circle_name' => $validated['circle_name'],
             'theme_title' => $validated['theme_title'],
+            'sharepoint_url' => $validated['sharepoint_url'] ?? null,
             'problem_statement' => $validated['problem_statement'] ?? null,
             'target_statement' => $validated['target_statement'] ?? null,
             'presentation_schedule' => $validated['presentation_schedule'] ?? null,
@@ -291,6 +291,399 @@ class AdminController extends Controller
 
         return redirect()->route('admin.circles.index')
             ->with('success', "Gugus {$name} ({$code}) beserta seluruh data penilaiannya telah dihapus!");
+    }
+
+    /**
+     * Export data seluruh gugus ke format Excel / CSV
+     */
+    public function exportCircles(Request $request): StreamedResponse
+    {
+        $query = Circle::with(['department', 'facilitator', 'members'])->orderBy('year', 'desc')->orderBy('circle_code', 'asc');
+
+        if ($request->filled('year') && $request->year !== 'all') {
+            $query->where('year', $request->year);
+        }
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('circle_name', 'like', "%{$s}%")
+                    ->orWhere('circle_code', 'like', "%{$s}%")
+                    ->orWhere('theme_title', 'like', "%{$s}%");
+            });
+        }
+
+        $circles = $query->get();
+        $filename = 'Data_Gugus_QCC_'.date('Ymd_His').'.csv';
+
+        return response()->stream(function () use ($circles) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF"); // UTF-8 BOM agar terbaca sempurna di Excel
+
+            // Header kolom
+            fputcsv($handle, [
+                'Kode Gugus',
+                'Nama Gugus',
+                'Judul Tema',
+                'Departemen',
+                'Tahun',
+                'Fasilitator',
+                'Link SharePoint',
+                'Status',
+                'Susunan Anggota',
+            ]);
+
+            foreach ($circles as $c) {
+                $membersFormatted = $c->members->map(function ($m) {
+                    return "{$m->name}:{$m->nik}:{$m->role}";
+                })->implode('; ');
+
+                fputcsv($handle, [
+                    $c->circle_code,
+                    $c->circle_name,
+                    $c->theme_title,
+                    $c->department?->name ?? '',
+                    $c->year,
+                    $c->facilitator?->name ?? '',
+                    $c->sharepoint_url ?? '',
+                    $c->status,
+                    $membersFormatted,
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
+     * Unduh template contoh format Excel / CSV untuk import gugus
+     */
+    public function downloadCircleTemplate(): StreamedResponse
+    {
+        $filename = 'Template_Import_Gugus_QCC.csv';
+
+        return response()->stream(function () {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'Kode Gugus',
+                'Nama Gugus',
+                'Judul Tema',
+                'Departemen',
+                'Tahun',
+                'Fasilitator',
+                'Link SharePoint',
+                'Status',
+                'Susunan Anggota',
+            ]);
+
+            // Contoh 1: Edit gugus lama (menggunakan Kode Gugus yang sudah ada)
+            fputcsv($handle, [
+                'QCC-2026-001',
+                'TES CIRCLE EDIT',
+                'Optimalisasi Efisiensi Mesin Drawing Line 2',
+                'Manufacturing & Operations',
+                '2026',
+                'Iman Sugih Hartono',
+                'https://bekaert.sharepoint.com/:f:/r/teams/qcc-tes',
+                'scheduled',
+                'Budi Santoso:EMP-001:leader; Siti Aminah:EMP-002:secretary; Joko:EMP-003:member',
+            ]);
+
+            // Contoh 2: Tambah gugus baru (Kode Gugus dikosongkan agar otomatis di-generate)
+            fputcsv($handle, [
+                '',
+                'GUGUS INOVASI BARU',
+                'Pengurangan Scrap Wire Melalui Kaizen 5S',
+                'Engineering',
+                '2026',
+                'Antonius Aswin Sidharta',
+                '',
+                'scheduled',
+                'Ahmad Dahlan:EMP-004:leader; Dewi Sartika:EMP-005:member',
+            ]);
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
+     * Import data gugus dari file Excel / CSV (Bulk Create & Update)
+     */
+    public function importCircles(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'max:10240'],
+        ], [
+            'file.required' => 'Silakan pilih file CSV yang ingin diimpor.',
+            'file.max' => 'Ukuran file maksimal adalah 10 MB.',
+        ]);
+
+        $file = $request->file('file');
+        $filePath = $file->getRealPath();
+
+        // Buka file dan deteksi delimiter
+        $content = file_get_contents($filePath);
+        if ($content === false || trim($content) === '') {
+            return back()->with('error', 'File yang diunggah kosong.');
+        }
+
+        // Hapus BOM jika ada
+        if (str_starts_with($content, "\xEF\xBB\xBF")) {
+            $content = substr($content, 3);
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', trim($content));
+        if (empty($lines)) {
+            return back()->with('error', 'File tidak memiliki baris data.');
+        }
+
+        // Deteksi delimiter (koma, titik koma, tab)
+        $firstLine = $lines[0];
+        $semicolonCount = substr_count($firstLine, ';');
+        $commaCount = substr_count($firstLine, ',');
+        $tabCount = substr_count($firstLine, "\t");
+
+        $delimiter = ',';
+        if ($semicolonCount > $commaCount && $semicolonCount > $tabCount) {
+            $delimiter = ';';
+        } elseif ($tabCount > $commaCount && $tabCount > $semicolonCount) {
+            $delimiter = "\t";
+        }
+
+        $handle = fopen($filePath, 'r');
+        // Lewati BOM jika ada
+        $bom = fread($handle, 3);
+        if ($bom !== "\xEF\xBB\xBF") {
+            rewind($handle);
+        }
+
+        $header = fgetcsv($handle, 0, $delimiter);
+        if (! $header) {
+            fclose($handle);
+
+            return back()->with('error', 'Gagal membaca baris header CSV.');
+        }
+
+        // Petakan kolom
+        $colMap = [
+            'code' => null,
+            'name' => null,
+            'theme' => null,
+            'dept' => null,
+            'year' => null,
+            'fac' => null,
+            'sharepoint' => null,
+            'status' => null,
+            'members' => null,
+        ];
+
+        foreach ($header as $idx => $col) {
+            $colClean = strtolower(trim(preg_replace('/[^a-zA-Z0-9]/', '', $col)));
+            if (str_contains($colClean, 'kodegugus') || $colClean === 'code' || $colClean === 'circlecode') {
+                $colMap['code'] = $idx;
+            } elseif (str_contains($colClean, 'namagugus') || $colClean === 'name' || $colClean === 'circlename') {
+                $colMap['name'] = $idx;
+            } elseif (str_contains($colClean, 'tema') || $colClean === 'themetitle' || $colClean === 'judul') {
+                $colMap['theme'] = $idx;
+            } elseif (str_contains($colClean, 'departemen') || $colClean === 'department' || $colClean === 'dept') {
+                $colMap['dept'] = $idx;
+            } elseif (str_contains($colClean, 'tahun') || $colClean === 'year') {
+                $colMap['year'] = $idx;
+            } elseif (str_contains($colClean, 'fasilitator') || $colClean === 'facilitator') {
+                $colMap['fac'] = $idx;
+            } elseif (str_contains($colClean, 'sharepoint') || str_contains($colClean, 'link')) {
+                $colMap['sharepoint'] = $idx;
+            } elseif (str_contains($colClean, 'status')) {
+                $colMap['status'] = $idx;
+            } elseif (str_contains($colClean, 'anggota') || str_contains($colClean, 'member')) {
+                $colMap['members'] = $idx;
+            }
+        }
+
+        if ($colMap['name'] === null && $colMap['theme'] === null) {
+            fclose($handle);
+
+            return back()->with('error', 'Format header CSV tidak sesuai. Minimal kolom "Nama Gugus" dan "Judul Tema" harus tersedia.');
+        }
+
+        $createdCount = 0;
+        $updatedCount = 0;
+        $activeYearDefault = (int) session('active_year', date('Y'));
+
+        DB::beginTransaction();
+        try {
+            while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+                if (empty($row) || (count($row) === 1 && trim($row[0]) === '')) {
+                    continue;
+                }
+
+                $codeVal = $colMap['code'] !== null && isset($row[$colMap['code']]) ? strtoupper(trim($row[$colMap['code']])) : '';
+                $nameVal = $colMap['name'] !== null && isset($row[$colMap['name']]) ? trim($row[$colMap['name']]) : '';
+                $themeVal = $colMap['theme'] !== null && isset($row[$colMap['theme']]) ? trim($row[$colMap['theme']]) : '';
+                $deptVal = $colMap['dept'] !== null && isset($row[$colMap['dept']]) ? trim($row[$colMap['dept']]) : '';
+                $yearVal = $colMap['year'] !== null && isset($row[$colMap['year']]) && is_numeric(trim($row[$colMap['year']])) ? (int) trim($row[$colMap['year']]) : $activeYearDefault;
+                $facVal = $colMap['fac'] !== null && isset($row[$colMap['fac']]) ? trim($row[$colMap['fac']]) : '';
+                $spVal = $colMap['sharepoint'] !== null && isset($row[$colMap['sharepoint']]) ? trim($row[$colMap['sharepoint']]) : '';
+                $statusVal = $colMap['status'] !== null && isset($row[$colMap['status']]) ? strtolower(trim($row[$colMap['status']])) : 'scheduled';
+                $membersVal = $colMap['members'] !== null && isset($row[$colMap['members']]) ? trim($row[$colMap['members']]) : '';
+
+                if (empty($nameVal)) {
+                    continue;
+                }
+
+                if (! in_array($statusVal, ['draft', 'submitted', 'verified', 'scheduled', 'evaluated', 'awarded'])) {
+                    $statusVal = 'scheduled';
+                }
+
+                // Cari atau pasangkan Departemen
+                $department = null;
+                if (! empty($deptVal)) {
+                    $department = Department::where('name', 'like', "%{$deptVal}%")->first();
+                }
+                if (! $department) {
+                    $department = Department::first();
+                }
+
+                // Cari Fasilitator
+                $facilitator = null;
+                if (! empty($facVal)) {
+                    $facilitator = User::where('nik', $facVal)
+                        ->orWhere('name', 'like', "%{$facVal}%")
+                        ->first();
+                }
+
+                // Periode
+                $period = AssessmentPeriod::firstOrCreate(
+                    ['year' => $yearVal],
+                    [
+                        'name' => "Konvensi Mutu & QCC {$yearVal}",
+                        'theme' => "Continuous Improvement & Innovation {$yearVal}",
+                        'status' => 'active',
+                        'start_date' => "{$yearVal}-01-01",
+                        'end_date' => "{$yearVal}-12-31",
+                    ]
+                );
+
+                // Cek apakah gugus sudah ada berdasarkan Kode Gugus
+                $circle = null;
+                if (! empty($codeVal)) {
+                    $circle = Circle::where('circle_code', $codeVal)->first();
+                }
+
+                if ($circle) {
+                    // Update gugus yang sudah ada
+                    $circle->update([
+                        'circle_name' => $nameVal,
+                        'theme_title' => $themeVal ?: $circle->theme_title,
+                        'department_id' => $department->id,
+                        'year' => $yearVal,
+                        'assessment_period_id' => $period->id,
+                        'facilitator_id' => $facilitator?->id ?? $circle->facilitator_id,
+                        'sharepoint_url' => $spVal ?: $circle->sharepoint_url,
+                        'status' => $statusVal,
+                    ]);
+                    $updatedCount++;
+                } else {
+                    // Buat kode jika kosong
+                    if (empty($codeVal)) {
+                        $count = Circle::where('year', $yearVal)->count();
+                        $seq = $count + 1;
+                        do {
+                            $candidate = sprintf('QCC-%d-%03d', $yearVal, $seq);
+                            if (! Circle::where('circle_code', $candidate)->exists()) {
+                                $codeVal = $candidate;
+                                break;
+                            }
+                            $seq++;
+                        } while (true);
+                    }
+
+                    $circle = Circle::create([
+                        'circle_code' => $codeVal,
+                        'circle_name' => $nameVal,
+                        'theme_title' => $themeVal ?: $nameVal,
+                        'department_id' => $department->id,
+                        'year' => $yearVal,
+                        'assessment_period_id' => $period->id,
+                        'circle_category_id' => CircleCategory::first()?->id,
+                        'facilitator_id' => $facilitator?->id,
+                        'sharepoint_url' => $spVal ?: null,
+                        'status' => $statusVal,
+                    ]);
+                    $createdCount++;
+                }
+
+                // Sinkronisasi Anggota jika kolom anggota terisi
+                if (! empty($membersVal)) {
+                    $circle->members()->delete();
+                    $memberItems = preg_split('/[;\n]+/', $membersVal);
+                    foreach ($memberItems as $mItem) {
+                        $mItem = trim($mItem);
+                        if (empty($mItem)) {
+                            continue;
+                        }
+
+                        $mName = $mItem;
+                        $mNik = 'EMP-'.rand(1000, 9999);
+                        $mRole = 'member';
+
+                        if (str_contains($mItem, ':')) {
+                            $parts = explode(':', $mItem);
+                            $mName = trim($parts[0] ?? '');
+                            $mNik = trim($parts[1] ?? $mNik);
+                            $mRole = strtolower(trim($parts[2] ?? 'member'));
+                        } elseif (preg_match('/^(.*?)\s*\((.*?)\)$/', $mItem, $matches)) {
+                            $mName = trim($matches[1]);
+                            $inside = trim($matches[2]);
+                            if (str_contains($inside, '-')) {
+                                $inParts = explode('-', $inside);
+                                $mNik = trim($inParts[0]);
+                                $mRole = strtolower(trim($inParts[1]));
+                            } else {
+                                $mNik = $inside;
+                            }
+                        }
+
+                        if (! in_array($mRole, ['leader', 'secretary', 'facilitator', 'member'])) {
+                            $mRole = 'member';
+                        }
+
+                        if (! empty($mName)) {
+                            CircleMember::create([
+                                'circle_id' => $circle->id,
+                                'name' => $mName,
+                                'nik' => $mNik,
+                                'role' => $mRole,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+            fclose($handle);
+
+            return redirect()->route('admin.circles.index')
+                ->with('success', "Proses import berhasil! {$createdCount} gugus baru ditambahkan dan {$updatedCount} gugus berhasil diperbarui.");
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            fclose($handle);
+
+            return back()->with('error', 'Gagal memproses file import: '.$e->getMessage());
+        }
     }
 
     /**

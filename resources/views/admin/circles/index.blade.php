@@ -37,7 +37,24 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Unduh Excel (CSV) Button -->
+            <a href="{{ route('admin.circles.export', request()->query()) }}" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs" title="Unduh Data Seluruh Gugus ke Format Excel / CSV">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span>Unduh Excel</span>
+            </a>
+
+            <!-- Import Excel (CSV) Button -->
+            <button type="button" onclick="openImportModal()" class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs sm:text-sm border border-emerald-200 transition inline-flex items-center gap-1.5 shadow-2xs" title="Import / Bulk Update Data Gugus dari Excel (CSV)">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+                <span>Import Excel</span>
+            </button>
+
+            <!-- Daftarkan Gugus Baru Button -->
             <a href="{{ route('admin.circles.create') }}" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition shadow-md shadow-blue-600/25 flex items-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -73,7 +90,7 @@
 
     <!-- Filters & Search Bar -->
     <div class="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm mb-6 space-y-4">
-        <form method="GET" action="{{ route('admin.circles.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <form method="GET" action="{{ route('admin.circles.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <!-- Search -->
             <div class="lg:col-span-2">
                 <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Cari Gugus / Kode / Tema</label>
@@ -94,19 +111,6 @@
                     @foreach($availableYears as $yr)
                         <option value="{{ $yr }}" {{ request('year') == (string)$yr ? 'selected' : '' }}>
                             Tahun {{ $yr }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Filter Kategori -->
-            <div>
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Kategori</label>
-                <select name="category_id" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none">
-                    <option value="">Semua Kategori</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
-                            {{ $cat->name }}
                         </option>
                     @endforeach
                 </select>
@@ -153,7 +157,7 @@
                     <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider">
                         <th class="py-3.5 px-4">Gugus & Kode</th>
                         <th class="py-3.5 px-4">Tema Perbaikan Mutu</th>
-                        <th class="py-3.5 px-4">Kategori & Departemen</th>
+                        <th class="py-3.5 px-4">Departemen & Dokumen</th>
                         <th class="py-3.5 px-4">Tim & Fasilitator</th>
                         <th class="py-3.5 px-4">Jadwal & Ruang</th>
                         <th class="py-3.5 px-4 text-center">Status</th>
@@ -178,8 +182,13 @@
                                 </div>
                             </td>
                             <td class="py-3.5 px-4">
-                                <div class="font-semibold text-slate-800">{{ $circle->category->name ?? '-' }}</div>
-                                <div class="text-[11px] text-slate-500">{{ $circle->department->name ?? '-' }}</div>
+                                <div class="font-semibold text-slate-800">{{ $circle->department->name ?? '-' }}</div>
+                                @if($circle->sharepoint_url)
+                                    <a href="{{ $circle->sharepoint_url }}" target="_blank" rel="noopener noreferrer" 
+                                        class="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 mt-0.5" title="Buka Folder SharePoint">
+                                        <span>📁 SharePoint</span>
+                                    </a>
+                                @endif
                             </td>
                             <td class="py-3.5 px-4">
                                 <div class="text-xs font-bold text-slate-700">
@@ -265,4 +274,81 @@
     </div>
 
 </div>
+
+<!-- Modal Import Excel (CSV) -->
+<div id="importModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-slate-200/90 shadow-2xl space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-black">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Import / Bulk Update Gugus</h3>
+                    <p class="text-xs text-slate-500 font-medium">Unggah file format Excel (.csv) untuk menambah atau mengedit banyak gugus sekaligus.</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeImportModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1">
+                ✕
+            </button>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 text-xs text-blue-900 space-y-1.5">
+            <div class="font-bold flex items-center gap-1.5">
+                <span>💡 Petunjuk Penggunaan Import:</span>
+            </div>
+            <ul class="list-disc list-inside space-y-1 text-[11px] text-blue-800">
+                <li><strong>Tambah Gugus Baru:</strong> Kosongkan kolom <em>Kode Gugus</em> agar sistem membuat kode otomatis (contoh: QCC-2026-xxx).</li>
+                <li><strong>Edit Gugus yang Ada:</strong> Isi kolom <em>Kode Gugus</em> sesuai data di tabel, maka sistem akan otomatis memperbarui gugus tersebut.</li>
+                <li><strong>Susunan Anggota:</strong> Format <code>Nama:NIK:Role</code> dipisahkan tanda titik koma (contoh: <code>Budi:EMP-001:leader; Siti:EMP-002:secretary</code>).</li>
+            </ul>
+            <div class="pt-1.5">
+                <a href="{{ route('admin.circles.template') }}" class="inline-flex items-center gap-1.5 text-xs font-black text-blue-700 hover:text-blue-900 underline">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    <span>Unduh Template Format Excel (CSV)</span>
+                </a>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ route('admin.circles.import') }}" enctype="multipart/form-data" class="space-y-4">
+            @csrf
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Pilih File Excel / CSV <span class="text-rose-500">*</span>
+                </label>
+                <input type="file" name="file" accept=".csv,text/csv,text/plain" required
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500">
+                <span class="text-[10px] text-slate-400 mt-1 block">Format file: .csv (Comma / Semicolon separated, UTF-8 BOM kompatibel dengan Microsoft Excel).</span>
+            </div>
+
+            <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeImportModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                    Batal
+                </button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                    <span>Mulai Proses Import</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    function openImportModal() {
+        document.getElementById('importModal').classList.remove('hidden');
+    }
+
+    function closeImportModal() {
+        document.getElementById('importModal').classList.add('hidden');
+    }
+</script>
+@endpush
 @endsection

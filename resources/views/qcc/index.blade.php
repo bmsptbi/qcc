@@ -100,15 +100,7 @@
                     <option value="all" {{ (string)$activeYear === 'all' ? 'selected' : '' }}>Semua Tahun</option>
                 </select>
 
-                <!-- Category Filter -->
-                <select name="category" onchange="this.form.submit()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                    <option value="">Semua Kategori</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>
-                            {{ $cat->name }}
-                        </option>
-                    @endforeach
-                </select>
+
 
                 <!-- Department Filter -->
                 <select name="department" onchange="this.form.submit()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
@@ -151,9 +143,7 @@
                                 {{ $circle->circle_code }}
                             </span>
 
-                            <span class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700">
-                                {{ $circle->category->name ?? 'Manufacturing' }}
-                            </span>
+
 
                             <span class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200/60">
                                 {{ $circle->department->name ?? '-' }}

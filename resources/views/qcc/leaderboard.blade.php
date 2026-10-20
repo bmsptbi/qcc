@@ -20,31 +20,18 @@
             Perhitungan skor agregat rata-rata dari seluruh dewan juri penilai konvensi mutu.
         </p>
 
-        <!-- Category Pill Filters -->
-        <div class="flex flex-wrap items-center justify-center gap-2 mt-5">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Kategori:</span>
-            <a href="{{ route('qcc.leaderboard', array_filter(['year' => request('year')])) }}" 
-                class="px-4 py-1.5 rounded-full text-xs font-bold transition {{ !request('category') ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' }}">
-                Semua Kategori
-            </a>
-            @foreach($categories as $cat)
-                <a href="{{ route('qcc.leaderboard', array_filter(['category' => $cat->id, 'year' => request('year')])) }}" 
-                    class="px-4 py-1.5 rounded-full text-xs font-bold transition {{ request('category') == $cat->id ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' }}">
-                    {{ $cat->name }}
-                </a>
-            @endforeach
-        </div>
+
 
         <!-- Year Period Quick Switcher Pills -->
-        <div class="flex flex-wrap items-center justify-center gap-2 mt-3 pt-3 border-t border-slate-200/60 max-w-xl mx-auto">
+        <div class="flex flex-wrap items-center justify-center gap-2 mt-4 max-w-xl mx-auto">
             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Periode:</span>
             @foreach($availableYears as $yr)
-                <a href="{{ route('qcc.leaderboard', array_filter(['category' => request('category'), 'year' => $yr])) }}"
+                <a href="{{ route('qcc.leaderboard', ['year' => $yr]) }}"
                     class="px-3 py-1 rounded-full text-xs font-bold transition {{ (string)$activeYear === (string)$yr ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
                     Tahun {{ $yr }}
                 </a>
             @endforeach
-            <a href="{{ route('qcc.leaderboard', array_filter(['category' => request('category'), 'year' => 'all'])) }}"
+            <a href="{{ route('qcc.leaderboard', ['year' => 'all']) }}"
                 class="px-3 py-1 rounded-full text-xs font-bold transition {{ (string)$activeYear === 'all' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
                 Semua Tahun
             </a>
@@ -82,10 +69,6 @@
                                 <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 text-blue-800">
                                     {{ $circle->circle_code }}
                                 </span>
-                                <span class="text-xs font-semibold text-slate-500">
-                                    {{ $circle->category->name ?? 'Manufacturing' }}
-                                </span>
-                                <span class="text-xs text-slate-400">•</span>
                                 <span class="text-xs font-medium text-slate-500">
                                     {{ $circle->department->name ?? '-' }}
                                 </span>

@@ -52,10 +52,6 @@ class QccAssessmentController extends Controller
             $query->where('year', $activeYear);
         }
 
-        if ($request->filled('category')) {
-            $query->where('circle_category_id', $request->category);
-        }
-
         if ($request->filled('department')) {
             $query->where('department_id', $request->department);
         }
@@ -496,10 +492,6 @@ class QccAssessmentController extends Controller
 
         if ($activeYear !== 'all') {
             $query->where('year', $activeYear);
-        }
-
-        if ($request->filled('category')) {
-            $query->where('circle_category_id', $request->category);
         }
 
         $circles = $query->orderByDesc('final_score')

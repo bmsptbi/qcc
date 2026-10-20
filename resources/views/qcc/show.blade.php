@@ -46,11 +46,6 @@
                     <span class="px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider bg-blue-100 text-blue-800">
                         {{ $circle->circle_code }}
                     </span>
-                    @if($circle->category)
-                        <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                            {{ $circle->category->name }}
-                        </span>
-                    @endif
                 </div>
 
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -193,35 +188,65 @@
                 </div>
             </div>
 
-            <!-- Documents & Presentation Files -->
+            <!-- SharePoint Folder & Documents -->
             <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs space-y-3">
-                <h2 class="text-base font-bold text-slate-900 tracking-tight">Dokumen Pendukung</h2>
-                
-                <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <svg class="w-6 h-6 text-rose-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
                         </svg>
-                        <div>
-                            <span class="text-xs font-bold text-slate-800 block">Risalah_Lengkap_{{ $circle->circle_code }}.pdf</span>
-                            <span class="text-[10px] text-slate-400">PDF Dokumentasi 8 Langkah</span>
-                        </div>
-                    </div>
-                    <span class="text-xs font-semibold text-blue-600 hover:underline cursor-pointer">Preview</span>
+                        <span>Dokumen & Risalah SharePoint</span>
+                    </h2>
                 </div>
 
-                <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <svg class="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 2h6v4H7V5zm8 8v2h1v-2h-1zm-2-2H7v4h6v-4zm2 0h1V9h-1v2zm0-4h1V5h-1v2zM5 5v2H4V5h1zm0 4v2H4V9h1zm0 4v2H4v-2h1z" clip-rule="evenodd"/>
-                        </svg>
-                        <div>
-                            <span class="text-xs font-bold text-slate-800 block">Slide_Presentasi_{{ $circle->circle_code }}.pptx</span>
-                            <span class="text-[10px] text-slate-400">PPT Konvensi Mutu</span>
+                @if($circle->sharepoint_url)
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-blue-50/60 to-indigo-50/40 border border-blue-100 flex flex-col gap-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-blue-500/20">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <span class="text-xs font-bold text-slate-800 block truncate">Folder Dokumen Gugus</span>
+                                <span class="text-[11px] text-slate-500 leading-tight block mt-0.5">
+                                    Akses file risalah 8 langkah, slide presentasi, dan berkas pendukung resmi.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="pt-1 flex items-center gap-2">
+                            <a href="{{ $circle->sharepoint_url }}" target="_blank" rel="noopener noreferrer"
+                                class="flex-1 py-2.5 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-sm transition inline-flex items-center justify-center gap-1.5">
+                                <span>Buka Folder SharePoint</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                </svg>
+                            </a>
+                            <button type="button" onclick="copySharePointUrl('{{ addslashes($circle->sharepoint_url) }}', this)"
+                                class="p-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition text-xs font-semibold" title="Salin Tautan">
+                                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                                </svg>
+                            </button>
                         </div>
                     </div>
-                    <span class="text-xs font-semibold text-blue-600 hover:underline cursor-pointer">Unduh</span>
-                </div>
+                @else
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                        <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2">
+                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                            </svg>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-600">Link Folder SharePoint Belum Ada</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Tautan folder dokumen risalah belum ditambahkan untuk gugus ini.</p>
+                        @if(Auth::check() && Auth::user()->role === 'admin')
+                            <a href="{{ route('admin.circles.edit', $circle) }}" class="mt-2.5 inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline">
+                                <span>+ Tambahkan Link Sekarang</span>
+                            </a>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -915,6 +940,17 @@
 
 @push('scripts')
 <script>
+    function copySharePointUrl(url, btn) {
+        if (!url) return;
+        navigator.clipboard.writeText(url).then(() => {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="text-[10px] font-bold text-emerald-600 px-1">✓ Tersalin!</span>';
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+            }, 2000);
+        });
+    }
+
     function selectMatrixStageTab(tabId) {
         document.querySelectorAll('.stage-matrix-panel').forEach(panel => {
             if (tabId === 'all') {

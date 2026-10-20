@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'circle_code',
     'circle_name',
     'theme_title',
+    'sharepoint_url',
     'problem_statement',
     'target_statement',
     'paper_file_path',

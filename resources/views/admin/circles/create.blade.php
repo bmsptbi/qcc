@@ -105,6 +105,23 @@
                     </select>
                 </div>
             </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Link Folder SharePoint (Risalah, Presentasi & Dokumen Pendukung)
+                </label>
+                <div class="relative">
+                    <input type="url" name="sharepoint_url" value="{{ old('sharepoint_url') }}"
+                        placeholder="Contoh: https://bekaert.sharepoint.com/:f:/r/teams/..."
+                        class="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-xs text-blue-700">
+                    <svg class="w-4 h-4 text-blue-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                    </svg>
+                </div>
+                <span class="text-[11px] text-slate-400 mt-1 block">
+                    Masukkan URL tautan folder SharePoint yang berisi file risalah, presentasi, atau lampiran gugus. Tautan ini akan tampil langsung pada halaman rincian gugus untuk dewan juri & fasilitator.
+                </span>
+            </div>
         </div>
 
         <!-- 2. Susunan Anggota Gugus Dinamis -->

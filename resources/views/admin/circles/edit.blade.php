@@ -91,24 +91,13 @@
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tahun Periode <span class="text-rose-500">*</span></label>
                     <select name="year" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
                         @foreach($availableYears as $yr)
                             <option value="{{ $yr }}" {{ (old('year', $circle->year) == $yr) ? 'selected' : '' }}>
                                 Tahun {{ $yr }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kategori Circle <span class="text-rose-500">*</span></label>
-                    <select name="circle_category_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat->id }}" {{ old('circle_category_id', $circle->circle_category_id) == $cat->id ? 'selected' : '' }}>
-                                {{ $cat->name }}
                             </option>
                         @endforeach
                     </select>
@@ -136,6 +125,23 @@
                         @endforeach
                     </select>
                 </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Link Folder SharePoint (Risalah, Presentasi & Dokumen Pendukung)
+                </label>
+                <div class="relative">
+                    <input type="url" name="sharepoint_url" value="{{ old('sharepoint_url', $circle->sharepoint_url) }}"
+                        placeholder="Contoh: https://bekaert.sharepoint.com/:f:/r/teams/..."
+                        class="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-xs text-blue-700">
+                    <svg class="w-4 h-4 text-blue-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                    </svg>
+                </div>
+                <span class="text-[11px] text-slate-400 mt-1 block">
+                    Masukkan URL tautan folder SharePoint yang berisi file risalah, presentasi, atau lampiran dokumen pendukung gugus.
+                </span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
