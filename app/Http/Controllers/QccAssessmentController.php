@@ -840,9 +840,9 @@ class QccAssessmentController extends Controller
                 $itemHeader = array_merge($itemHeader, ['Max', 'Min', 'Range', 'Average', 'Deviasi Max', 'Deviasi Min', 'Deviasi (%)']);
                 fputcsv($handle, $itemHeader);
 
-                // Jika ada adjustment, tulis baris Adjustment di atas Nilai Tertimbang
+                // Jika ada adjustment, tulis baris Adjustment di atas Nilai Tertimbang (Final di atas)
                 if (! empty($stageData['adjustments'])) {
-                    foreach ($stageData['adjustments'] as $adj) {
+                    foreach (array_reverse($stageData['adjustments']) as $adj) {
                         $adjRow = [$adj['name'].($adj['is_final'] ? ' (Final)' : '')];
                         foreach ($stageJudges as $judge) {
                             $adjRow[] = $adj['judge_scores'][$judge->id] ?? '-';

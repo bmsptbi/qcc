@@ -448,9 +448,9 @@
                                         <th class="p-3 text-center bg-purple-100/80 text-purple-900">Deviasi (%)</th>
                                     </tr>
 
-                                    <!-- Row(s): Adjustment jika Deviasi > Batas Maksimum (Diletakkan di atas Nilai Tertimbang) -->
+                                    <!-- Row(s): Adjustment jika Deviasi > Batas Maksimum (Urutan: Final di paling atas, bertahap ke Nilai Tertimbang di bawah) -->
                                     @if(!empty($stageData['adjustments']))
-                                        @foreach($stageData['adjustments'] as $adj)
+                                        @foreach(array_reverse($stageData['adjustments']) as $adj)
                                             <tr class="{{ $adj['is_final'] ? 'bg-emerald-50/70 border-b-2 border-emerald-200 text-slate-900' : 'bg-amber-50/50 border-b border-slate-200 text-slate-800' }} font-bold">
                                                 <th class="p-3 font-black text-xs text-slate-900 sticky left-0 {{ $adj['is_final'] ? 'bg-emerald-50/95' : 'bg-amber-50/95' }} z-10 border-r border-slate-200">
                                                     <div class="flex items-center justify-between gap-1.5">
