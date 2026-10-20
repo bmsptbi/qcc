@@ -49,6 +49,9 @@ class QccAssessmentController extends Controller
         $query = Circle::with(['category', 'department', 'leader', 'facilitator', 'members'])
             ->withCount(['members', 'assessments']);
 
+        // Bersihkan data lama berstatus 'Bronze'
+        Circle::where('award_level', 'Bronze')->update(['award_level' => null]);
+
         if ($activeYear !== 'all') {
             $query->where('year', $activeYear);
         }
@@ -421,8 +424,8 @@ class QccAssessmentController extends Controller
             $circle->award_level = 'Gold';
         } elseif ($finalScore >= 7.5) {
             $circle->award_level = 'Silver';
-        } elseif ($finalScore > 0) {
-            $circle->award_level = 'Bronze';
+        } else {
+            $circle->award_level = null;
         }
 
         $hasSubmitted = Assessment::where('circle_id', $circle->id)->where('status', 'submitted')->exists();
@@ -1131,8 +1134,6 @@ class QccAssessmentController extends Controller
             $circle->award_level = 'Gold';
         } elseif ($finalScore >= 7.5) {
             $circle->award_level = 'Silver';
-        } elseif ($finalScore > 0) {
-            $circle->award_level = 'Bronze';
         } else {
             $circle->award_level = null;
         }

@@ -169,7 +169,7 @@
                                 </span>
                             @endif
 
-                            @if($circle->award_level)
+                            @if($circle->award_level && $circle->award_level !== 'Bronze')
                                 <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-xs">
                                     ★ {{ $circle->award_level }}
                                 </span>
@@ -221,7 +221,7 @@
                             <div class="text-right">
                                 <span class="text-[11px] font-semibold text-slate-400 block uppercase">Nilai Akhir</span>
                                 <span class="text-2xl font-black text-slate-900">{{ number_format($circle->final_score, 2) }}</span>
-                                <span class="text-xs text-slate-500 font-medium block">/ 100</span>
+                                <span class="text-xs text-slate-500 font-medium block">/ 10</span>
                             </div>
                         @endif
 
