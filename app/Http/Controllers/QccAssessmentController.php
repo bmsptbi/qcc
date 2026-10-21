@@ -807,8 +807,12 @@ class QccAssessmentController extends Controller
     /**
      * Export Assessment Summary Matrix to CSV (Excel compatible)
      */
-    public function exportAssessmentCsv(Circle $circle): StreamedResponse
+    public function exportAssessmentCsv(Circle $circle): StreamedResponse|RedirectResponse
     {
+        if (! Auth::check()) {
+            return redirect()->route('login')->with('error', 'Silakan masuk/login terlebih dahulu untuk mengunduh rekap penilaian.');
+        }
+
         $categories = CriteriaCategory::with(['criteria' => function ($q) {
             $q->where('is_active', true)->orderBy('display_order', 'asc');
         }])->orderBy('display_order', 'asc')->get();
