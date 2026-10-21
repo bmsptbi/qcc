@@ -131,9 +131,11 @@
             </div>
 
             <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
-                <!-- Sorting State Preservation -->
-                <input type="hidden" name="sort" value="{{ request('sort', 'status') }}">
-                <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
+                <!-- Sorting State Preservation (hanya jika ada sort eksplisit) -->
+                @if(request()->filled('sort'))
+                    <input type="hidden" name="sort" value="{{ request('sort') }}">
+                    <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
+                @endif
 
                 <!-- Year Period Filter -->
                 <div class="relative inline-block flex-shrink-0">

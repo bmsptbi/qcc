@@ -152,9 +152,11 @@
                 </div>
             </div>
 
-            <!-- Sorting State Preservation -->
-            <input type="hidden" name="sort" value="{{ request('sort', 'status') }}">
-            <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
+            <!-- Sorting State Preservation (hanya jika ada sort eksplisit) -->
+            @if(request()->filled('sort'))
+                <input type="hidden" name="sort" value="{{ request('sort') }}">
+                <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
+            @endif
 
             <!-- Filter Tahun Periode -->
             <div>
@@ -212,6 +214,11 @@
                 <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition flex-shrink-0">
                     Filter
                 </button>
+                @if(request()->anyFilled(['search', 'year', 'department_id', 'status', 'sort']))
+                    <a href="{{ route('admin.circles.index') }}" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs sm:text-sm transition flex-shrink-0" title="Reset filter & sorting ke default">
+                        Reset
+                    </a>
+                @endif
             </div>
         </form>
     </div>
