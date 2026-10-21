@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Manajemen Gugus QCC')
+@section('title', 'Manajemen Circle QCC')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20">
@@ -26,13 +26,13 @@
                     <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60">
                         Admin Master Data
                     </span>
-                    <span class="text-xs text-slate-400 font-medium">Total: {{ $stats['total'] }} Gugus</span>
+                    <span class="text-xs text-slate-400 font-medium">Total: {{ $stats['total'] }} Circle</span>
                 </div>
                 <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-0.5 truncate">
-                    Kelola Gugus Mutu QCC
+                    Kelola Circle Mutu QCC
                 </h1>
                 <p class="text-xs text-slate-500 font-medium hidden sm:block">
-                    Pusat administrasi gugus inovasi: tambah, edit informasi, jadwalkan presentasi, dan kelola data tim.
+                    Pusat administrasi circle inovasi: tambah, edit informasi, jadwalkan presentasi, dan kelola data tim.
                 </p>
             </div>
         </div>
@@ -42,7 +42,7 @@
             <!-- Unduh Excel (CSV) Button -->
             <a href="{{ route('admin.circles.export', request()->query()) }}" 
                 class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-95" 
-                title="Unduh Data Seluruh Gugus ke Format Excel / CSV">
+                title="Unduh Data Seluruh Circle ke Format Excel / CSV">
                 <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
@@ -52,21 +52,21 @@
             <!-- Import Excel (CSV) Button -->
             <button type="button" onclick="openImportModal()" 
                 class="px-2.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-200 transition inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-95" 
-                title="Import / Bulk Update Data Gugus dari Excel (CSV)">
+                title="Import / Bulk Update Data Circle dari Excel (CSV)">
                 <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                 </svg>
                 <span class="text-xs">Import</span>
             </button>
 
-            <!-- Daftarkan Gugus Baru Button -->
+            <!-- Daftarkan Circle Baru Button -->
             <a href="{{ route('admin.circles.create') }}" 
                 class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition shadow-sm hover:shadow-md shadow-blue-600/20 active:scale-95 inline-flex items-center gap-1.5" 
-                title="Daftarkan Gugus Baru">
+                title="Daftarkan Circle Baru">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                <span>+ Gugus Baru</span>
+                <span>+ Circle Baru</span>
             </a>
         </div>
     </div>
@@ -79,19 +79,19 @@
         <!-- Total (Default) -->
         <a href="{{ route('admin.circles.index', request()->except(['status', 'page'])) }}" 
             class="bg-white p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md block group col-span-2 sm:col-span-1 {{ empty($currentAdminStatus) ? 'border-slate-800 ring-2 ring-slate-800 bg-slate-50/70 shadow-sm' : 'border-slate-200/90 shadow-xs' }}"
-            title="Klik untuk melihat semua gugus (Total)">
+            title="Klik untuk melihat semua circle (Total)">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-[10px] sm:text-xs font-bold text-slate-800 uppercase tracking-wider block">Total</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ empty($currentAdminStatus) ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700' }}">Semua</span>
             </div>
             <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{{ $stats['total'] }}</div>
-            <span class="text-[10px] text-slate-500 mt-0.5 block">Semua gugus terdaftar</span>
+            <span class="text-[10px] text-slate-500 mt-0.5 block">Semua circle terdaftar</span>
         </a>
 
         <!-- Submitted -->
         <a href="{{ route('admin.circles.index', array_merge(request()->except(['status', 'page']), $currentAdminStatus === 'submitted' ? [] : ['status' => 'submitted'])) }}" 
             class="bg-white p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md block group {{ $currentAdminStatus === 'submitted' ? 'border-amber-500 ring-2 ring-amber-400 bg-amber-50/40 shadow-sm' : 'border-amber-200/90 bg-amber-50/20 shadow-xs' }}"
-            title="Klik untuk filter gugus Submitted">
+            title="Klik untuk filter circle Submitted">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-wider block">Submitted</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Terdaftar</span>
@@ -103,7 +103,7 @@
         <!-- Verified -->
         <a href="{{ route('admin.circles.index', array_merge(request()->except(['status', 'page']), $currentAdminStatus === 'verified' ? [] : ['status' => 'verified'])) }}" 
             class="bg-white p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md block group {{ $currentAdminStatus === 'verified' ? 'border-sky-500 ring-2 ring-sky-400 bg-sky-50/40 shadow-sm' : 'border-sky-200/90 bg-sky-50/20 shadow-xs' }}"
-            title="Klik untuk filter gugus Verified">
+            title="Klik untuk filter circle Verified">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-[10px] sm:text-xs font-bold text-sky-600 uppercase tracking-wider block">Verified</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">Terverifikasi</span>
@@ -115,7 +115,7 @@
         <!-- Evaluating -->
         <a href="{{ route('admin.circles.index', array_merge(request()->except(['status', 'page']), $currentAdminStatus === 'evaluating' ? [] : ['status' => 'evaluating'])) }}" 
             class="bg-white p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md block group {{ $currentAdminStatus === 'evaluating' ? 'border-blue-500 ring-2 ring-blue-400 bg-blue-50/40 shadow-sm' : 'border-blue-200/90 bg-blue-50/20 shadow-xs' }}"
-            title="Klik untuk filter gugus Evaluating">
+            title="Klik untuk filter circle Evaluating">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-[10px] sm:text-xs font-bold text-blue-600 uppercase tracking-wider block">Evaluating</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Dinilai Juri</span>
@@ -127,7 +127,7 @@
         <!-- Evaluated -->
         <a href="{{ route('admin.circles.index', array_merge(request()->except(['status', 'page']), $currentAdminStatus === 'evaluated' ? [] : ['status' => 'evaluated'])) }}" 
             class="bg-white p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md block group {{ $currentAdminStatus === 'evaluated' ? 'border-emerald-500 ring-2 ring-emerald-400 bg-emerald-50/40 shadow-sm' : 'border-emerald-200/90 bg-emerald-50/20 shadow-xs' }}"
-            title="Klik untuk filter gugus Evaluated">
+            title="Klik untuk filter circle Evaluated">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase tracking-wider block">Evaluated</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Selesai</span>
@@ -142,7 +142,7 @@
         <form method="GET" action="{{ route('admin.circles.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <!-- Search -->
             <div class="lg:col-span-2">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Cari Gugus / Kode / Tema</label>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Cari Circle / Kode / Tema</label>
                 <div class="relative">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Contoh: QCC-2026 atau Spider..."
                         class="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
@@ -240,8 +240,8 @@
                 <thead>
                     <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider select-none">
                         <th class="py-3.5 px-4">
-                            <a href="{{ $getSortUrl('code') }}" class="inline-flex items-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan gugus">
-                                <span>Gugus & Kode</span>
+                            <a href="{{ $getSortUrl('code') }}" class="inline-flex items-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan circle">
+                                <span>Circle & Kode</span>
                                 @if($currentSort === 'code')
                                     <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
                                 @else
@@ -345,7 +345,7 @@
                                             class="no-search appearance-none pl-2.5 pr-6 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-2xs transition"
                                             data-no-search="true"
                                             style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none;"
-                                            title="Ubah status gugus">
+                                            title="Ubah status circle">
                                             <option value="verified" selected>Verified</option>
                                             <option value="submitted">Submitted</option>
                                         </select>
@@ -359,7 +359,7 @@
                                             class="no-search appearance-none pl-2.5 pr-6 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs transition"
                                             data-no-search="true"
                                             style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none;"
-                                            title="Ubah status gugus">
+                                            title="Ubah status circle">
                                             <option value="submitted" selected>Submitted</option>
                                             <option value="verified">Verified</option>
                                         </select>
@@ -380,17 +380,17 @@
                                     </a>
 
                                     <a href="{{ route('admin.circles.edit', $circle) }}" 
-                                        class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition" title="Edit Gugus">
+                                        class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition" title="Edit Circle">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                     </a>
 
                                     <form method="POST" action="{{ route('admin.circles.destroy', $circle) }}" class="inline" 
-                                        onsubmit="return confirm('PERINGATAN: Hapus gugus {{ $circle->circle_name }} ({{ $circle->circle_code }})? Seluruh nilai dan riwayat asesmen juri akan ikut terhapus.')">
+                                        onsubmit="return confirm('PERINGATAN: Hapus circle {{ $circle->circle_name }} ({{ $circle->circle_code }})? Seluruh nilai dan riwayat asesmen juri akan ikut terhapus.')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Hapus Gugus">
+                                        <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Hapus Circle">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                             </svg>
@@ -402,7 +402,7 @@
                     @empty
                         <tr>
                             <td colspan="6" class="py-12 text-center text-slate-400 text-sm">
-                                Tidak ada gugus yang sesuai dengan pencarian atau filter yang dipilih.
+                                Tidak ada circle yang sesuai dengan pencarian atau filter yang dipilih.
                             </td>
                         </tr>
                     @endforelse
@@ -430,8 +430,8 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Import / Bulk Update Gugus</h3>
-                    <p class="text-xs text-slate-500 font-medium">Unggah file format Excel (.csv) untuk menambah atau mengedit banyak gugus sekaligus.</p>
+                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Import / Bulk Update Circle</h3>
+                    <p class="text-xs text-slate-500 font-medium">Unggah file format Excel (.csv) untuk menambah atau mengedit banyak circle sekaligus.</p>
                 </div>
             </div>
             <button type="button" onclick="closeImportModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1">
@@ -444,8 +444,8 @@
                 <span>💡 Petunjuk Penggunaan Import:</span>
             </div>
             <ul class="list-disc list-inside space-y-1 text-[11px] text-blue-800">
-                <li><strong>Tambah Gugus Baru:</strong> Kosongkan kolom <em>Kode Gugus</em> agar sistem membuat kode otomatis (contoh: QCC-2026-xxx).</li>
-                <li><strong>Edit Gugus yang Ada:</strong> Isi kolom <em>Kode Gugus</em> sesuai data di tabel untuk memperbarui gugus tersebut.</li>
+                <li><strong>Tambah Circle Baru:</strong> Kosongkan kolom <em>Kode Circle</em> agar sistem membuat kode otomatis (contoh: QCC-2026-xxx).</li>
+                <li><strong>Edit Circle yang Ada:</strong> Isi kolom <em>Kode Circle</em> sesuai data di tabel untuk memperbarui circle tersebut.</li>
                 <li><strong>Fasilitator:</strong> Masukkan alamat <strong>Email</strong> fasilitator (contoh: <code>iman.sugih@bekaert.com</code>).</li>
                 <li><strong>Susunan Anggota:</strong> Format cukup <code>Nama*NIK</code> dipisahkan titik koma (contoh: <code>Budi Santoso*10001; Siti Aminah*10002; Joko Widodo*10003</code>). Urutan ke-1 = Leader, ke-2 = Secretary, ke-3 dst = Anggota.</li>
             </ul>
@@ -496,7 +496,7 @@
     }
 
     function updateCircleStatus(circleId, newStatus, selectEl) {
-        if (!confirm('Ubah status gugus ini menjadi ' + newStatus.toUpperCase() + '?')) {
+        if (!confirm('Ubah status circle ini menjadi ' + newStatus.toUpperCase() + '?')) {
             selectEl.value = (newStatus === 'verified') ? 'submitted' : 'verified';
             return;
         }

@@ -26,7 +26,7 @@
                     Manajemen Pengguna (User Management)
                 </h1>
                 <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-                    Kelola akun Administrator, Dewan Juri, Fasilitator, dan Anggota Gugus.
+                    Kelola akun Administrator, Dewan Juri, Fasilitator, dan Anggota Circle.
                 </p>
             </div>
         </div>
@@ -341,7 +341,7 @@
                     </label>
                     <label class="col-span-2 flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition">
                         <input type="checkbox" name="roles[]" value="member" class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
-                        <span class="text-xs font-bold text-slate-800">👤 Member / Anggota Gugus</span>
+                        <span class="text-xs font-bold text-slate-800">👤 Member / Anggota Circle</span>
                     </label>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-1">
@@ -449,7 +449,7 @@
                     </label>
                     <label class="col-span-2 flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition">
                         <input type="checkbox" id="edit_role_member" name="roles[]" value="member" class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
-                        <span class="text-xs font-bold text-slate-800">👤 Member / Anggota Gugus</span>
+                        <span class="text-xs font-bold text-slate-800">👤 Member / Anggota Circle</span>
                     </label>
                 </div>
             </div>

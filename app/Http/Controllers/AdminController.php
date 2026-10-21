@@ -216,7 +216,7 @@ class AdminController extends Controller
         });
 
         return redirect()->route('admin.circles.index')
-            ->with('success', "Gugus {$circle->circle_name} ({$circle->circle_code}) periode {$circle->year} berhasil didaftarkan!");
+            ->with('success', "Circle {$circle->circle_name} ({$circle->circle_code}) periode {$circle->year} berhasil didaftarkan!");
     }
 
     /**
@@ -309,7 +309,7 @@ class AdminController extends Controller
         }
 
         return redirect()->route('admin.circles.index')
-            ->with('success', "Data gugus {$circle->circle_name} ({$circle->circle_code}) berhasil diperbarui!");
+            ->with('success', "Data circle {$circle->circle_name} ({$circle->circle_code}) berhasil diperbarui!");
     }
 
     /**
@@ -329,7 +329,7 @@ class AdminController extends Controller
         $circle->delete();
 
         return redirect()->route('admin.circles.index')
-            ->with('success', "Gugus {$name} ({$code}) beserta seluruh data penilaiannya telah dihapus!");
+            ->with('success', "Circle {$name} ({$code}) beserta seluruh data penilaiannya telah dihapus!");
     }
 
     /**
@@ -358,7 +358,7 @@ class AdminController extends Controller
         }
 
         $circles = $query->get();
-        $filename = 'Data_Gugus_QCC_'.date('Ymd_His').'.csv';
+        $filename = 'Data_Circle_QCC_'.date('Ymd_His').'.csv';
 
         return response()->stream(function () use ($circles) {
             $handle = fopen('php://output', 'w');
@@ -366,8 +366,8 @@ class AdminController extends Controller
 
             // Header kolom
             fputcsv($handle, [
-                'Kode Gugus',
-                'Nama Gugus',
+                'Kode Circle',
+                'Nama Circle',
                 'Judul Tema',
                 'Departemen',
                 'Tahun',
@@ -413,19 +413,19 @@ class AdminController extends Controller
     }
 
     /**
-     * Unduh template contoh format Excel / CSV untuk import gugus
+     * Unduh template contoh format Excel / CSV untuk import circle
      */
     public function downloadCircleTemplate(): StreamedResponse
     {
-        $filename = 'Template_Import_Gugus_QCC.csv';
+        $filename = 'Template_Import_Circle_QCC.csv';
 
         return response()->stream(function () {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
 
             fputcsv($handle, [
-                'Kode Gugus',
-                'Nama Gugus',
+                'Kode Circle',
+                'Nama Circle',
                 'Judul Tema',
                 'Departemen',
                 'Tahun',
@@ -449,10 +449,10 @@ class AdminController extends Controller
                 'Budi Santoso*10001; Siti Aminah*10002; Joko Widodo*10003',
             ]);
 
-            // Contoh 2: Tambah gugus baru (Kode Gugus dikosongkan agar otomatis di-generate)
+            // Contoh 2: Tambah circle baru (Kode Circle dikosongkan agar otomatis di-generate)
             fputcsv($handle, [
                 '',
-                'GUGUS INOVASI BARU',
+                'CIRCLE INOVASI BARU',
                 'Pengurangan Scrap Wire Melalui Kaizen 5S',
                 'Engineering',
                 '2026',
@@ -542,9 +542,9 @@ class AdminController extends Controller
 
         foreach ($header as $idx => $col) {
             $colClean = strtolower(trim(preg_replace('/[^a-zA-Z0-9]/', '', $col)));
-            if (str_contains($colClean, 'kodegugus') || $colClean === 'code' || $colClean === 'circlecode') {
+            if (str_contains($colClean, 'kodegugus') || str_contains($colClean, 'kodecircle') || $colClean === 'code' || $colClean === 'circlecode') {
                 $colMap['code'] = $idx;
-            } elseif (str_contains($colClean, 'namagugus') || $colClean === 'name' || $colClean === 'circlename') {
+            } elseif (str_contains($colClean, 'namagugus') || str_contains($colClean, 'namacircle') || $colClean === 'name' || $colClean === 'circlename') {
                 $colMap['name'] = $idx;
             } elseif (str_contains($colClean, 'tema') || $colClean === 'themetitle' || $colClean === 'judul') {
                 $colMap['theme'] = $idx;
@@ -566,7 +566,7 @@ class AdminController extends Controller
         if ($colMap['name'] === null && $colMap['theme'] === null) {
             fclose($handle);
 
-            return back()->with('error', 'Format header CSV tidak sesuai. Minimal kolom "Nama Gugus" dan "Judul Tema" harus tersedia.');
+            return back()->with('error', 'Format header CSV tidak sesuai. Minimal kolom "Nama Circle" dan "Judul Tema" harus tersedia.');
         }
 
         $createdCount = 0;
@@ -738,7 +738,7 @@ class AdminController extends Controller
             fclose($handle);
 
             return redirect()->route('admin.circles.index')
-                ->with('success', "Proses import berhasil! {$createdCount} gugus baru ditambahkan dan {$updatedCount} gugus berhasil diperbarui.");
+                ->with('success', "Proses import berhasil! {$createdCount} circle baru ditambahkan dan {$updatedCount} circle berhasil diperbarui.");
         } catch (\Throwable $e) {
             DB::rollBack();
             fclose($handle);

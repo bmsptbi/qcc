@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Gugus - ' . $circle->circle_name)
+@section('title', 'Edit Circle - ' . $circle->circle_name)
 
 @section('content')
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20">
@@ -11,7 +11,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
             </svg>
-            Kembali ke Manajemen Gugus
+            Kembali ke Manajemen Circle
         </a>
     </div>
 
@@ -29,10 +29,10 @@
                     <span class="text-xs text-slate-400">ID: #{{ $circle->id }}</span>
                 </div>
                 <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5">
-                    Edit Data Gugus: {{ $circle->circle_name }}
+                    Edit Data Circle: {{ $circle->circle_name }}
                 </h1>
                 <p class="text-xs sm:text-sm text-slate-500 font-medium">
-                    Perbarui informasi gugus mutu, jadwal presentasi, dan susunan anggota tim.
+                    Perbarui informasi circle mutu, jadwal presentasi, dan susunan anggota tim.
                 </p>
             </div>
         </div>
@@ -42,7 +42,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
             </svg>
-            <span>Halaman Publik Gugus</span>
+            <span>Halaman Publik Circle</span>
         </a>
     </div>
 
@@ -61,23 +61,23 @@
         @csrf
         @method('PUT')
 
-        <!-- 1. Informasi Utama Gugus -->
+        <!-- 1. Informasi Utama Circle -->
         <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
             <h2 class="text-base font-bold text-slate-900 tracking-tight border-b border-slate-100 pb-3 flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-blue-600"></span>
-                1. Data Utama Gugus
+                1. Data Utama Circle
             </h2>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kode Gugus <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kode Circle <span class="text-rose-500">*</span></label>
                     <input type="text" name="circle_code" value="{{ old('circle_code', $circle->circle_code) }}" required
                         placeholder="Contoh: QCC-2026-005"
                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Gugus / Circle <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Circle <span class="text-rose-500">*</span></label>
                     <input type="text" name="circle_name" value="{{ old('circle_name', $circle->circle_name) }}" required
                         placeholder="Contoh: QCC THUNDER, KAIZEN MASTER"
                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
@@ -140,7 +140,7 @@
                     </svg>
                 </div>
                 <span class="text-[11px] text-slate-400 mt-1 block">
-                    Masukkan URL tautan folder SharePoint yang berisi file risalah, presentasi, atau lampiran dokumen pendukung gugus.
+                    Masukkan URL tautan folder SharePoint yang berisi file risalah, presentasi, atau lampiran dokumen pendukung circle.
                 </span>
             </div>
 
@@ -158,7 +158,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Status Gugus <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Status Circle <span class="text-rose-500">*</span></label>
                     <select name="status" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white font-semibold">
                         <option value="submitted" {{ old('status', $circle->status) == 'submitted' ? 'selected' : '' }}>Submitted (Terkirim / Terdaftar)</option>
                         <option value="verified" {{ old('status', $circle->status) == 'verified' ? 'selected' : '' }}>Verified (Terverifikasi)</option>
@@ -214,12 +214,12 @@
             </div>
         </div>
 
-        <!-- 4. Susunan Anggota Gugus Dinamis -->
+        <!-- 4. Susunan Anggota Circle Dinamis -->
         <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
-                    4. Susunan Anggota Tim Gugus
+                    4. Susunan Anggota Tim Circle
                 </h2>
                 <button type="button" onclick="addMemberRow()" class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold transition flex items-center gap-1">
                     + Tambah Anggota
@@ -278,7 +278,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
-                <span>Simpan Perubahan Gugus</span>
+                <span>Simpan Perubahan Circle</span>
             </button>
         </div>
 

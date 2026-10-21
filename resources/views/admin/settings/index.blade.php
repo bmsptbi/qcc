@@ -112,7 +112,7 @@
                         &bull; Jika <em>Deviasi Max &gt; Deviasi Min</em>, nilai juri tertinggi digantikan dengan nilai <em>Average</em> tahap sebelumnya.<br>
                         &bull; Jika <em>Deviasi Min &gt; Deviasi Max</em>, nilai juri terendah digantikan dengan nilai <em>Average</em> tahap sebelumnya.<br>
                         3. Dilakukan kalkulasi ulang. Jika deviasi baru masih <strong>&gt; {{ number_format($maxDeviation, 1) }}%</strong>, dibuat baris <strong>Adjustment 2</strong> dan seterusnya sampai deviasi memenuhi batas toleransi.<br>
-                        4. Nilai pada baris adjustment terakhir adalah nilai yang <strong>digunakan untuk total nilai gugus</strong>.
+                        4. Nilai pada baris adjustment terakhir adalah nilai yang <strong>digunakan untuk total nilai circle</strong>.
                     </p>
                 </div>
             </div>

@@ -1026,7 +1026,7 @@ class QccAssessmentController extends Controller
                 $assessmentIds = Assessment::where('circle_id', $circle->id)->pluck('id');
                 AssessmentScore::whereIn('assessment_id', $assessmentIds)->delete();
                 Assessment::where('circle_id', $circle->id)->delete();
-                $deletedDescription = "seluruh penilaian (semua tahapan dan seluruh dewan juri) pada gugus {$circle->circle_name}";
+                $deletedDescription = "seluruh penilaian (semua tahapan dan seluruh dewan juri) pada circle {$circle->circle_name}";
             }
             // 2. Semua Tahap, tapi Juri Tertentu
             elseif ($stageId === 'all' && $judgeId !== 'all') {
@@ -1039,7 +1039,7 @@ class QccAssessmentController extends Controller
                 Assessment::where('circle_id', $circle->id)
                     ->where('judge_id', $judgeId)
                     ->delete();
-                $deletedDescription = "seluruh penilaian dari {$judgeName} di semua tahapan pada gugus {$circle->circle_name}";
+                $deletedDescription = "seluruh penilaian dari {$judgeName} di semua tahapan pada circle {$circle->circle_name}";
             }
             // 3. Tahap Tertentu, Semua Juri
             elseif ($stageId !== 'all' && $judgeId === 'all') {
@@ -1058,7 +1058,7 @@ class QccAssessmentController extends Controller
                         $this->recalculateSingleAssessment($ass);
                     }
                 }
-                $deletedDescription = "penilaian pada tahap {$category->name} untuk seluruh dewan juri pada gugus {$circle->circle_name}";
+                $deletedDescription = "penilaian pada tahap {$category->name} untuk seluruh dewan juri pada circle {$circle->circle_name}";
             }
             // 4. Tahap Tertentu & Juri Tertentu
             else {
@@ -1082,7 +1082,7 @@ class QccAssessmentController extends Controller
                         $this->recalculateSingleAssessment($ass);
                     }
                 }
-                $deletedDescription = "penilaian tahap {$category->name} dari {$judgeName} pada gugus {$circle->circle_name}";
+                $deletedDescription = "penilaian tahap {$category->name} dari {$judgeName} pada circle {$circle->circle_name}";
             }
 
             // Hitung ulang nilai akhir gugus dan perbarui status
@@ -1202,11 +1202,11 @@ class QccAssessmentController extends Controller
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => "Status gugus {$circle->circle_code} berhasil diubah ke ".ucfirst($validated['status']),
+                'message' => "Status circle {$circle->circle_code} berhasil diubah ke ".ucfirst($validated['status']),
                 'status' => $circle->status,
             ]);
         }
 
-        return back()->with('success', "Status gugus {$circle->circle_code} berhasil diubah ke ".ucfirst($validated['status']));
+        return back()->with('success', "Status circle {$circle->circle_code} berhasil diubah ke ".ucfirst($validated['status']));
     }
 }

@@ -432,7 +432,7 @@
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
-                    1. Kelebihan & Nilai Unggul Gugus (Strengths)
+                    1. Kelebihan & Nilai Unggul Circle (Strengths)
                 </label>
                 <textarea name="feedback_strengths" rows="3" 
                     placeholder="Tuliskan keunggulan inovasi, penguasaan metodologi, atau kerjasama tim yang sangat baik..."
@@ -614,7 +614,7 @@
                 Pemberitahuan: Penilaian Sudah Terisi
             </h3>
             <p class="text-xs text-slate-600 leading-relaxed">
-                Halo <strong class="text-slate-900">{{ $currentJudge->name }}</strong>, Anda tercatat <strong>sudah pernah mengisi penilaian</strong> untuk gugus <strong class="text-blue-700">{{ $circle->circle_name }}</strong>
+                Halo <strong class="text-slate-900">{{ $currentJudge->name }}</strong>, Anda tercatat <strong>sudah pernah mengisi penilaian</strong> untuk circle <strong class="text-blue-700">{{ $circle->circle_name }}</strong>
                 @if($isStageLocked && $lockedCategory)
                     pada tahap <strong class="text-indigo-700">{{ $lockedCategory->name }}</strong>
                 @endif.
@@ -1692,7 +1692,7 @@
         const text = `*FORM PENILAIAN QCC {{ $circle->year ?? $activeYear ?? date('Y') }}*\n` +
             `Halo ${judgeName},\n` +
             `Berikut link penilaian untuk:\n` +
-            `• *Gugus:* {{ $circle->circle_name }} ({{ $circle->circle_code }})\n` +
+            `• *Circle:* {{ $circle->circle_name }} ({{ $circle->circle_code }})\n` +
             `• *Tema:* "{{ $circle->theme_title }}"\n` +
             `• *Tahap:* ${stageName}\n\n` +
             `Silakan scan QR Code atau akses link di bawah ini:\n${url}`;

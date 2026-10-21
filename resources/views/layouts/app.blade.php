@@ -175,17 +175,17 @@
                 <div class="w-8 h-0.5 bg-slate-200 rounded mx-auto group-hover/sidebar:hidden"></div>
             </div>
 
-            <!-- Item 1: Dashboard Gugus -->
+            <!-- Item 1: Dashboard Circle -->
             <a href="{{ route('qcc.index') }}" 
                 class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('qcc.index') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
-                title="Dashboard Gugus">
+                title="Dashboard Circle">
                 <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                     </svg>
                 </div>
                 <div class="sidebar-text">
-                    <span class="text-sm block leading-tight">Dashboard Gugus</span>
+                    <span class="text-sm block leading-tight">Dashboard Circle</span>
                     <span class="text-[10px] opacity-75 block font-normal">Daftar Circle Peserta</span>
                 </div>
             </a>
@@ -259,17 +259,17 @@
                     </div>
                 </a>
 
-                <!-- Item 5: Kelola Gugus QCC -->
+                <!-- Item 5: Kelola Circle QCC -->
                 <a href="{{ route('admin.circles.index') }}" 
                     class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.circles.*') ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md shadow-teal-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
-                    title="Manajemen Gugus QCC">
+                    title="Manajemen Circle QCC">
                     <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                         </svg>
                     </div>
                     <div class="sidebar-text">
-                        <span class="text-sm block leading-tight">Kelola Gugus QCC</span>
+                        <span class="text-sm block leading-tight">Kelola Circle QCC</span>
                         <span class="text-[10px] opacity-75 block font-normal">Data Tim & Jadwal</span>
                     </div>
                 </a>
@@ -423,7 +423,7 @@
                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                 </svg>
-                <span>Dashboard Gugus</span>
+                <span>Dashboard Circle</span>
             </a>
 
             <a href="{{ route('qcc.leaderboard') }}" onclick="closeMobileSidebar()" 
@@ -467,7 +467,7 @@
                         <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                         </svg>
-                        <span>Kelola Gugus QCC</span>
+                        <span>Kelola Circle QCC</span>
                     </a>
 
                     <a href="{{ route('admin.settings.index') }}" onclick="closeMobileSidebar()" 
@@ -636,7 +636,7 @@
                 <div class="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
                     +
                 </div>
-                <span class="text-[10px] mt-0.5 font-bold text-blue-700">Gugus</span>
+                <span class="text-[10px] mt-0.5 font-bold text-blue-700">Circle</span>
             </a>
 
             <a href="{{ route('admin.judges.index') }}" class="flex flex-col items-center py-1 {{ request()->routeIs('admin.judges.*') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">

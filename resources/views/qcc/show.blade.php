@@ -162,7 +162,7 @@
                     <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
                     </svg>
-                    Susunan Anggota Gugus
+                    Susunan Anggota Circle
                 </h2>
 
                 <div class="space-y-3">
@@ -210,7 +210,7 @@
                                 </svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <span class="text-xs font-bold text-slate-800 block truncate">Folder Dokumen Gugus</span>
+                                <span class="text-xs font-bold text-slate-800 block truncate">Folder Dokumen Circle</span>
                                 <span class="text-[11px] text-slate-500 leading-tight block mt-0.5">
                                     Akses file risalah 8 langkah, slide presentasi, dan berkas pendukung resmi.
                                 </span>
@@ -241,7 +241,7 @@
                             </svg>
                         </div>
                         <p class="text-xs font-semibold text-slate-600">Link Folder SharePoint Belum Ada</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Tautan folder dokumen risalah belum ditambahkan untuk gugus ini.</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Tautan folder dokumen risalah belum ditambahkan untuk circle ini.</p>
                         @if(Auth::check() && Auth::user()->role === 'admin')
                             <a href="{{ route('admin.circles.edit', $circle) }}" class="mt-2.5 inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline">
                                 <span>+ Tambahkan Link Sekarang</span>
@@ -271,7 +271,7 @@
             <!-- Nilai Keseluruhan di Header -->
             <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 text-white shadow-xs border border-slate-800 self-start sm:self-auto flex-shrink-0">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Nilai Keseluruhan:</span>
-                <span class="px-2.5 py-0.5 bg-yellow-300 border border-yellow-400 font-mono font-black text-slate-950 text-sm sm:text-base rounded shadow-2xs" title="Total Nilai Akhir Keseluruhan Gugus">
+                <span class="px-2.5 py-0.5 bg-yellow-300 border border-yellow-400 font-mono font-black text-slate-950 text-sm sm:text-base rounded shadow-2xs" title="Total Nilai Akhir Keseluruhan Circle">
                     {{ number_format($circle->final_score ?? $calculatedFinalScore, 4) }}
                 </span>
             </div>
@@ -696,7 +696,7 @@
                 </div>
                 <div>
                     <h3 class="text-base font-extrabold text-slate-900 tracking-tight">Hapus Penilaian Dewan Juri</h3>
-                    <p class="text-xs text-slate-500 font-medium">Gugus: <span class="font-bold text-slate-800">{{ $circle->circle_name }}</span> ({{ $circle->circle_code }})</p>
+                    <p class="text-xs text-slate-500 font-medium">Circle: <span class="font-bold text-slate-800">{{ $circle->circle_name }}</span> ({{ $circle->circle_code }})</p>
                 </div>
             </div>
             <button type="button" onclick="closeDeleteAssessmentModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 leading-none">&times;</button>
@@ -749,7 +749,7 @@
                         <span>💡 Opsi yang Tersedia:</span>
                     </div>
                     <ul class="list-disc list-inside space-y-0.5 text-slate-500">
-                        <li><strong>Semua Tahap & Semua Juri:</strong> Menghapus bersih seluruh skor gugus kembali ke status awal.</li>
+                        <li><strong>Semua Tahap & Semua Juri:</strong> Menghapus bersih seluruh skor circle kembali ke status awal.</li>
                         <li><strong>Tahap Tertentu & Semua Juri:</strong> Hanya menghapus penilaian di tahap tersebut dari semua juri.</li>
                         <li><strong>Juri Tertentu:</strong> Hanya menghapus penilaian dari satu juri yang dipilih.</li>
                     </ul>
@@ -781,7 +781,7 @@
                     </div>
                     <div class="space-y-1 text-xs">
                         <div class="flex items-start justify-between py-0.5 border-b border-rose-100">
-                            <span class="text-rose-700 font-medium">Gugus Target:</span>
+                            <span class="text-rose-700 font-medium">Circle Target:</span>
                             <span class="font-bold text-slate-900">{{ $circle->circle_name }} ({{ $circle->circle_code }})</span>
                         </div>
                         <div class="flex items-start justify-between py-0.5 border-b border-rose-100">
@@ -794,7 +794,7 @@
                         </div>
                     </div>
                     <p class="text-[11px] text-rose-600 italic pt-1">
-                        * Nilai yang dihapus tidak dapat dipulihkan. Skor akhir dan status gugus akan otomatis dihitung ulang.
+                        * Nilai yang dihapus tidak dapat dipulihkan. Skor akhir dan status circle akan otomatis dihitung ulang.
                     </p>
                 </div>
 
@@ -1107,7 +1107,7 @@
         const text = `*FORM PENILAIAN QCC {{ $circle->year ?? $activeYear ?? date('Y') }}*\n` +
             `Halo ${judgeName},\n` +
             `Berikut link penilaian untuk:\n` +
-            `• *Gugus:* {{ $circle->circle_name }} ({{ $circle->circle_code }})\n` +
+            `• *Circle:* {{ $circle->circle_name }} ({{ $circle->circle_code }})\n` +
             `• *Tema:* "{{ $circle->theme_title }}"\n` +
             `• *Tahap:* ${stageName}\n\n` +
             `Silakan scan QR Code atau akses link di bawah ini:\n${url}`;

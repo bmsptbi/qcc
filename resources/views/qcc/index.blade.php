@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Gugus QCC')
+@section('title', 'Dashboard Circle QCC')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
@@ -17,7 +17,7 @@
             </div>
             
             <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2">
-                Evaluasi & Penilaian Gugus Mutu
+                Evaluasi & Penilaian Circle Mutu
             </h1>
             <p class="text-blue-100/90 text-sm sm:text-base max-w-2xl leading-relaxed mb-6 font-normal">
                 {{ $activePeriod->theme ?? 'Mendorong inovasi dan operational excellence melalui pemecahan masalah 8 Langkah PDCA.' }}
@@ -25,11 +25,11 @@
 
             <!-- Quick Action Buttons for Judge / Participant -->
             <div class="flex flex-wrap items-center gap-3">
-                <a href="#daftar-gugus" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition shadow-lg shadow-blue-600/30 inline-flex items-center gap-2">
+                <a href="#daftar-circle" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition shadow-lg shadow-blue-600/30 inline-flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                     </svg>
-                    Daftar Gugus Dinilai
+                    Daftar Circle Dinilai
                 </a>
 
                 <a href="{{ route('qcc.leaderboard') }}" class="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm transition border border-white/15 backdrop-blur-sm inline-flex items-center gap-2">
@@ -42,7 +42,7 @@
         </div>
     </div>
 
-    <!-- Quick Stat Cards (Total + Berdasarkan Status Gugus) -->
+    <!-- Quick Stat Cards (Total + Berdasarkan Status Circle) -->
     @php
         $currentStatus = request('status');
     @endphp
@@ -50,80 +50,80 @@
         <!-- 0. Total (Default) -->
         <a href="{{ route('qcc.index', request()->except(['status', 'page'])) }}" 
             class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group col-span-2 sm:col-span-1 {{ empty($currentStatus) ? 'border-slate-800 ring-2 ring-slate-800 bg-slate-50/70 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
-            title="Klik untuk menampilkan semua gugus (Total)">
+            title="Klik untuk menampilkan semua circle (Total)">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-bold text-slate-800 uppercase tracking-wider group-hover:text-slate-900 transition">Total</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ empty($currentStatus) ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700' }}">Semua</span>
             </div>
             <div class="flex items-baseline justify-between mt-2">
                 <span class="text-2xl sm:text-3xl font-black text-slate-900">{{ $stats['total'] }}</span>
-                <span class="text-[11px] text-slate-500 font-medium">Gugus</span>
+                <span class="text-[11px] text-slate-500 font-medium">Circle</span>
             </div>
         </a>
 
         <!-- 1. Submitted -->
         <a href="{{ route('qcc.index', array_merge(request()->except(['status', 'page']), $currentStatus === 'submitted' ? [] : ['status' => 'submitted'])) }}" 
             class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group {{ $currentStatus === 'submitted' ? 'border-amber-500 ring-2 ring-amber-400 bg-amber-50/40 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
-            title="Klik untuk filter gugus status Submitted">
+            title="Klik untuk filter circle status Submitted">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-bold text-amber-600 uppercase tracking-wider group-hover:text-amber-700 transition">Submitted</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Terdaftar</span>
             </div>
             <div class="flex items-baseline justify-between mt-2">
                 <span class="text-2xl sm:text-3xl font-black text-amber-600">{{ $stats['submitted'] }}</span>
-                <span class="text-[11px] text-amber-600/70 font-medium">Gugus</span>
+                <span class="text-[11px] text-amber-600/70 font-medium">Circle</span>
             </div>
         </a>
 
         <!-- 2. Verified -->
         <a href="{{ route('qcc.index', array_merge(request()->except(['status', 'page']), $currentStatus === 'verified' ? [] : ['status' => 'verified'])) }}" 
             class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group {{ $currentStatus === 'verified' ? 'border-sky-500 ring-2 ring-sky-400 bg-sky-50/40 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
-            title="Klik untuk filter gugus status Verified">
+            title="Klik untuk filter circle status Verified">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-bold text-sky-600 uppercase tracking-wider group-hover:text-sky-700 transition">Verified</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700">Terverifikasi</span>
             </div>
             <div class="flex items-baseline justify-between mt-2">
                 <span class="text-2xl sm:text-3xl font-black text-sky-600">{{ $stats['verified'] }}</span>
-                <span class="text-[11px] text-sky-600/70 font-medium">Gugus</span>
+                <span class="text-[11px] text-sky-600/70 font-medium">Circle</span>
             </div>
         </a>
 
         <!-- 3. Evaluating -->
         <a href="{{ route('qcc.index', array_merge(request()->except(['status', 'page']), $currentStatus === 'evaluating' ? [] : ['status' => 'evaluating'])) }}" 
             class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group {{ $currentStatus === 'evaluating' ? 'border-blue-500 ring-2 ring-blue-400 bg-blue-50/40 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
-            title="Klik untuk filter gugus status Evaluating">
+            title="Klik untuk filter circle status Evaluating">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-bold text-blue-600 uppercase tracking-wider group-hover:text-blue-700 transition">Evaluating</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">Dinilai Juri</span>
             </div>
             <div class="flex items-baseline justify-between mt-2">
                 <span class="text-2xl sm:text-3xl font-black text-blue-600">{{ $stats['evaluating'] }}</span>
-                <span class="text-[11px] text-blue-600/70 font-medium">Gugus</span>
+                <span class="text-[11px] text-blue-600/70 font-medium">Circle</span>
             </div>
         </a>
 
         <!-- 4. Evaluated -->
         <a href="{{ route('qcc.index', array_merge(request()->except(['status', 'page']), $currentStatus === 'evaluated' ? [] : ['status' => 'evaluated'])) }}" 
             class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group {{ $currentStatus === 'evaluated' ? 'border-emerald-500 ring-2 ring-emerald-400 bg-emerald-50/40 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
-            title="Klik untuk filter gugus status Evaluated">
+            title="Klik untuk filter circle status Evaluated">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider group-hover:text-emerald-700 transition">Evaluated</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">Selesai</span>
             </div>
             <div class="flex items-baseline justify-between mt-2">
                 <span class="text-2xl sm:text-3xl font-black text-emerald-600">{{ $stats['evaluated'] }}</span>
-                <span class="text-[11px] text-emerald-600/70 font-medium">Gugus</span>
+                <span class="text-[11px] text-emerald-600/70 font-medium">Circle</span>
             </div>
         </a>
     </div>
 
     <!-- Filter & Search Bar -->
-    <div id="daftar-gugus" class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs mb-6">
+    <div id="daftar-circle" class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs mb-6">
         <form method="GET" action="{{ route('qcc.index') }}" class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
             <!-- Search Input -->
             <div class="relative flex-1">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama gugus, kode (QCC-xxx), atau judul tema..."
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama circle, kode (QCC-xxx), atau judul tema..."
                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                 <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -205,10 +205,10 @@
             <div class="flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                 <h3 class="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider">
-                    Daftar Gugus Inovasi
+                    Daftar Circle Inovasi
                 </h3>
                 <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-200/70 text-slate-700">
-                    {{ $circles->count() }} @if($circles->count() !== $stats['total']) dari {{ $stats['total'] }} @endif Gugus
+                    {{ $circles->count() }} @if($circles->count() !== $stats['total']) dari {{ $stats['total'] }} @endif Circle
                 </span>
             </div>
             @if(request()->filled('status'))
@@ -239,8 +239,8 @@
                     <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider select-none">
                         <th class="py-3 px-3.5 text-center w-12">No</th>
                         <th class="py-3 px-3.5">
-                            <a href="{{ $getSortUrl('code') }}" class="inline-flex items-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan kode gugus">
-                                <span>Kode & Gugus</span>
+                            <a href="{{ $getSortUrl('code') }}" class="inline-flex items-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan kode circle">
+                                <span>Kode & Circle</span>
                                 @if($currentSort === 'code')
                                     <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
                                 @else
@@ -289,7 +289,7 @@
                                 {{ $loop->iteration }}
                             </td>
 
-                            <!-- Kode & Gugus -->
+                            <!-- Kode & Circle -->
                             <td class="py-3 px-3.5 whitespace-nowrap">
                                 <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 inline-block mb-1">
                                     {{ $circle->circle_code }}
@@ -390,8 +390,8 @@
                                 <svg class="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
-                                <h3 class="text-base font-bold text-slate-700">Tidak ada data gugus</h3>
-                                <p class="text-xs text-slate-500 mt-1">Belum ada gugus yang cocok dengan kriteria filter Anda.</p>
+                                <h3 class="text-base font-bold text-slate-700">Tidak ada data circle</h3>
+                                <p class="text-xs text-slate-500 mt-1">Belum ada circle yang cocok dengan kriteria filter Anda.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -422,8 +422,8 @@
 
         <!-- Target Circle Info -->
         <div class="p-3 bg-blue-50/70 border border-blue-100 rounded-2xl">
-            <span class="text-[10px] font-bold text-blue-600 uppercase block tracking-wider">Target Gugus:</span>
-            <div id="share_circle_name" class="font-bold text-sm text-slate-900">Nama Gugus</div>
+            <span class="text-[10px] font-bold text-blue-600 uppercase block tracking-wider">Target Circle:</span>
+            <div id="share_circle_name" class="font-bold text-sm text-slate-900">Nama Circle</div>
             <div id="share_circle_theme" class="text-xs text-slate-600 italic">"Tema Inovasi"</div>
         </div>
 
@@ -674,7 +674,7 @@
         const text = `*FORM PENILAIAN QCC {{ $activeYear ?? date('Y') }}*\n` +
             `Halo ${judgeName},\n` +
             `Berikut link penilaian untuk:\n` +
-            `• *Gugus:* ${currentCircle.name} (${currentCircle.code})\n` +
+            `• *Circle:* ${currentCircle.name} (${currentCircle.code})\n` +
             `• *Tema:* ${currentCircle.theme}\n` +
             `• *Tahap:* ${stageName}\n\n` +
             `Silakan scan QR Code atau akses link di bawah ini:\n${url}`;

@@ -15,7 +15,7 @@
                 Sign In Administrator
             </h1>
             <p class="text-xs sm:text-sm text-slate-500 font-medium">
-                Masuk untuk mengakses pengaturan Gugus, Juri, dan Kriteria Penilaian QCC.
+                Masuk untuk mengakses pengaturan Circle, Juri, dan Kriteria Penilaian QCC.
             </p>
         </div>
 

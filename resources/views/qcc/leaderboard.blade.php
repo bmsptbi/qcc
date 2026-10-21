@@ -45,7 +45,7 @@
                 Peringkat & Kategori Penghargaan
             </h2>
             <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
-                {{ $circles->count() }} Gugus Tercatat
+                {{ $circles->count() }} Circle Tercatat
             </span>
         </div>
 
@@ -135,7 +135,7 @@
                 </div>
             @empty
                 <div class="text-center py-12 text-slate-400 text-sm">
-                    Belum ada data nilai gugus.
+                    Belum ada data nilai circle.
                 </div>
             @endforelse
         </div>

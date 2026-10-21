@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pendaftaran Gugus QCC Baru')
+@section('title', 'Pendaftaran Circle QCC Baru')
 
 @section('content')
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20">
@@ -23,10 +23,10 @@
             </div>
             <div>
                 <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                    Pendaftaran Gugus QCC Baru
+                    Pendaftaran Circle QCC Baru
                 </h1>
                 <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-                    Masukkan data utama gugus mutu, departemen, dan susunan anggota tim.
+                    Masukkan data utama circle mutu, departemen, dan susunan anggota tim.
                 </p>
             </div>
         </div>
@@ -46,20 +46,20 @@
     <form method="POST" action="{{ route('admin.circles.store') }}" class="space-y-6">
         @csrf
 
-        <!-- 1. Informasi Utama Gugus -->
+        <!-- 1. Informasi Utama Circle -->
         <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
             <h2 class="text-base font-bold text-slate-900 tracking-tight border-b border-slate-100 pb-3 flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-blue-600"></span>
-                1. Data Utama Gugus
+                1. Data Utama Circle
             </h2>
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Gugus / Circle <span class="text-rose-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Circle <span class="text-rose-500">*</span></label>
                 <input type="text" name="circle_name" value="{{ old('circle_name') }}" required
                     placeholder="Contoh: QCC THUNDER, KAIZEN MASTER, DELTA TEAM"
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                 <span class="text-[11px] text-slate-400 mt-1 block">
-                    ✨ Kode Gugus (seperti QCC-{{ session('active_year', date('Y')) }}-xxx) otomatis di-generate unik oleh sistem saat disimpan agar tidak terjadi bentrok nomor.
+                    ✨ Kode Circle (seperti QCC-{{ session('active_year', date('Y')) }}-xxx) otomatis di-generate unik oleh sistem saat disimpan agar tidak terjadi bentrok nomor.
                 </span>
             </div>
 
@@ -96,7 +96,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Status Awal Gugus <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Status Awal Circle <span class="text-rose-500">*</span></label>
                     <select name="status" required class="searchable-select w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white font-semibold">
                         <option value="scheduled" {{ old('status', 'scheduled') == 'scheduled' ? 'selected' : '' }}>Terjadwal Siap Presentasi (Scheduled)</option>
                         <option value="verified" {{ old('status') == 'verified' ? 'selected' : '' }}>Terverifikasi (Verified)</option>
@@ -119,17 +119,17 @@
                     </svg>
                 </div>
                 <span class="text-[11px] text-slate-400 mt-1 block">
-                    Masukkan URL tautan folder SharePoint yang berisi file risalah, presentasi, atau lampiran gugus. Tautan ini akan tampil langsung pada halaman rincian gugus untuk dewan juri & fasilitator.
+                    Masukkan URL tautan folder SharePoint yang berisi file risalah, presentasi, atau lampiran circle. Tautan ini akan tampil langsung pada halaman rincian circle untuk dewan juri & fasilitator.
                 </span>
             </div>
         </div>
 
-        <!-- 2. Susunan Anggota Gugus Dinamis -->
+        <!-- 2. Susunan Anggota Circle Dinamis -->
         <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
-                    2. Susunan Anggota Tim Gugus
+                    2. Susunan Anggota Tim Circle
                 </h2>
                 <button type="button" onclick="addMemberRow()" class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold transition flex items-center gap-1">
                     + Tambah Anggota
@@ -198,7 +198,7 @@
                 Batal
             </a>
             <button type="submit" class="px-7 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm shadow-lg shadow-blue-600/30 transition">
-                Simpan & Daftarkan Gugus
+                Simpan & Daftarkan Circle
             </button>
         </div>
 
