@@ -258,10 +258,6 @@
 
                             <!-- Status & Award -->
                             <td class="py-3 px-3.5 text-center whitespace-nowrap">
-                                @php
-                                    $isAdmin = Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin'));
-                                @endphp
-
                                 @if($circle->status === 'evaluating')
                                     <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 inline-flex items-center gap-1 shadow-2xs">
                                         <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
@@ -273,42 +269,13 @@
                                         Evaluated
                                     </span>
                                 @elseif($circle->status === 'verified')
-                                    @if($isAdmin)
-                                        <div class="inline-block relative">
-                                            <select onchange="updateCircleStatus({{ $circle->id }}, this.value, this)" 
-                                                class="appearance-none pl-2.5 pr-6 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-2xs transition"
-                                                title="Ubah status gugus (Admin)">
-                                                <option value="verified" selected>Verified</option>
-                                                <option value="submitted">Submitted</option>
-                                            </select>
-                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-sky-800">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                            </div>
-                                        </div>
-                                    @else
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-100 text-sky-800 border border-sky-200">
-                                            Verified
-                                        </span>
-                                    @endif
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-100 text-sky-800 border border-sky-200">
+                                        Verified
+                                    </span>
                                 @else
-                                    {{-- Status: submitted (atau status awal lainnya) --}}
-                                    @if($isAdmin)
-                                        <div class="inline-block relative">
-                                            <select onchange="updateCircleStatus({{ $circle->id }}, this.value, this)" 
-                                                class="appearance-none pl-2.5 pr-6 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs transition"
-                                                title="Ubah status gugus (Admin)">
-                                                <option value="submitted" selected>Submitted</option>
-                                                <option value="verified">Verified</option>
-                                            </select>
-                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-amber-800">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                            </div>
-                                        </div>
-                                    @else
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
-                                            Submitted
-                                        </span>
-                                    @endif
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                                        Submitted
+                                    </span>
                                 @endif
 
                                 @if($circle->award_level && $circle->award_level !== 'Bronze')
@@ -343,7 +310,7 @@
                                         <span>Detail</span>
                                     </a>
 
-                                    @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
+                                    @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')) && in_array($circle->status, ['verified', 'evaluating', 'evaluated']))
                                         <button type="button" 
                                             onclick="openShareModalForCircle({{ $circle->id }}, '{{ addslashes($circle->circle_name) }}', '{{ $circle->circle_code }}', '{{ addslashes($circle->theme_title) }}')"
                                             class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs transition inline-flex items-center gap-1 shadow-2xs"
@@ -653,41 +620,6 @@
             `Silakan scan QR Code atau akses link di bawah ini:\n${url}`;
 
         window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
-    }
-
-    function updateCircleStatus(circleId, newStatus, selectEl) {
-        if (!confirm('Ubah status gugus ini menjadi ' + newStatus.toUpperCase() + '?')) {
-            selectEl.value = (newStatus === 'verified') ? 'submitted' : 'verified';
-            return;
-        }
-
-        const previousValue = (newStatus === 'verified') ? 'submitted' : 'verified';
-        selectEl.disabled = true;
-
-        fetch('/circles/' + circleId + '/update-status', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ status: newStatus })
-        })
-        .then(res => res.json())
-        .then(data => {
-            selectEl.disabled = false;
-            if (data.success) {
-                window.location.reload();
-            } else {
-                alert('Gagal mengubah status: ' + (data.message || 'Terjadi kesalahan'));
-                selectEl.value = previousValue;
-            }
-        })
-        .catch(err => {
-            selectEl.disabled = false;
-            alert('Gagal menghubungi server.');
-            console.error(err);
-        });
     }
 </script>
 @endpush

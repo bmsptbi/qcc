@@ -140,7 +140,7 @@
             <div class="flex items-end gap-2">
                 <div class="flex-1">
                     <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Status</label>
-                    <select name="status" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none">
+                    <select name="status" class="no-search w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none" data-no-search="true">
                         <option value="">Semua Status</option>
                         <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>Submitted</option>
                         <option value="verified" {{ request('status') === 'verified' ? 'selected' : '' }}>Verified</option>
@@ -216,18 +216,46 @@
                                     <span class="text-[11px] text-slate-400 italic">Belum dijadwalkan</span>
                                 @endif
                             </td>
-                            <td class="py-3.5 px-4 text-center">
-                                @php
-                                    $badgeStyles = [
-                                        'submitted' => 'bg-amber-100 text-amber-800',
-                                        'verified' => 'bg-sky-100 text-sky-800',
-                                        'evaluating' => 'bg-blue-100 text-blue-800',
-                                        'evaluated' => 'bg-emerald-100 text-emerald-800',
-                                    ];
-                                @endphp
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider {{ $badgeStyles[$circle->status] ?? 'bg-slate-100 text-slate-700' }}">
-                                    {{ $circle->status }}
-                                </span>
+                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                @if($circle->status === 'evaluating')
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 inline-flex items-center gap-1 shadow-2xs" title="Sedang dalam proses penilaian tahap berjalan">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+                                        Evaluating
+                                    </span>
+                                @elseif($circle->status === 'evaluated')
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1 shadow-2xs" title="Semua tahap penilaian telah selesai">
+                                        <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        Evaluated
+                                    </span>
+                                @elseif($circle->status === 'verified')
+                                    <div class="inline-block relative">
+                                        <select onchange="updateCircleStatus({{ $circle->id }}, this.value, this)" 
+                                            class="no-search appearance-none pl-2.5 pr-6 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-2xs transition"
+                                            data-no-search="true"
+                                            style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none;"
+                                            title="Ubah status gugus">
+                                            <option value="verified" selected>Verified</option>
+                                            <option value="submitted">Submitted</option>
+                                        </select>
+                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-1.5 text-sky-800">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="inline-block relative">
+                                        <select onchange="updateCircleStatus({{ $circle->id }}, this.value, this)" 
+                                            class="no-search appearance-none pl-2.5 pr-6 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs transition"
+                                            data-no-search="true"
+                                            style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none;"
+                                            title="Ubah status gugus">
+                                            <option value="submitted" selected>Submitted</option>
+                                            <option value="verified">Verified</option>
+                                        </select>
+                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-1.5 text-amber-800">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                                        </div>
+                                    </div>
+                                @endif
                             </td>
                             <td class="py-3.5 px-4 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
@@ -353,6 +381,41 @@
 
     function closeImportModal() {
         document.getElementById('importModal').classList.add('hidden');
+    }
+
+    function updateCircleStatus(circleId, newStatus, selectEl) {
+        if (!confirm('Ubah status gugus ini menjadi ' + newStatus.toUpperCase() + '?')) {
+            selectEl.value = (newStatus === 'verified') ? 'submitted' : 'verified';
+            return;
+        }
+
+        const previousValue = (newStatus === 'verified') ? 'submitted' : 'verified';
+        selectEl.disabled = true;
+
+        fetch('/circles/' + circleId + '/update-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(res => res.json())
+        .then(data => {
+            selectEl.disabled = false;
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Gagal mengubah status: ' + (data.message || 'Terjadi kesalahan'));
+                selectEl.value = previousValue;
+            }
+        })
+        .catch(err => {
+            selectEl.disabled = false;
+            alert('Gagal menghubungi server.');
+            console.error(err);
+        });
     }
 </script>
 @endpush
