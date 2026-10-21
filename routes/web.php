@@ -26,6 +26,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Protected Admin Routes (Hanya dapat diakses setelah Sign In dengan role Admin)
 Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
+    Route::get('/', fn () => redirect()->route('admin.circles.index'))->name('dashboard');
+
     // User Management Routes
     Route::get('/users', [AdminController::class, 'usersIndex'])->name('users.index');
     Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');

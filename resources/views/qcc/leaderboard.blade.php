@@ -72,6 +72,19 @@
                                 <span class="text-xs font-medium text-slate-500">
                                     {{ $circle->department->name ?? '-' }}
                                 </span>
+                                @if($circle->status === 'evaluated')
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        Evaluated
+                                    </span>
+                                @elseif($circle->status === 'evaluating')
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">
+                                        Evaluating
+                                    </span>
+                                @elseif($circle->status === 'verified')
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-100 text-sky-800 border border-sky-200">
+                                        Verified
+                                    </span>
+                                @endif
                             </div>
 
                             <h3 class="text-base sm:text-lg font-bold text-slate-900">
@@ -135,7 +148,7 @@
                 </div>
             @empty
                 <div class="text-center py-12 text-slate-400 text-sm">
-                    Belum ada data nilai circle.
+                    Belum ada data circle (hanya circle berstatus Verified, Evaluating, atau Evaluated yang tampil di leaderboard).
                 </div>
             @endforelse
         </div>

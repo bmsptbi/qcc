@@ -518,6 +518,9 @@ class QccAssessmentController extends Controller
             $query->where('year', $activeYear);
         }
 
+        // Leaderboard hanya menampilkan circle yang sudah berstatus verified ke atas
+        $query->whereIn('status', ['verified', 'evaluating', 'evaluated', 'awarded']);
+
         $circles = $query->orderByDesc('final_score')
             ->orderBy('circle_name', 'asc')
             ->get();

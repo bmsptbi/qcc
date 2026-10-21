@@ -15,7 +15,7 @@ class AuthController extends Controller
     public function showLoginForm(): View|RedirectResponse
     {
         if (Auth::check() && Auth::user()->role === 'admin') {
-            return redirect()->route('admin.criteria.index');
+            return redirect()->route('admin.circles.index');
         }
 
         return view('auth.login');
@@ -54,7 +54,7 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            return redirect()->intended(route('admin.criteria.index'))->with('success', "Selamat datang kembali, {$user->name}!");
+            return redirect()->intended(route('admin.circles.index'))->with('success', "Selamat datang kembali, {$user->name}!");
         }
 
         return back()->withInput($request->only('login'))->with('error', 'Kombinasi Email/NIK dan Password tidak cocok.');
