@@ -77,9 +77,50 @@ class QccAssessmentController extends Controller
             });
         }
 
-        $circles = $query->orderBy('presentation_schedule', 'asc')
-            ->orderBy('id', 'asc')
-            ->get();
+        $sort = $request->input('sort', 'status');
+        $direction = strtolower($request->input('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+        switch ($sort) {
+            case 'code':
+            case 'circle_code':
+                $query->orderBy('circle_code', $direction)->orderBy('id', 'asc');
+                break;
+            case 'name':
+            case 'circle_name':
+                $query->orderBy('circle_name', $direction)->orderBy('id', 'asc');
+                break;
+            case 'theme':
+            case 'theme_title':
+                $query->orderBy('theme_title', $direction)->orderBy('id', 'asc');
+                break;
+            case 'department':
+                $query->orderBy(Department::select('name')->whereColumn('departments.id', 'circles.department_id'), $direction)
+                    ->orderBy('id', 'asc');
+                break;
+            case 'schedule':
+            case 'presentation_schedule':
+                $query->orderByRaw("presentation_schedule IS NULL, presentation_schedule {$direction}")
+                    ->orderBy('id', 'asc');
+                break;
+            case 'score':
+            case 'final_score':
+                $query->orderByRaw("final_score IS NULL, final_score {$direction}")
+                    ->orderBy('id', 'asc');
+                break;
+            case 'status':
+            default:
+                if ($direction === 'desc') {
+                    $query->orderByRaw("FIELD(status, 'evaluated', 'evaluating', 'verified', 'submitted') ASC");
+                } else {
+                    $query->orderByRaw("FIELD(status, 'submitted', 'verified', 'evaluating', 'evaluated') ASC");
+                }
+                $query->orderByRaw('presentation_schedule IS NULL, presentation_schedule ASC')
+                    ->orderBy('circle_code', 'asc')
+                    ->orderBy('id', 'asc');
+                break;
+        }
+
+        $circles = $query->get();
 
         $statsQuery = Circle::query();
         if ($activeYear !== 'all') {

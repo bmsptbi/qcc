@@ -117,37 +117,65 @@
             </div>
 
             <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+                <!-- Sorting State Preservation -->
+                <input type="hidden" name="sort" value="{{ request('sort', 'status') }}">
+                <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
+
                 <!-- Year Period Filter -->
-                <select name="year" onchange="this.form.submit()" class="px-3 py-2.5 rounded-xl border border-blue-200 text-xs sm:text-sm font-bold text-blue-900 bg-blue-50/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                    @foreach($availableYears as $yr)
-                        <option value="{{ $yr }}" {{ (string)$activeYear === (string)$yr ? 'selected' : '' }}>
-                            Tahun {{ $yr }}
-                        </option>
-                    @endforeach
-                    <option value="all" {{ (string)$activeYear === 'all' ? 'selected' : '' }}>Semua Tahun</option>
-                </select>
+                <div class="relative inline-block flex-shrink-0">
+                    <select name="year" onchange="this.form.submit()" 
+                        class="no-search appearance-none pl-3.5 pr-8 py-2 rounded-xl border border-blue-200 text-xs sm:text-sm font-bold text-blue-900 bg-blue-50/70 hover:bg-blue-100/70 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition shadow-2xs" 
+                        data-no-search="true"
+                        style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none;">
+                        @foreach($availableYears as $yr)
+                            <option value="{{ $yr }}" {{ (string)$activeYear === (string)$yr ? 'selected' : '' }}>
+                                Tahun {{ $yr }}
+                            </option>
+                        @endforeach
+                        <option value="all" {{ (string)$activeYear === 'all' ? 'selected' : '' }}>Semua Tahun</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-blue-800">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </div>
 
                 <!-- Department Filter -->
-                <select name="department" onchange="this.form.submit()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                    <option value="">Semua Departemen</option>
-                    @foreach($departments as $dept)
-                        <option value="{{ $dept->id }}" {{ request('department') == $dept->id ? 'selected' : '' }}>
-                            {{ $dept->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="relative inline-block flex-shrink-0">
+                    <select name="department" onchange="this.form.submit()" 
+                        class="no-search appearance-none pl-3.5 pr-8 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition shadow-2xs" 
+                        data-no-search="true"
+                        style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none;">
+                        <option value="">Semua Departemen</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept->id }}" {{ request('department') == $dept->id ? 'selected' : '' }}>
+                                {{ $dept->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </div>
 
                 <!-- Status Filter -->
-                <select name="status" onchange="this.form.submit()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                    <option value="">Semua Status ({{ $stats['total'] }})</option>
-                    <option value="submitted" {{ request('status') == 'submitted' ? 'selected' : '' }}>Submitted ({{ $stats['submitted'] }})</option>
-                    <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified ({{ $stats['verified'] }})</option>
-                    <option value="evaluating" {{ request('status') == 'evaluating' ? 'selected' : '' }}>Evaluating ({{ $stats['evaluating'] }})</option>
-                    <option value="evaluated" {{ request('status') == 'evaluated' ? 'selected' : '' }}>Evaluated ({{ $stats['evaluated'] }})</option>
-                </select>
+                <div class="relative inline-block flex-shrink-0">
+                    <select name="status" onchange="this.form.submit()" 
+                        class="no-search appearance-none pl-3.5 pr-8 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition shadow-2xs" 
+                        data-no-search="true"
+                        style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none;">
+                        <option value="">Semua Status ({{ $stats['total'] }})</option>
+                        <option value="submitted" {{ request('status') == 'submitted' ? 'selected' : '' }}>Submitted ({{ $stats['submitted'] }})</option>
+                        <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified ({{ $stats['verified'] }})</option>
+                        <option value="evaluating" {{ request('status') == 'evaluating' ? 'selected' : '' }}>Evaluating ({{ $stats['evaluating'] }})</option>
+                        <option value="evaluated" {{ request('status') == 'evaluated' ? 'selected' : '' }}>Evaluated ({{ $stats['evaluated'] }})</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </div>
 
                 @if(request()->anyFilled(['search', 'category', 'department', 'status']))
-                    <a href="{{ route('qcc.index') }}" class="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 transition whitespace-nowrap">
+                    <a href="{{ route('qcc.index', request()->only(['sort', 'direction'])) }}" class="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 transition whitespace-nowrap">
                         Reset
                     </a>
                 @endif
@@ -179,17 +207,81 @@
             @endif
         </div>
 
+        @php
+            $currentSort = request('sort', 'status');
+            $currentDir = strtolower(request('direction', 'asc'));
+
+            $getSortUrl = function($col) use ($currentSort, $currentDir) {
+                $nextDir = ($currentSort === $col && $currentDir === 'asc') ? 'desc' : 'asc';
+                return request()->fullUrlWithQuery(['sort' => $col, 'direction' => $nextDir]);
+            };
+        @endphp
+
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs sm:text-sm">
                 <thead>
-                    <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider">
+                    <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider select-none">
                         <th class="py-3 px-3.5 text-center w-12">No</th>
-                        <th class="py-3 px-3.5">Kode & Gugus</th>
-                        <th class="py-3 px-3.5">Judul Tema Perbaikan</th>
-                        <th class="py-3 px-3.5">Departemen & Tim</th>
-                        <th class="py-3 px-3.5">Jadwal & Ruang</th>
-                        <th class="py-3 px-3.5 text-center">Status</th>
-                        <th class="py-3 px-3.5 text-center">Nilai Akhir</th>
+                        <th class="py-3 px-3.5">
+                            <a href="{{ $getSortUrl('code') }}" class="inline-flex items-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan kode gugus">
+                                <span>Kode & Gugus</span>
+                                @if($currentSort === 'code')
+                                    <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
+                                @else
+                                    <span class="text-slate-300 group-hover/sort:text-slate-400 text-[10px]">⇅</span>
+                                @endif
+                            </a>
+                        </th>
+                        <th class="py-3 px-3.5">
+                            <a href="{{ $getSortUrl('theme') }}" class="inline-flex items-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan tema">
+                                <span>Judul Tema Perbaikan</span>
+                                @if($currentSort === 'theme')
+                                    <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
+                                @else
+                                    <span class="text-slate-300 group-hover/sort:text-slate-400 text-[10px]">⇅</span>
+                                @endif
+                            </a>
+                        </th>
+                        <th class="py-3 px-3.5">
+                            <a href="{{ $getSortUrl('department') }}" class="inline-flex items-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan departemen">
+                                <span>Departemen & Tim</span>
+                                @if($currentSort === 'department')
+                                    <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
+                                @else
+                                    <span class="text-slate-300 group-hover/sort:text-slate-400 text-[10px]">⇅</span>
+                                @endif
+                            </a>
+                        </th>
+                        <th class="py-3 px-3.5">
+                            <a href="{{ $getSortUrl('schedule') }}" class="inline-flex items-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan jadwal presentasi">
+                                <span>Jadwal & Ruang</span>
+                                @if($currentSort === 'schedule')
+                                    <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
+                                @else
+                                    <span class="text-slate-300 group-hover/sort:text-slate-400 text-[10px]">⇅</span>
+                                @endif
+                            </a>
+                        </th>
+                        <th class="py-3 px-3.5 text-center">
+                            <a href="{{ $getSortUrl('status') }}" class="inline-flex items-center justify-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan status">
+                                <span>Status</span>
+                                @if($currentSort === 'status')
+                                    <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
+                                @else
+                                    <span class="text-slate-300 group-hover/sort:text-slate-400 text-[10px]">⇅</span>
+                                @endif
+                            </a>
+                        </th>
+                        <th class="py-3 px-3.5 text-center">
+                            <a href="{{ $getSortUrl('score') }}" class="inline-flex items-center justify-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan nilai akhir">
+                                <span>Nilai Akhir</span>
+                                @if($currentSort === 'score')
+                                    <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
+                                @else
+                                    <span class="text-slate-300 group-hover/sort:text-slate-400 text-[10px]">⇅</span>
+                                @endif
+                            </a>
+                        </th>
                         <th class="py-3 px-3.5 text-right">Aksi</th>
                     </tr>
                 </thead>
