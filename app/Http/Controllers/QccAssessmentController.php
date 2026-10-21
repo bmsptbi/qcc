@@ -89,9 +89,9 @@ class QccAssessmentController extends Controller
         $stats = [
             'total' => (clone $statsQuery)->count(),
             'total_circles' => (clone $statsQuery)->count(),
-            'draft' => (clone $statsQuery)->where('status', 'draft')->count(),
             'submitted' => (clone $statsQuery)->where('status', 'submitted')->count(),
-            'scheduled' => (clone $statsQuery)->where('status', 'scheduled')->count(),
+            'verified' => (clone $statsQuery)->where('status', 'verified')->count(),
+            'evaluating' => (clone $statsQuery)->where('status', 'evaluating')->count(),
             'evaluated' => (clone $statsQuery)->whereIn('status', ['evaluated', 'awarded'])->count(),
         ];
 
@@ -413,34 +413,8 @@ class QccAssessmentController extends Controller
             'submitted_at' => $isSubmit ? now() : $assessment->submitted_at,
         ]);
 
-        // Recalculate Circle Final Score and Award Level based on Stage-Weighted Matrix
-        $categories = CriteriaCategory::with(['criteria' => function ($q) {
-            $q->where('is_active', true)->orderBy('display_order', 'asc');
-        }])->orderBy('display_order', 'asc')->get();
-
-        $matrixData = $this->buildAssessmentMatrix($circle, $categories);
-        $finalScore = $matrixData['final_score'];
-        $circle->final_score = $finalScore;
-
-        if ($finalScore >= 9.0) {
-            $circle->award_level = 'Diamond';
-        } elseif ($finalScore >= 8.5) {
-            $circle->award_level = 'Platinum';
-        } elseif ($finalScore >= 8.0) {
-            $circle->award_level = 'Gold';
-        } elseif ($finalScore >= 7.5) {
-            $circle->award_level = 'Silver';
-        } else {
-            $circle->award_level = null;
-        }
-
-        $hasSubmitted = Assessment::where('circle_id', $circle->id)->where('status', 'submitted')->exists();
-        if ($hasSubmitted) {
-            $circle->status = 'evaluated';
-        } elseif ($circle->status === 'scheduled') {
-            $circle->status = 'under_assessment';
-        }
-        $circle->save();
+        // Recalculate Circle Final Score, Award Level, and Status (evaluating/evaluated)
+        $this->recalculateCircleScoreAndStatus($circle);
 
         $message = $isSubmit
             ? 'Penilaian berhasil dikirim secara final!'
@@ -1121,6 +1095,11 @@ class QccAssessmentController extends Controller
 
     /**
      * Hitung ulang skor akhir (final score), peringkat/award level, dan status gugus
+     * Alur status gugus:
+     * - submitted: terdaftar awal
+     * - verified: diverifikasi oleh admin
+     * - evaluating: ketika ada penilaian di salah satu tahap (belum semua tahap selesai)
+     * - evaluated: ketika semua tahap penilaian telah selesai dinilai
      */
     protected function recalculateCircleScoreAndStatus(Circle $circle): void
     {
@@ -1144,14 +1123,50 @@ class QccAssessmentController extends Controller
             $circle->award_level = null;
         }
 
-        $hasSubmitted = Assessment::where('circle_id', $circle->id)->where('status', 'submitted')->exists();
-        if ($hasSubmitted) {
+        $totalStagesCount = $categories->count();
+        $assessedStagesCount = 0;
+        foreach ($matrixData['stages'] as $stage) {
+            if (! empty($stage['judge_stage_scores'])) {
+                $assessedStagesCount++;
+            }
+        }
+
+        if ($totalStagesCount > 0 && $assessedStagesCount >= $totalStagesCount) {
             $circle->status = 'evaluated';
-        } elseif (Assessment::where('circle_id', $circle->id)->exists()) {
-            $circle->status = 'under_assessment';
+        } elseif ($assessedStagesCount > 0) {
+            $circle->status = 'evaluating';
         } else {
-            $circle->status = 'scheduled';
+            // Belum ada penilaian sama sekali
+            if ($circle->status !== 'verified') {
+                $circle->status = 'submitted';
+            }
         }
         $circle->save();
+    }
+
+    /**
+     * Update status circle secara cepat dari tabel dashboard oleh admin (misal: submitted -> verified)
+     */
+    public function updateQuickStatus(Request $request, Circle $circle): JsonResponse|RedirectResponse
+    {
+        if (! Auth::check() || (Auth::user()->role !== 'admin' && ! Auth::user()->hasRole('admin'))) {
+            abort(403, 'Aksi ini hanya dapat dilakukan oleh Administrator.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:submitted,verified,evaluating,evaluated'],
+        ]);
+
+        $circle->update(['status' => $validated['status']]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Status gugus {$circle->circle_code} berhasil diubah ke ".ucfirst($validated['status']),
+                'status' => $circle->status,
+            ]);
+        }
+
+        return back()->with('success', "Status gugus {$circle->circle_code} berhasil diubah ke ".ucfirst($validated['status']));
     }
 }

@@ -62,9 +62,10 @@ class AdminController extends Controller
 
         $stats = [
             'total' => Circle::count(),
-            'scheduled' => Circle::where('status', 'scheduled')->count(),
+            'submitted' => Circle::where('status', 'submitted')->count(),
+            'verified' => Circle::where('status', 'verified')->count(),
+            'evaluating' => Circle::where('status', 'evaluating')->count(),
             'evaluated' => Circle::whereIn('status', ['evaluated', 'awarded'])->count(),
-            'draft' => Circle::where('status', 'draft')->count(),
         ];
 
         return view('admin.circles.index', compact('circles', 'periods', 'categories', 'departments', 'stats'));
@@ -95,7 +96,7 @@ class AdminController extends Controller
             'sharepoint_url' => ['nullable', 'string', 'max:2000'],
             'department_id' => ['required', 'exists:departments,id'],
             'facilitator_id' => ['nullable', 'exists:users,id'],
-            'status' => ['nullable', 'in:draft,submitted,verified,scheduled'],
+            'status' => ['nullable', 'in:submitted,verified,evaluating,evaluated,draft,scheduled,awarded'],
             'year' => ['nullable', 'integer', 'min:2000', 'max:2099'],
             'circle_category_id' => ['nullable', 'exists:circle_categories,id'],
             'assessment_period_id' => ['nullable', 'exists:assessment_periods,id'],
@@ -152,7 +153,7 @@ class AdminController extends Controller
                 'circle_name' => $validated['circle_name'],
                 'theme_title' => $validated['theme_title'],
                 'sharepoint_url' => $validated['sharepoint_url'] ?? null,
-                'status' => $validated['status'] ?? 'scheduled',
+                'status' => $validated['status'] ?? 'submitted',
             ]);
 
             // Simpan anggota tim
@@ -209,7 +210,7 @@ class AdminController extends Controller
             'target_statement' => ['nullable', 'string'],
             'presentation_schedule' => ['nullable', 'date'],
             'presentation_room' => ['nullable', 'string', 'max:150'],
-            'status' => ['required', 'in:draft,submitted,verified,scheduled,evaluated,awarded'],
+            'status' => ['required', 'in:submitted,verified,evaluating,evaluated,draft,scheduled,awarded'],
             'members' => ['nullable', 'array'],
             'members.*.name' => ['required_with:members.*.nik', 'string', 'max:150'],
             'members.*.nik' => ['required_with:members.*.name', 'string', 'max:50'],
@@ -545,15 +546,15 @@ class AdminController extends Controller
                 $yearVal = $colMap['year'] !== null && isset($row[$colMap['year']]) && is_numeric(trim($row[$colMap['year']])) ? (int) trim($row[$colMap['year']]) : $activeYearDefault;
                 $facVal = $colMap['fac'] !== null && isset($row[$colMap['fac']]) ? trim($row[$colMap['fac']]) : '';
                 $spVal = $colMap['sharepoint'] !== null && isset($row[$colMap['sharepoint']]) ? trim($row[$colMap['sharepoint']]) : '';
-                $statusVal = $colMap['status'] !== null && isset($row[$colMap['status']]) ? strtolower(trim($row[$colMap['status']])) : 'scheduled';
+                $statusVal = $colMap['status'] !== null && isset($row[$colMap['status']]) ? strtolower(trim($row[$colMap['status']])) : 'submitted';
                 $membersVal = $colMap['members'] !== null && isset($row[$colMap['members']]) ? trim($row[$colMap['members']]) : '';
 
                 if (empty($nameVal)) {
                     continue;
                 }
 
-                if (! in_array($statusVal, ['draft', 'submitted', 'verified', 'scheduled', 'evaluated', 'awarded'])) {
-                    $statusVal = 'scheduled';
+                if (! in_array($statusVal, ['submitted', 'verified', 'evaluating', 'evaluated', 'draft', 'scheduled', 'awarded'])) {
+                    $statusVal = 'submitted';
                 }
 
                 // Cari atau pasangkan Departemen

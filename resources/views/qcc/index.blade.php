@@ -47,21 +47,7 @@
         $currentStatus = request('status');
     @endphp
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <!-- 1. Draft -->
-        <a href="{{ route('qcc.index', array_merge(request()->except(['status', 'page']), $currentStatus === 'draft' ? [] : ['status' => 'draft'])) }}" 
-            class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group {{ $currentStatus === 'draft' ? 'border-slate-500 ring-2 ring-slate-400 bg-slate-50/70 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
-            title="Klik untuk filter gugus status Draft">
-            <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider group-hover:text-slate-800 transition">Draft</span>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Draft</span>
-            </div>
-            <div class="flex items-baseline justify-between mt-2">
-                <span class="text-2xl sm:text-3xl font-black text-slate-700">{{ $stats['draft'] }}</span>
-                <span class="text-[11px] text-slate-400 font-medium">Gugus</span>
-            </div>
-        </a>
-
-        <!-- 2. Submitted -->
+        <!-- 1. Submitted -->
         <a href="{{ route('qcc.index', array_merge(request()->except(['status', 'page']), $currentStatus === 'submitted' ? [] : ['status' => 'submitted'])) }}" 
             class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group {{ $currentStatus === 'submitted' ? 'border-amber-500 ring-2 ring-amber-400 bg-amber-50/40 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
             title="Klik untuk filter gugus status Submitted">
@@ -75,16 +61,30 @@
             </div>
         </a>
 
-        <!-- 3. Scheduled -->
-        <a href="{{ route('qcc.index', array_merge(request()->except(['status', 'page']), $currentStatus === 'scheduled' ? [] : ['status' => 'scheduled'])) }}" 
-            class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group {{ $currentStatus === 'scheduled' ? 'border-blue-500 ring-2 ring-blue-400 bg-blue-50/40 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
-            title="Klik untuk filter gugus status Scheduled">
+        <!-- 2. Verified -->
+        <a href="{{ route('qcc.index', array_merge(request()->except(['status', 'page']), $currentStatus === 'verified' ? [] : ['status' => 'verified'])) }}" 
+            class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group {{ $currentStatus === 'verified' ? 'border-sky-500 ring-2 ring-sky-400 bg-sky-50/40 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
+            title="Klik untuk filter gugus status Verified">
             <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider group-hover:text-blue-700 transition">Scheduled</span>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">Terjadwal</span>
+                <span class="text-xs font-bold text-sky-600 uppercase tracking-wider group-hover:text-sky-700 transition">Verified</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700">Terverifikasi</span>
             </div>
             <div class="flex items-baseline justify-between mt-2">
-                <span class="text-2xl sm:text-3xl font-black text-blue-600">{{ $stats['scheduled'] }}</span>
+                <span class="text-2xl sm:text-3xl font-black text-sky-600">{{ $stats['verified'] }}</span>
+                <span class="text-[11px] text-sky-600/70 font-medium">Gugus</span>
+            </div>
+        </a>
+
+        <!-- 3. Evaluating -->
+        <a href="{{ route('qcc.index', array_merge(request()->except(['status', 'page']), $currentStatus === 'evaluating' ? [] : ['status' => 'evaluating'])) }}" 
+            class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group {{ $currentStatus === 'evaluating' ? 'border-blue-500 ring-2 ring-blue-400 bg-blue-50/40 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
+            title="Klik untuk filter gugus status Evaluating">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider group-hover:text-blue-700 transition">Evaluating</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">Dinilai Juri</span>
+            </div>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-2xl sm:text-3xl font-black text-blue-600">{{ $stats['evaluating'] }}</span>
                 <span class="text-[11px] text-blue-600/70 font-medium">Gugus</span>
             </div>
         </a>
@@ -140,9 +140,9 @@
                 <!-- Status Filter -->
                 <select name="status" onchange="this.form.submit()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                     <option value="">Semua Status ({{ $stats['total'] }})</option>
-                    <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft ({{ $stats['draft'] }})</option>
                     <option value="submitted" {{ request('status') == 'submitted' ? 'selected' : '' }}>Submitted ({{ $stats['submitted'] }})</option>
-                    <option value="scheduled" {{ request('status') == 'scheduled' ? 'selected' : '' }}>Scheduled ({{ $stats['scheduled'] }})</option>
+                    <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified ({{ $stats['verified'] }})</option>
+                    <option value="evaluating" {{ request('status') == 'evaluating' ? 'selected' : '' }}>Evaluating ({{ $stats['evaluating'] }})</option>
                     <option value="evaluated" {{ request('status') == 'evaluated' ? 'selected' : '' }}>Evaluated ({{ $stats['evaluated'] }})</option>
                 </select>
 
@@ -258,27 +258,57 @@
 
                             <!-- Status & Award -->
                             <td class="py-3 px-3.5 text-center whitespace-nowrap">
-                                @if($circle->status === 'scheduled')
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 inline-flex items-center gap-1">
+                                @php
+                                    $isAdmin = Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin'));
+                                @endphp
+
+                                @if($circle->status === 'evaluating')
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 inline-flex items-center gap-1 shadow-2xs">
                                         <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
-                                        Scheduled
+                                        Evaluating
                                     </span>
                                 @elseif($circle->status === 'evaluated')
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1 shadow-2xs">
+                                        <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                         Evaluated
                                     </span>
-                                @elseif($circle->status === 'submitted')
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800">
-                                        Submitted
-                                    </span>
-                                @elseif($circle->status === 'draft')
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700">
-                                        Draft
-                                    </span>
+                                @elseif($circle->status === 'verified')
+                                    @if($isAdmin)
+                                        <div class="inline-block relative">
+                                            <select onchange="updateCircleStatus({{ $circle->id }}, this.value, this)" 
+                                                class="appearance-none pl-2.5 pr-6 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-2xs transition"
+                                                title="Ubah status gugus (Admin)">
+                                                <option value="verified" selected>Verified</option>
+                                                <option value="submitted">Submitted</option>
+                                            </select>
+                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-sky-800">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-100 text-sky-800 border border-sky-200">
+                                            Verified
+                                        </span>
+                                    @endif
                                 @else
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700">
-                                        {{ ucfirst($circle->status) }}
-                                    </span>
+                                    {{-- Status: submitted (atau status awal lainnya) --}}
+                                    @if($isAdmin)
+                                        <div class="inline-block relative">
+                                            <select onchange="updateCircleStatus({{ $circle->id }}, this.value, this)" 
+                                                class="appearance-none pl-2.5 pr-6 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs transition"
+                                                title="Ubah status gugus (Admin)">
+                                                <option value="submitted" selected>Submitted</option>
+                                                <option value="verified">Verified</option>
+                                            </select>
+                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-amber-800">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                                            Submitted
+                                        </span>
+                                    @endif
                                 @endif
 
                                 @if($circle->award_level && $circle->award_level !== 'Bronze')
@@ -623,6 +653,41 @@
             `Silakan scan QR Code atau akses link di bawah ini:\n${url}`;
 
         window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
+    }
+
+    function updateCircleStatus(circleId, newStatus, selectEl) {
+        if (!confirm('Ubah status gugus ini menjadi ' + newStatus.toUpperCase() + '?')) {
+            selectEl.value = (newStatus === 'verified') ? 'submitted' : 'verified';
+            return;
+        }
+
+        const previousValue = (newStatus === 'verified') ? 'submitted' : 'verified';
+        selectEl.disabled = true;
+
+        fetch('/circles/' + circleId + '/update-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(res => res.json())
+        .then(data => {
+            selectEl.disabled = false;
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Gagal mengubah status: ' + (data.message || 'Terjadi kesalahan'));
+                selectEl.value = previousValue;
+            }
+        })
+        .catch(err => {
+            selectEl.disabled = false;
+            alert('Gagal menghubungi server.');
+            console.error(err);
+        });
     }
 </script>
 @endpush

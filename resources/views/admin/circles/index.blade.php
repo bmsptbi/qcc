@@ -73,25 +73,25 @@
 
     <!-- Stat Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs">
-            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Gugus</span>
-            <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{{ $stats['total'] }}</div>
-            <span class="text-[10px] text-slate-500 mt-0.5 block">Semua periode aktif</span>
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/90 shadow-xs bg-amber-50/20">
+            <span class="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-wider block">Submitted</span>
+            <div class="text-2xl sm:text-3xl font-black text-amber-700 mt-1">{{ $stats['submitted'] }}</div>
+            <span class="text-[10px] text-amber-600/80 mt-0.5 block">Menunggu verifikasi</span>
+        </div>
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-sky-200/90 shadow-xs bg-sky-50/20">
+            <span class="text-[10px] sm:text-xs font-bold text-sky-600 uppercase tracking-wider block">Verified</span>
+            <div class="text-2xl sm:text-3xl font-black text-sky-700 mt-1">{{ $stats['verified'] }}</div>
+            <span class="text-[10px] text-sky-600/80 mt-0.5 block">Terverifikasi</span>
         </div>
         <div class="bg-white p-4 sm:p-5 rounded-2xl border border-blue-200/90 shadow-xs bg-blue-50/20">
-            <span class="text-[10px] sm:text-xs font-bold text-blue-600 uppercase tracking-wider block">Terjadwal</span>
-            <div class="text-2xl sm:text-3xl font-black text-blue-700 mt-1">{{ $stats['scheduled'] }}</div>
-            <span class="text-[10px] text-blue-600/80 mt-0.5 block">Siap dinilai</span>
+            <span class="text-[10px] sm:text-xs font-bold text-blue-600 uppercase tracking-wider block">Evaluating</span>
+            <div class="text-2xl sm:text-3xl font-black text-blue-700 mt-1">{{ $stats['evaluating'] }}</div>
+            <span class="text-[10px] text-blue-600/80 mt-0.5 block">Sedang dinilai juri</span>
         </div>
         <div class="bg-white p-4 sm:p-5 rounded-2xl border border-emerald-200/90 shadow-xs bg-emerald-50/20">
-            <span class="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase tracking-wider block">Selesai Dinilai</span>
+            <span class="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase tracking-wider block">Evaluated</span>
             <div class="text-2xl sm:text-3xl font-black text-emerald-700 mt-1">{{ $stats['evaluated'] }}</div>
-            <span class="text-[10px] text-emerald-600/80 mt-0.5 block">Skor tersimpan</span>
-        </div>
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/90 shadow-xs bg-amber-50/20">
-            <span class="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-wider block">Draft Gugus</span>
-            <div class="text-2xl sm:text-3xl font-black text-amber-700 mt-1">{{ $stats['draft'] }}</div>
-            <span class="text-[10px] text-amber-600/80 mt-0.5 block">Belum terjadwal</span>
+            <span class="text-[10px] text-emerald-600/80 mt-0.5 block">Semua tahap selesai</span>
         </div>
     </div>
 
@@ -142,11 +142,10 @@
                     <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Status</label>
                     <select name="status" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none">
                         <option value="">Semua Status</option>
-                        <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                         <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>Submitted</option>
-                        <option value="scheduled" {{ request('status') === 'scheduled' ? 'selected' : '' }}>Scheduled</option>
+                        <option value="verified" {{ request('status') === 'verified' ? 'selected' : '' }}>Verified</option>
+                        <option value="evaluating" {{ request('status') === 'evaluating' ? 'selected' : '' }}>Evaluating</option>
                         <option value="evaluated" {{ request('status') === 'evaluated' ? 'selected' : '' }}>Evaluated</option>
-                        <option value="awarded" {{ request('status') === 'awarded' ? 'selected' : '' }}>Awarded</option>
                     </select>
                 </div>
                 <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition flex-shrink-0">
@@ -220,12 +219,10 @@
                             <td class="py-3.5 px-4 text-center">
                                 @php
                                     $badgeStyles = [
-                                        'draft' => 'bg-slate-100 text-slate-700',
                                         'submitted' => 'bg-amber-100 text-amber-800',
                                         'verified' => 'bg-sky-100 text-sky-800',
-                                        'scheduled' => 'bg-blue-100 text-blue-800',
+                                        'evaluating' => 'bg-blue-100 text-blue-800',
                                         'evaluated' => 'bg-emerald-100 text-emerald-800',
-                                        'awarded' => 'bg-purple-100 text-purple-800',
                                     ];
                                 @endphp
                                 <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider {{ $badgeStyles[$circle->status] ?? 'bg-slate-100 text-slate-700' }}">

@@ -160,12 +160,10 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Status Gugus <span class="text-rose-500">*</span></label>
                     <select name="status" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white font-semibold">
-                        <option value="scheduled" {{ old('status', $circle->status) == 'scheduled' ? 'selected' : '' }}>Terjadwal Siap Presentasi (Scheduled)</option>
-                        <option value="evaluated" {{ old('status', $circle->status) == 'evaluated' ? 'selected' : '' }}>Selesai Dinilai (Evaluated)</option>
-                        <option value="awarded" {{ old('status', $circle->status) == 'awarded' ? 'selected' : '' }}>Penganugerahan Juara (Awarded)</option>
-                        <option value="verified" {{ old('status', $circle->status) == 'verified' ? 'selected' : '' }}>Terverifikasi (Verified)</option>
-                        <option value="submitted" {{ old('status', $circle->status) == 'submitted' ? 'selected' : '' }}>Terkirim (Submitted)</option>
-                        <option value="draft" {{ old('status', $circle->status) == 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="submitted" {{ old('status', $circle->status) == 'submitted' ? 'selected' : '' }}>Submitted (Terkirim / Terdaftar)</option>
+                        <option value="verified" {{ old('status', $circle->status) == 'verified' ? 'selected' : '' }}>Verified (Terverifikasi)</option>
+                        <option value="evaluating" {{ old('status', $circle->status) == 'evaluating' ? 'selected' : '' }}>Evaluating (Sedang Dinilai)</option>
+                        <option value="evaluated" {{ old('status', $circle->status) == 'evaluated' ? 'selected' : '' }}>Evaluated (Selesai Dinilai)</option>
                     </select>
                 </div>
             </div>

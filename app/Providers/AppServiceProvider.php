@@ -6,6 +6,7 @@ use App\Models\AssessmentPeriod;
 use App\Models\Circle;
 use App\Models\User;
 use Database\Seeders\BekaertUsersSeeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -29,6 +30,20 @@ class AppServiceProvider extends ServiceProvider
         try {
             if (Schema::hasTable('users') && ! User::where('nik', '971205')->exists()) {
                 (new BekaertUsersSeeder)->run();
+            }
+
+            // Pastikan kolom status di circles bertipe varchar agar mendukung: submitted, verified, evaluating, evaluated
+            if (Schema::hasTable('circles')) {
+                DB::statement("ALTER TABLE circles MODIFY status VARCHAR(50) NOT NULL DEFAULT 'submitted'");
+                DB::table('circles')
+                    ->whereIn('status', ['draft', 'scheduled'])
+                    ->whereNotIn('id', function ($query) {
+                        $query->select('circle_id')->from('assessments');
+                    })
+                    ->update(['status' => 'submitted']);
+                DB::table('circles')
+                    ->where('status', 'under_assessment')
+                    ->update(['status' => 'evaluating']);
             }
         } catch (\Throwable $e) {
             // Abaikan jika database belum siap / koneksi offline
