@@ -61,7 +61,11 @@ class QccAssessmentController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'evaluated') {
+                $query->whereIn('status', ['evaluated', 'awarded']);
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('search')) {
@@ -83,10 +87,12 @@ class QccAssessmentController extends Controller
         }
 
         $stats = [
+            'total' => (clone $statsQuery)->count(),
             'total_circles' => (clone $statsQuery)->count(),
-            'scheduled_today' => (clone $statsQuery)->whereDate('presentation_schedule', now()->toDateString())->count(),
-            'completed_assessment' => (clone $statsQuery)->whereIn('status', ['evaluated', 'awarded'])->count(),
-            'active_judges' => User::role('judge')->count(),
+            'draft' => (clone $statsQuery)->where('status', 'draft')->count(),
+            'submitted' => (clone $statsQuery)->where('status', 'submitted')->count(),
+            'scheduled' => (clone $statsQuery)->where('status', 'scheduled')->count(),
+            'evaluated' => (clone $statsQuery)->whereIn('status', ['evaluated', 'awarded'])->count(),
         ];
 
         // Active judge in session or default to Judge 1 for convenient testing
