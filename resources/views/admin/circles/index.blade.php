@@ -71,28 +71,70 @@
         </div>
     </div>
 
-    <!-- Stat Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/90 shadow-xs bg-amber-50/20">
-            <span class="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-wider block">Submitted</span>
+    <!-- Stat Cards (Total + Status) -->
+    @php
+        $currentAdminStatus = request('status');
+    @endphp
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+        <!-- Total (Default) -->
+        <a href="{{ route('admin.circles.index', request()->except(['status', 'page'])) }}" 
+            class="bg-white p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md block group col-span-2 sm:col-span-1 {{ empty($currentAdminStatus) ? 'border-slate-800 ring-2 ring-slate-800 bg-slate-50/70 shadow-sm' : 'border-slate-200/90 shadow-xs' }}"
+            title="Klik untuk melihat semua gugus (Total)">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] sm:text-xs font-bold text-slate-800 uppercase tracking-wider block">Total</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ empty($currentAdminStatus) ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700' }}">Semua</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{{ $stats['total'] }}</div>
+            <span class="text-[10px] text-slate-500 mt-0.5 block">Semua gugus terdaftar</span>
+        </a>
+
+        <!-- Submitted -->
+        <a href="{{ route('admin.circles.index', array_merge(request()->except(['status', 'page']), $currentAdminStatus === 'submitted' ? [] : ['status' => 'submitted'])) }}" 
+            class="bg-white p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md block group {{ $currentAdminStatus === 'submitted' ? 'border-amber-500 ring-2 ring-amber-400 bg-amber-50/40 shadow-sm' : 'border-amber-200/90 bg-amber-50/20 shadow-xs' }}"
+            title="Klik untuk filter gugus Submitted">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-wider block">Submitted</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Terdaftar</span>
+            </div>
             <div class="text-2xl sm:text-3xl font-black text-amber-700 mt-1">{{ $stats['submitted'] }}</div>
             <span class="text-[10px] text-amber-600/80 mt-0.5 block">Menunggu verifikasi</span>
-        </div>
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-sky-200/90 shadow-xs bg-sky-50/20">
-            <span class="text-[10px] sm:text-xs font-bold text-sky-600 uppercase tracking-wider block">Verified</span>
+        </a>
+
+        <!-- Verified -->
+        <a href="{{ route('admin.circles.index', array_merge(request()->except(['status', 'page']), $currentAdminStatus === 'verified' ? [] : ['status' => 'verified'])) }}" 
+            class="bg-white p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md block group {{ $currentAdminStatus === 'verified' ? 'border-sky-500 ring-2 ring-sky-400 bg-sky-50/40 shadow-sm' : 'border-sky-200/90 bg-sky-50/20 shadow-xs' }}"
+            title="Klik untuk filter gugus Verified">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] sm:text-xs font-bold text-sky-600 uppercase tracking-wider block">Verified</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">Terverifikasi</span>
+            </div>
             <div class="text-2xl sm:text-3xl font-black text-sky-700 mt-1">{{ $stats['verified'] }}</div>
-            <span class="text-[10px] text-sky-600/80 mt-0.5 block">Terverifikasi</span>
-        </div>
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-blue-200/90 shadow-xs bg-blue-50/20">
-            <span class="text-[10px] sm:text-xs font-bold text-blue-600 uppercase tracking-wider block">Evaluating</span>
+            <span class="text-[10px] text-sky-600/80 mt-0.5 block">Siap dinilai</span>
+        </a>
+
+        <!-- Evaluating -->
+        <a href="{{ route('admin.circles.index', array_merge(request()->except(['status', 'page']), $currentAdminStatus === 'evaluating' ? [] : ['status' => 'evaluating'])) }}" 
+            class="bg-white p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md block group {{ $currentAdminStatus === 'evaluating' ? 'border-blue-500 ring-2 ring-blue-400 bg-blue-50/40 shadow-sm' : 'border-blue-200/90 bg-blue-50/20 shadow-xs' }}"
+            title="Klik untuk filter gugus Evaluating">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] sm:text-xs font-bold text-blue-600 uppercase tracking-wider block">Evaluating</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Dinilai Juri</span>
+            </div>
             <div class="text-2xl sm:text-3xl font-black text-blue-700 mt-1">{{ $stats['evaluating'] }}</div>
             <span class="text-[10px] text-blue-600/80 mt-0.5 block">Sedang dinilai juri</span>
-        </div>
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-emerald-200/90 shadow-xs bg-emerald-50/20">
-            <span class="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase tracking-wider block">Evaluated</span>
+        </a>
+
+        <!-- Evaluated -->
+        <a href="{{ route('admin.circles.index', array_merge(request()->except(['status', 'page']), $currentAdminStatus === 'evaluated' ? [] : ['status' => 'evaluated'])) }}" 
+            class="bg-white p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md block group {{ $currentAdminStatus === 'evaluated' ? 'border-emerald-500 ring-2 ring-emerald-400 bg-emerald-50/40 shadow-sm' : 'border-emerald-200/90 bg-emerald-50/20 shadow-xs' }}"
+            title="Klik untuk filter gugus Evaluated">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase tracking-wider block">Evaluated</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Selesai</span>
+            </div>
             <div class="text-2xl sm:text-3xl font-black text-emerald-700 mt-1">{{ $stats['evaluated'] }}</div>
             <span class="text-[10px] text-emerald-600/80 mt-0.5 block">Semua tahap selesai</span>
-        </div>
+        </a>
     </div>
 
     <!-- Filters & Search Bar -->
@@ -230,16 +272,7 @@
                                 @endif
                             </a>
                         </th>
-                        <th class="py-3.5 px-4">
-                            <a href="{{ $getSortUrl('schedule') }}" class="inline-flex items-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan jadwal">
-                                <span>Jadwal & Ruang</span>
-                                @if($currentSort === 'schedule')
-                                    <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
-                                @else
-                                    <span class="text-slate-300 group-hover/sort:text-slate-400 text-[10px]">⇅</span>
-                                @endif
-                            </a>
-                        </th>
+
                         <th class="py-3.5 px-4 text-center">
                             <a href="{{ $getSortUrl('status') }}" class="inline-flex items-center justify-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan status">
                                 <span>Status</span>
@@ -287,18 +320,7 @@
                                     Fasilitator: {{ $circle->facilitator->name ?? '-' }}
                                 </div>
                             </td>
-                            <td class="py-3.5 px-4">
-                                @if($circle->presentation_schedule)
-                                    <div class="font-semibold text-slate-800">
-                                        {{ $circle->presentation_schedule->format('d M Y, H:i') }}
-                                    </div>
-                                    <div class="text-[10px] text-slate-500">
-                                        📍 {{ $circle->presentation_room ?? 'Ruang Presentasi' }}
-                                    </div>
-                                @else
-                                    <span class="text-[11px] text-slate-400 italic">Belum dijadwalkan</span>
-                                @endif
-                            </td>
+
                             <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                 @if($circle->status === 'evaluating')
                                     <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 inline-flex items-center gap-1 shadow-2xs" title="Sedang dalam proses penilaian tahap berjalan">
@@ -372,7 +394,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-400 text-sm">
+                            <td colspan="6" class="py-12 text-center text-slate-400 text-sm">
                                 Tidak ada gugus yang sesuai dengan pencarian atau filter yang dipilih.
                             </td>
                         </tr>

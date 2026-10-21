@@ -42,11 +42,25 @@
         </div>
     </div>
 
-    <!-- Quick Stat Cards (Berdasarkan Status Gugus Saja) -->
+    <!-- Quick Stat Cards (Total + Berdasarkan Status Gugus) -->
     @php
         $currentStatus = request('status');
     @endphp
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+        <!-- 0. Total (Default) -->
+        <a href="{{ route('qcc.index', request()->except(['status', 'page'])) }}" 
+            class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group col-span-2 sm:col-span-1 {{ empty($currentStatus) ? 'border-slate-800 ring-2 ring-slate-800 bg-slate-50/70 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
+            title="Klik untuk menampilkan semua gugus (Total)">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider group-hover:text-slate-900 transition">Total</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ empty($currentStatus) ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700' }}">Semua</span>
+            </div>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-2xl sm:text-3xl font-black text-slate-900">{{ $stats['total'] }}</span>
+                <span class="text-[11px] text-slate-500 font-medium">Gugus</span>
+            </div>
+        </a>
+
         <!-- 1. Submitted -->
         <a href="{{ route('qcc.index', array_merge(request()->except(['status', 'page']), $currentStatus === 'submitted' ? [] : ['status' => 'submitted'])) }}" 
             class="bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md block group {{ $currentStatus === 'submitted' ? 'border-amber-500 ring-2 ring-amber-400 bg-amber-50/40 shadow-sm' : 'border-slate-200/80 shadow-xs' }}"
@@ -252,30 +266,10 @@
                                 @endif
                             </a>
                         </th>
-                        <th class="py-3 px-3.5">
-                            <a href="{{ $getSortUrl('schedule') }}" class="inline-flex items-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan jadwal presentasi">
-                                <span>Jadwal & Ruang</span>
-                                @if($currentSort === 'schedule')
-                                    <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
-                                @else
-                                    <span class="text-slate-300 group-hover/sort:text-slate-400 text-[10px]">⇅</span>
-                                @endif
-                            </a>
-                        </th>
                         <th class="py-3 px-3.5 text-center">
                             <a href="{{ $getSortUrl('status') }}" class="inline-flex items-center justify-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan status">
                                 <span>Status</span>
                                 @if($currentSort === 'status')
-                                    <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
-                                @else
-                                    <span class="text-slate-300 group-hover/sort:text-slate-400 text-[10px]">⇅</span>
-                                @endif
-                            </a>
-                        </th>
-                        <th class="py-3 px-3.5 text-center">
-                            <a href="{{ $getSortUrl('score') }}" class="inline-flex items-center justify-center gap-1.5 hover:text-blue-600 transition group/sort" title="Klik untuk mengurutkan nilai akhir">
-                                <span>Nilai Akhir</span>
-                                @if($currentSort === 'score')
                                     <span class="text-blue-600 font-black text-xs">{{ $currentDir === 'desc' ? '▼' : '▲' }}</span>
                                 @else
                                     <span class="text-slate-300 group-hover/sort:text-slate-400 text-[10px]">⇅</span>
@@ -334,20 +328,6 @@
                                 @endif
                             </td>
 
-                            <!-- Jadwal & Ruang -->
-                            <td class="py-3 px-3.5 whitespace-nowrap">
-                                @if($circle->presentation_schedule)
-                                    <div class="font-semibold text-slate-800 text-xs">
-                                        {{ $circle->presentation_schedule->translatedFormat('d M Y, H:i') }} WIB
-                                    </div>
-                                    <div class="text-[11px] text-slate-500 mt-0.5">
-                                        📍 {{ $circle->presentation_room ?? 'Ruang Presentasi' }}
-                                    </div>
-                                @else
-                                    <span class="text-[11px] text-slate-400 italic">Belum terjadwal</span>
-                                @endif
-                            </td>
-
                             <!-- Status & Award -->
                             <td class="py-3 px-3.5 text-center whitespace-nowrap">
                                 @if($circle->status === 'evaluating')
@@ -379,20 +359,6 @@
                                 @endif
                             </td>
 
-                            <!-- Nilai Akhir -->
-                            <td class="py-3 px-3.5 text-center whitespace-nowrap">
-                                @if($circle->final_score)
-                                    <div>
-                                        <span class="text-base font-black text-slate-900 leading-none">
-                                            {{ number_format($circle->final_score, 2) }}
-                                        </span>
-                                        <span class="text-[10px] text-slate-500 font-semibold block">/ 10</span>
-                                    </div>
-                                @else
-                                    <span class="text-xs font-semibold text-slate-300">-</span>
-                                @endif
-                            </td>
-
                             <!-- Aksi -->
                             <td class="py-3 px-3.5 text-right whitespace-nowrap">
                                 <div class="inline-flex items-center justify-end gap-1.5">
@@ -418,7 +384,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center py-12 px-4">
+                            <td colspan="6" class="text-center py-12 px-4">
                                 <svg class="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>

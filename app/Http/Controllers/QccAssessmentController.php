@@ -110,12 +110,11 @@ class QccAssessmentController extends Controller
             case 'status':
             default:
                 if ($direction === 'desc') {
-                    $query->orderByRaw("FIELD(status, 'evaluated', 'evaluating', 'verified', 'submitted') ASC");
-                } else {
                     $query->orderByRaw("FIELD(status, 'submitted', 'verified', 'evaluating', 'evaluated') ASC");
+                } else {
+                    $query->orderByRaw("FIELD(status, 'evaluated', 'evaluating', 'verified', 'submitted') ASC");
                 }
-                $query->orderByRaw('presentation_schedule IS NULL, presentation_schedule ASC')
-                    ->orderBy('circle_code', 'asc')
+                $query->orderBy('circle_code', 'asc')
                     ->orderBy('id', 'asc');
                 break;
         }
