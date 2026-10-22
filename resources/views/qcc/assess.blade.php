@@ -61,15 +61,6 @@
                         <span class="px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold bg-slate-100 text-slate-700">
                             {{ $circle->department->name ?? '-' }}
                         </span>
-                        <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-50 text-slate-600 border border-slate-200 hidden md:inline-block">
-                            {{ $circle->category->name ?? 'Manufacturing' }}
-                        </span>
-                        @if($isStageLocked)
-                            <span class="px-2 py-0.5 rounded-lg bg-blue-50 border border-blue-200/90 text-blue-700 text-[10px] sm:text-xs font-black inline-flex items-center gap-1">
-                                <span>🎯 {{ $lockedCategory?->name ?? 'Tahap Penilaian' }}</span>
-                                <span class="text-blue-600 font-extrabold">({{ number_format($lockedCategory?->weight_percentage ?? 0, 0) }}%)</span>
-                            </span>
-                        @endif
                     </div>
                     <p class="text-[11px] sm:text-xs text-slate-600 font-medium truncate mt-0.5" title="{{ $circle->theme_title }}">
                         "{{ $circle->theme_title }}"
