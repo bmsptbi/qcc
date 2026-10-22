@@ -404,7 +404,7 @@
 
 @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
 <!-- Modal Admin: Bagikan Link & QR Code Penilaian -->
-<div id="shareModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+<div id="shareModal" onclick="if(event.target === this) closeShareModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
         
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -542,28 +542,43 @@
 <script>
     let currentCircle = null;
 
-    function openShareModalForCircle(id, name, code, theme) {
-        currentCircle = { id, name, code, theme };
-        document.getElementById('share_circle_name').innerText = name + ' (' + code + ')';
-        document.getElementById('share_circle_theme').innerText = '"' + theme + '"';
-        
-        // Reset stage select to blank by default
+    function resetShareModal() {
         const stageSelect = document.getElementById('share_stage_select');
-        if (stageSelect) stageSelect.value = '';
+        if (stageSelect) {
+            if (stageSelect.tomselect) {
+                stageSelect.tomselect.clear();
+                stageSelect.tomselect.setValue('');
+            }
+            stageSelect.value = '';
+        }
 
-        // Reset checkboxes
         document.querySelectorAll('.share-judge-cb').forEach(cb => cb.checked = false);
         const toggleBtn = document.getElementById('toggle_all_judges_btn');
         if (toggleBtn) toggleBtn.innerText = 'Pilih Semua';
 
         updateGeneratedShareUrl();
+    }
+
+    function openShareModalForCircle(id, name, code, theme) {
+        currentCircle = { id, name, code, theme };
+        const nameEl = document.getElementById('share_circle_name');
+        const themeEl = document.getElementById('share_circle_theme');
+        if (nameEl) nameEl.innerText = name + ' (' + code + ')';
+        if (themeEl) themeEl.innerText = '"' + theme + '"';
+        
+        resetShareModal();
+
         const modal = document.getElementById('shareModal');
-        modal.classList.remove('hidden');
-        if (window.initSearchableSelects) window.initSearchableSelects(modal);
+        if (modal) {
+            modal.classList.remove('hidden');
+            if (window.initSearchableSelects) window.initSearchableSelects(modal);
+        }
     }
 
     function closeShareModal() {
-        document.getElementById('shareModal').classList.add('hidden');
+        const modal = document.getElementById('shareModal');
+        if (modal) modal.classList.add('hidden');
+        resetShareModal();
     }
 
     function toggleAllShareJudges() {
