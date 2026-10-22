@@ -57,22 +57,56 @@ class AppServiceProvider extends ServiceProvider
                 session(['active_year' => $sessionYear]);
             }
 
-            $allYears = [(int) date('Y'), 2026];
+            $currentYear = (int) date('Y');
+            $defaultYears = [$currentYear, $currentYear + 1, 2026];
+            if (is_numeric($sessionYear)) {
+                $defaultYears[] = (int) $sessionYear;
+            }
+            if (request()->filled('year') && is_numeric(request()->query('year'))) {
+                $defaultYears[] = (int) request()->query('year');
+            }
+
+            $circleYears = [];
+            $periodYears = [];
+            $criteriaYears = [];
+
             try {
-                if (Schema::hasTable('circles') && Schema::hasTable('assessment_periods')) {
+                if (Schema::hasTable('circles')) {
                     $circleYears = Circle::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray();
+                }
+                if (Schema::hasTable('assessment_periods')) {
                     $periodYears = AssessmentPeriod::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray();
-                    $criteriaYears = (Schema::hasTable('criteria_categories') && Schema::hasColumn('criteria_categories', 'year'))
-                        ? CriteriaCategory::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray()
-                        : [];
-                    $allYears = array_values(array_filter(array_unique(array_merge($circleYears, $periodYears, $criteriaYears, [(int) date('Y'), 2026]))));
-                    rsort($allYears);
+                }
+                if (Schema::hasTable('criteria_categories') && Schema::hasColumn('criteria_categories', 'year')) {
+                    $criteriaYears = CriteriaCategory::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray();
                 }
             } catch (\Throwable $e) {
                 // Ignore during bootstrapping or migration edge cases
             }
 
-            $activeYear = $sessionYear ?? ($allYears[0] ?? (int) date('Y'));
+            $allYears = array_values(array_filter(array_unique(array_merge(
+                $circleYears,
+                $periodYears,
+                $criteriaYears,
+                $defaultYears
+            ))));
+            rsort($allYears);
+
+            // Default tahun aktif jika belum ada di sesi: utamakan tahun yang ada datanya di DB (misal 2026)
+            $fallbackDefaultYear = 2026;
+            if (! empty($circleYears)) {
+                $fallbackDefaultYear = $circleYears[0];
+            } elseif (! empty($criteriaYears)) {
+                $fallbackDefaultYear = $criteriaYears[0];
+            }
+
+            $activeYear = $sessionYear ?? $fallbackDefaultYear;
+
+            // Pastikan jika activeYear numerik, dia ada di availableYears
+            if (is_numeric($activeYear) && ! in_array((int) $activeYear, $allYears)) {
+                $allYears[] = (int) $activeYear;
+                rsort($allYears);
+            }
 
             $view->with([
                 'activeYear' => $activeYear,

@@ -904,9 +904,10 @@ class AdminController extends Controller
     /**
      * Halaman kelola kategori & butir kriteria penilaian (versioned per tahun)
      */
-    public function criteriaIndex(Request $request): View
+    public function criteriaIndex(Request $request): View|RedirectResponse
     {
-        $allYears = [(int) date('Y'), 2026];
+        $currentYear = (int) date('Y');
+        $allYears = [$currentYear, $currentYear + 1, 2026];
         $criteriaYears = [];
 
         try {
@@ -919,18 +920,30 @@ class AdminController extends Controller
             $circleYears = Schema::hasTable('circles')
                 ? Circle::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray()
                 : [];
-            $allYears = array_values(array_filter(array_unique(array_merge($criteriaYears, $periodYears, $circleYears, [(int) date('Y'), 2026]))));
+            $allYears = array_values(array_filter(array_unique(array_merge($criteriaYears, $periodYears, $circleYears, $allYears))));
             rsort($allYears);
         } catch (\Throwable $e) {
             // Ignore during edge cases
         }
 
-        $activeSession = session('active_year');
-        $fallbackYear = ($activeSession && $activeSession !== 'all') ? (int) $activeSession : ($allYears[0] ?? 2026);
-        $selectedYear = $request->filled('year') ? (int) $request->query('year') : $fallbackYear;
+        // Jika request tidak memiliki parameter ?year=..., redirect otomatis ke URL spesifik ber-query ?year=...
+        if (! $request->filled('year')) {
+            $activeSession = session('active_year');
+            if ($activeSession && $activeSession !== 'all' && is_numeric($activeSession)) {
+                $targetYear = (int) $activeSession;
+            } elseif (! empty($criteriaYears)) {
+                $targetYear = (int) $criteriaYears[0];
+            } else {
+                $targetYear = 2026;
+            }
 
-        // Pastikan active_year di session tidak bernilai 'all' saat membuka halaman kriteria
-        if (session('active_year') === 'all' || session('active_year') !== $selectedYear) {
+            return redirect()->route('admin.criteria.index', ['year' => $targetYear]);
+        }
+
+        $selectedYear = (int) $request->query('year');
+
+        // Sinkronkan active_year di session agar konsisten dengan halaman kriteria yang dibuka
+        if (session('active_year') !== $selectedYear) {
             session(['active_year' => $selectedYear]);
         }
 

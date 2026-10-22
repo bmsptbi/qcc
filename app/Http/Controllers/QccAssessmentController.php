@@ -543,7 +543,7 @@ class QccAssessmentController extends Controller
                     unset($query['year']);
                 } elseif ($year === 'all') {
                     if ($isCriteria) {
-                        unset($query['year']);
+                        $query['year'] = 2026;
                     } else {
                         $query['year'] = 'all';
                     }
@@ -552,9 +552,9 @@ class QccAssessmentController extends Controller
                 }
 
                 $newQuery = http_build_query($query);
-                $newUrl = ($parsed['scheme'] ?? 'http').'://'.($parsed['host'] ?? '').(isset($parsed['port']) ? ':'.$parsed['port'] : '').$path.($newQuery ? '?'.$newQuery : '');
+                $targetUrl = $path.($newQuery ? '?'.$newQuery : '');
 
-                return redirect($newUrl)->with('info', 'Periode konvensi aktif diubah ke: '.($year === 'all' ? 'Semua Tahun' : 'Tahun '.$year));
+                return redirect($targetUrl)->with('info', 'Periode konvensi aktif diubah ke: '.($year === 'all' ? 'Semua Tahun' : 'Tahun '.$year));
             }
         }
 
