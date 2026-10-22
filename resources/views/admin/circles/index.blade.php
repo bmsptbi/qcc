@@ -163,9 +163,9 @@
                 <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Tahun Periode</label>
                 <div class="relative">
                     <select name="year" class="no-search appearance-none w-full pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none cursor-pointer" data-no-search="true" style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none;">
-                        <option value="">Semua Tahun</option>
+                        <option value="all" {{ (string)$selectedYear === 'all' ? 'selected' : '' }}>Semua Tahun</option>
                         @foreach($availableYears as $yr)
-                            <option value="{{ $yr }}" {{ request('year') == (string)$yr ? 'selected' : '' }}>
+                            <option value="{{ $yr }}" {{ (string)$selectedYear === (string)$yr ? 'selected' : '' }}>
                                 Tahun {{ $yr }}
                             </option>
                         @endforeach

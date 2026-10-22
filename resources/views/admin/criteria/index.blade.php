@@ -54,22 +54,6 @@
                 </span>
             </div>
 
-            <button type="button" onclick="openCreateCategoryModal()" class="px-3.5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm border border-emerald-600 shadow-sm transition inline-flex items-center gap-1.5" title="Tambah Tahap / Kategori Baru">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-                </svg>
-                <span>+ Tambah Tahap</span>
-            </button>
-
-            @if($categories->isNotEmpty())
-                <button type="button" onclick="openCreateCriterionModal()" class="px-3.5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm border border-blue-600 shadow-sm transition inline-flex items-center gap-1.5" title="Tambah Butir Kriteria Baru">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    <span>+ Tambah Butir</span>
-                </button>
-            @endif
-
             <button type="button" onclick="openCopyCriteriaModal({{ $selectedYear }})" class="px-3.5 py-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm border border-indigo-200 transition inline-flex items-center gap-1.5 shadow-2xs" title="Salin tahap & kriteria dari tahun lain">
                 <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
@@ -112,13 +96,13 @@
                             Bobot: {{ number_format($category->weight_percentage, 0) }}%
                         </span>
 
-                        <!-- Tombol Tambah Butir di Tahap Ini -->
+                        <!-- Tombol Tambah Kriteria di Tahap Ini -->
                         <button type="button" onclick="openCreateCriterionModal({{ $category->id }})" 
-                            class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition inline-flex items-center gap-1 shadow-xs" title="Tambah Butir Kriteria di Tahap Ini">
+                            class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition inline-flex items-center gap-1 shadow-xs" title="Tambah Kriteria di Tahap Ini">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                             </svg>
-                            <span>+ Butir</span>
+                            <span>+ Kriteria</span>
                         </button>
 
                         <!-- Tombol Edit Tahap -->
@@ -172,16 +156,16 @@
                             <!-- Action Buttons: Edit & Delete Criterion -->
                             <div class="flex items-center gap-1.5 flex-shrink-0">
                                 <button type="button" onclick="openEditCriterionModal({{ $crit->id }}, {{ $category->id }}, '{{ addslashes($crit->code) }}', '{{ addslashes($crit->title) }}', {{ $crit->weight !== null ? $crit->weight : 'null' }}, '{{ addslashes($crit->guidelines ?? '') }}')" 
-                                    class="p-1.5 text-slate-400 hover:text-blue-600 transition" title="Ubah Butir Kriteria">
+                                    class="p-1.5 text-slate-400 hover:text-blue-600 transition" title="Ubah Kriteria">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </button>
 
-                                <form method="POST" action="{{ route('admin.criteria.destroy', $crit) }}" onsubmit="return confirm('Hapus butir kriteria {{ $crit->code }} - {{ $crit->title }}?')">
+                                <form method="POST" action="{{ route('admin.criteria.destroy', $crit) }}" onsubmit="return confirm('Hapus kriteria {{ $crit->code }} - {{ $crit->title }}?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="p-1.5 text-slate-300 hover:text-rose-600 transition" title="Hapus Butir">
+                                    <button type="submit" class="p-1.5 text-slate-300 hover:text-rose-600 transition" title="Hapus Kriteria">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
@@ -191,14 +175,14 @@
                         </div>
                     @empty
                         <div class="text-center py-6 text-slate-400 text-xs">
-                            <p>Belum ada butir kriteria di kategori ini.</p>
+                            <p>Belum ada kriteria di kategori ini.</p>
                             <div class="mt-2.5">
                                 <button type="button" onclick="openCreateCriterionModal({{ $category->id }})" 
                                     class="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs inline-flex items-center gap-1.5 transition">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                                     </svg>
-                                    <span>+ Tambah Butir Kriteria</span>
+                                    <span>+ Tambah Kriteria</span>
                                 </button>
                             </div>
                         </div>
@@ -213,7 +197,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                                     </svg>
                                 </span>
-                                <span>+ Tambah Butir Kriteria di Tahap {{ $category->name }}</span>
+                                <span>+ Tambah Kriteria di Tahap {{ $category->name }}</span>
                             </button>
                         </div>
                     @endif
@@ -248,6 +232,21 @@
                 </div>
             </div>
         @endforelse
+
+        @if($categories->isNotEmpty())
+            <!-- Tombol Tambah Tahap Baru di Bawah Luar Card Tahap -->
+            <div class="pt-2 flex justify-center">
+                <button type="button" onclick="openCreateCategoryModal()" 
+                    class="w-full sm:w-auto px-6 py-3 rounded-2xl border-2 border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-800 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-xs group">
+                    <span class="w-6 h-6 rounded-full bg-emerald-600 group-hover:bg-emerald-500 text-white flex items-center justify-center transition shadow-xs">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                        </svg>
+                    </span>
+                    <span>+ Tambah Tahap Baru ({{ $selectedYear }})</span>
+                </button>
+            </div>
+        @endif
     </div>
 
 </div>
@@ -321,7 +320,7 @@
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div class="flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                <h3 class="text-base font-bold text-slate-900">Tambah Butir Kriteria Baru</h3>
+                <h3 class="text-base font-bold text-slate-900">Tambah Kriteria Baru</h3>
             </div>
             <button type="button" onclick="closeCreateCriterionModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
         </div>
@@ -390,7 +389,7 @@
                     Batal
                 </button>
                 <button type="submit" @disabled($categories->isEmpty()) class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-xs shadow-md shadow-blue-600/25 transition">
-                    Simpan Butir Kriteria
+                    Simpan Kriteria
                 </button>
             </div>
         </form>
@@ -450,11 +449,11 @@
     </div>
 </div>
 
-<!-- Modal Edit Butir Kriteria -->
+<!-- Modal Edit Kriteria -->
 <div id="editCriterionModal" onclick="if(event.target === this) closeEditCriterionModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 class="text-base font-bold text-slate-900">Edit Butir Kriteria</h3>
+            <h3 class="text-base font-bold text-slate-900">Edit Kriteria</h3>
             <button type="button" onclick="closeEditCriterionModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
         </div>
 

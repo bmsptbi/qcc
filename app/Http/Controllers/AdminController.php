@@ -32,15 +32,25 @@ class AdminController extends Controller
         $categories = CircleCategory::where('is_active', true)->get();
         $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
 
+        // Sinkronisasi filter tahun dari query param atau session active_year
+        if ($request->has('year')) {
+            $selectedYear = $request->query('year');
+            if ($selectedYear === 'all' || is_numeric($selectedYear)) {
+                session(['active_year' => $selectedYear === 'all' ? 'all' : (int) $selectedYear]);
+            }
+        } else {
+            $selectedYear = session('active_year', date('Y'));
+        }
+
         $query = Circle::with(['period', 'category', 'department', 'leader', 'facilitator', 'members'])
             ->withCount(['members', 'assessments']);
 
-        if ($request->filled('period_id')) {
-            $query->where('assessment_period_id', $request->period_id);
+        if ($selectedYear !== 'all' && ! empty($selectedYear)) {
+            $query->where('year', (int) $selectedYear);
         }
 
-        if ($request->filled('year') && $request->year !== 'all') {
-            $query->where('year', $request->year);
+        if ($request->filled('period_id')) {
+            $query->where('assessment_period_id', $request->period_id);
         }
 
         if ($request->filled('department_id')) {
@@ -103,15 +113,20 @@ class AdminController extends Controller
 
         $circles = $query->paginate(15)->withQueryString();
 
+        $statsQuery = Circle::query();
+        if ($selectedYear !== 'all' && ! empty($selectedYear)) {
+            $statsQuery->where('year', (int) $selectedYear);
+        }
+
         $stats = [
-            'total' => Circle::count(),
-            'submitted' => Circle::where('status', 'submitted')->count(),
-            'verified' => Circle::where('status', 'verified')->count(),
-            'evaluating' => Circle::where('status', 'evaluating')->count(),
-            'evaluated' => Circle::whereIn('status', ['evaluated', 'awarded'])->count(),
+            'total' => (clone $statsQuery)->count(),
+            'submitted' => (clone $statsQuery)->where('status', 'submitted')->count(),
+            'verified' => (clone $statsQuery)->where('status', 'verified')->count(),
+            'evaluating' => (clone $statsQuery)->where('status', 'evaluating')->count(),
+            'evaluated' => (clone $statsQuery)->whereIn('status', ['evaluated', 'awarded'])->count(),
         ];
 
-        return view('admin.circles.index', compact('circles', 'periods', 'categories', 'departments', 'stats'));
+        return view('admin.circles.index', compact('circles', 'periods', 'categories', 'departments', 'stats', 'selectedYear'));
     }
 
     /**
@@ -121,10 +136,14 @@ class AdminController extends Controller
     {
         $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
         $facilitators = User::orderBy('name', 'asc')->get();
+        $periods = AssessmentPeriod::orderByDesc('year')->get();
 
         $activeYear = session('active_year', (int) date('Y'));
+        if ($activeYear === 'all') {
+            $activeYear = (int) date('Y');
+        }
 
-        return view('admin.circles.create', compact('departments', 'facilitators', 'activeYear'));
+        return view('admin.circles.create', compact('departments', 'facilitators', 'periods', 'activeYear'));
     }
 
     /**
