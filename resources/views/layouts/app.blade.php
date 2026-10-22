@@ -250,7 +250,7 @@
                 </a>
 
                 <!-- Item 4: Kriteria Nilai -->
-                <a href="{{ route('admin.criteria.index', ['year' => ($activeYear && $activeYear !== 'all') ? $activeYear : 2026]) }}" 
+                <a href="{{ route('admin.criteria.index', ['year' => (int) date('Y')]) }}" 
                     class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('admin.criteria.*') ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
                     title="Kriteria & Rubrik Penilaian">
                     <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
@@ -461,7 +461,7 @@
                         <span>Penugasan Juri</span>
                     </a>
 
-                    <a href="{{ route('admin.criteria.index', ['year' => ($activeYear && $activeYear !== 'all') ? $activeYear : 2026]) }}" onclick="closeMobileSidebar()" 
+                    <a href="{{ route('admin.criteria.index', ['year' => (int) date('Y')]) }}" onclick="closeMobileSidebar()" 
                         class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('admin.criteria.*') ? 'bg-amber-50 text-amber-700' : 'text-slate-700 hover:bg-slate-50' }}">
                         <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
@@ -659,7 +659,7 @@
                 <span class="text-[10px] mt-0.5">Juri</span>
             </a>
 
-            <a href="{{ route('admin.criteria.index', ['year' => ($activeYear && $activeYear !== 'all') ? $activeYear : 2026]) }}" class="flex flex-col items-center py-1 {{ request()->routeIs('admin.criteria.*') ? 'text-amber-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+            <a href="{{ route('admin.criteria.index', ['year' => (int) date('Y')]) }}" class="flex flex-col items-center py-1 {{ request()->routeIs('admin.criteria.*') ? 'text-amber-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>

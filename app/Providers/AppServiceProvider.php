@@ -51,19 +51,21 @@ class AppServiceProvider extends ServiceProvider
         }
 
         View::composer('*', function ($view) {
-            $sessionYear = session('active_year');
+            $currentYear = (int) date('Y');
+
+            // Default SELALU tahun sekarang jika membuka halaman atau refresh tanpa query ?year=...
             if (request()->filled('year')) {
-                $sessionYear = request()->query('year') === 'all' ? 'all' : (int) request()->query('year');
-                session(['active_year' => $sessionYear]);
+                $activeYear = request()->query('year') === 'all' ? 'all' : (int) request()->query('year');
+                session(['active_year' => $activeYear]);
+            } else {
+                $activeYear = $currentYear;
+                session(['active_year' => $currentYear]);
             }
 
-            $currentYear = (int) date('Y');
+            // Opsi tahun tetap menyertakan tahun sekarang + 1 (misal 2027) agar dapat dipilih saat dibutuhkan
             $defaultYears = [$currentYear, $currentYear + 1, 2026];
-            if (is_numeric($sessionYear)) {
-                $defaultYears[] = (int) $sessionYear;
-            }
-            if (request()->filled('year') && is_numeric(request()->query('year'))) {
-                $defaultYears[] = (int) request()->query('year');
+            if (is_numeric($activeYear)) {
+                $defaultYears[] = (int) $activeYear;
             }
 
             $circleYears = [];
@@ -91,16 +93,6 @@ class AppServiceProvider extends ServiceProvider
                 $defaultYears
             ))));
             rsort($allYears);
-
-            // Default tahun aktif jika belum ada di sesi: utamakan tahun yang ada datanya di DB (misal 2026)
-            $fallbackDefaultYear = 2026;
-            if (! empty($circleYears)) {
-                $fallbackDefaultYear = $circleYears[0];
-            } elseif (! empty($criteriaYears)) {
-                $fallbackDefaultYear = $criteriaYears[0];
-            }
-
-            $activeYear = $sessionYear ?? $fallbackDefaultYear;
 
             // Pastikan jika activeYear numerik, dia ada di availableYears
             if (is_numeric($activeYear) && ! in_array((int) $activeYear, $allYears)) {

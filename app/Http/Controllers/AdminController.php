@@ -32,14 +32,17 @@ class AdminController extends Controller
         $categories = CircleCategory::where('is_active', true)->get();
         $departments = Department::where('is_active', true)->orderBy('display_order', 'asc')->get();
 
-        // Sinkronisasi filter tahun dari query param atau session active_year
-        if ($request->has('year')) {
+        $currentYear = (int) date('Y');
+
+        // Sinkronisasi filter tahun dari query param atau default ke tahun sekarang
+        if ($request->has('year') && $request->query('year') !== null && $request->query('year') !== '') {
             $selectedYear = $request->query('year');
             if ($selectedYear === 'all' || is_numeric($selectedYear)) {
                 session(['active_year' => $selectedYear === 'all' ? 'all' : (int) $selectedYear]);
             }
         } else {
-            $selectedYear = session('active_year', date('Y'));
+            $selectedYear = $currentYear;
+            session(['active_year' => $currentYear]);
         }
 
         $query = Circle::with(['period', 'category', 'department', 'leader', 'facilitator', 'members'])
@@ -926,18 +929,11 @@ class AdminController extends Controller
             // Ignore during edge cases
         }
 
-        // Jika request tidak memiliki parameter ?year=..., redirect otomatis ke URL spesifik ber-query ?year=...
+        // Jika request tidak memiliki parameter ?year=..., default selalu tahun sekarang
         if (! $request->filled('year')) {
-            $activeSession = session('active_year');
-            if ($activeSession && $activeSession !== 'all' && is_numeric($activeSession)) {
-                $targetYear = (int) $activeSession;
-            } elseif (! empty($criteriaYears)) {
-                $targetYear = (int) $criteriaYears[0];
-            } else {
-                $targetYear = 2026;
-            }
+            session(['active_year' => $currentYear]);
 
-            return redirect()->route('admin.criteria.index', ['year' => $targetYear]);
+            return redirect()->route('admin.criteria.index', ['year' => $currentYear]);
         }
 
         $selectedYear = (int) $request->query('year');

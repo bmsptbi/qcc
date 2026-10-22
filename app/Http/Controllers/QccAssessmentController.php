@@ -28,10 +28,13 @@ class QccAssessmentController extends Controller
      */
     public function index(Request $request): View
     {
-        $activeYear = session('active_year', $request->query('year', 2026));
+        $currentYear = (int) date('Y');
         if ($request->filled('year')) {
             $activeYear = $request->query('year') === 'all' ? 'all' : (int) $request->query('year');
             session(['active_year' => $activeYear]);
+        } else {
+            $activeYear = $currentYear;
+            session(['active_year' => $currentYear]);
         }
 
         $activePeriod = null;
@@ -566,10 +569,13 @@ class QccAssessmentController extends Controller
      */
     public function leaderboard(Request $request): View
     {
-        $activeYear = session('active_year', $request->query('year', 2026));
+        $currentYear = (int) date('Y');
         if ($request->filled('year')) {
             $activeYear = $request->query('year') === 'all' ? 'all' : (int) $request->query('year');
             session(['active_year' => $activeYear]);
+        } else {
+            $activeYear = $currentYear;
+            session(['active_year' => $currentYear]);
         }
 
         $activePeriod = null;
