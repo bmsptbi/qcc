@@ -32,20 +32,58 @@
         </div>
 
         <!-- Total Weight Status Badge -->
-        <div class="flex items-center gap-3">
-            <div class="px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-right">
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="px-4 py-2 rounded-2xl bg-blue-50 border border-blue-200 text-right">
+                <span class="text-[10px] font-bold uppercase text-blue-500 block">Tahun Aktif</span>
+                <span class="text-lg font-black text-blue-700">
+                    {{ $selectedYear }}
+                </span>
+            </div>
+
+            <div class="px-4 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-right">
                 <span class="text-[10px] font-bold uppercase text-slate-400 block">Total Bobot Tahap</span>
                 <span class="text-lg font-black {{ $totalWeight == 100 ? 'text-emerald-600' : 'text-amber-600' }}">
                     {{ number_format($totalWeight, 0) }}% / 100%
                 </span>
             </div>
 
-            <div class="px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-right">
+            <div class="px-4 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-right">
                 <span class="text-[10px] font-bold uppercase text-slate-400 block">Total Butir</span>
                 <span class="text-lg font-black text-slate-900">
                     {{ $totalCriteria }} Butir
                 </span>
             </div>
+        </div>
+    </div>
+
+    <!-- Year Filter & Copy Toolbar -->
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1 shrink-0">Pilih Tahun:</span>
+            @foreach($allYears as $yearOption)
+                @php
+                    $isYearActive = ((int)$selectedYear === (int)$yearOption);
+                    $hasData = in_array((int)$yearOption, $yearsWithCriteria);
+                @endphp
+                <a href="{{ route('admin.criteria.index', ['year' => $yearOption]) }}" 
+                   class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shrink-0 {{ $isYearActive ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/80' }}">
+                    <span>{{ $yearOption }}</span>
+                    @if($hasData)
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isYearActive ? 'bg-emerald-300' : 'bg-emerald-500' }}" title="Memiliki kriteria"></span>
+                    @else
+                        <span class="text-[10px] font-medium opacity-60">(Kosong)</span>
+                    @endif
+                </a>
+            @endforeach
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="openCopyCriteriaModal({{ $selectedYear }})" class="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm border border-indigo-200/80 transition inline-flex items-center gap-1.5 shadow-2xs">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                </svg>
+                <span>Salin Kriteria dari Tahun Lain</span>
+            </button>
         </div>
     </div>
 
@@ -77,11 +115,17 @@
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tahap / Kategori <span class="text-rose-500">*</span></label>
-                        <select name="criteria_category_id" required class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold">
-                            @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->name }} (Bobot: {{ number_format($cat->weight_percentage, 0) }}%)</option>
-                            @endforeach
-                        </select>
+                        @if($categories->isEmpty())
+                            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+                                Belum ada tahap di tahun {{ $selectedYear }}. Tambah tahap atau salin kriteria terlebih dahulu.
+                            </div>
+                        @else
+                            <select name="criteria_category_id" required class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold">
+                                @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->name }} (Bobot: {{ number_format($cat->weight_percentage, 0) }}%)</option>
+                                @endforeach
+                            </select>
+                        @endif
                     </div>
 
                     <div class="grid grid-cols-3 gap-2">
@@ -125,7 +169,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-600/25 transition">
+                    <button type="submit" @disabled($categories->isEmpty()) class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-600/25 transition">
                         Simpan Butir Kriteria
                     </button>
                 </form>
@@ -140,6 +184,12 @@
 
                 <form method="POST" action="{{ route('admin.criteria.categories.store') }}" class="space-y-3">
                     @csrf
+                    <input type="hidden" name="year" value="{{ $selectedYear }}">
+                    <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 flex items-center justify-between text-xs">
+                        <span class="font-bold text-emerald-900">Tahun Penilaian:</span>
+                        <span class="px-2 py-0.5 rounded-lg bg-emerald-600 text-white font-extrabold">{{ $selectedYear }}</span>
+                    </div>
+
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Kategori Tahap <span class="text-rose-500">*</span></label>
                         <input type="text" name="name" placeholder="Contoh: 6. Dampak Safety & Ergonomi" required
@@ -181,7 +231,7 @@
 
         <!-- Daftar Tahapan & Butir Kriteria Saat Ini (2 Cols) -->
         <div class="lg:col-span-2 space-y-6">
-            @foreach($categories as $category)
+            @forelse($categories as $category)
                 <div class="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
                     
                     <!-- Category Header with Edit & Delete Buttons -->
@@ -277,7 +327,27 @@
                     </div>
 
                 </div>
-            @endforeach
+            @empty
+                <div class="bg-white rounded-3xl p-8 sm:p-12 border border-dashed border-slate-300 text-center space-y-4 shadow-sm">
+                    <div class="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto text-3xl shadow-xs">
+                        📋
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-slate-900">Belum Ada Kriteria & Tahap untuk Tahun {{ $selectedYear }}</h3>
+                        <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+                            Format kriteria penilaian untuk tahun {{ $selectedYear }} belum dikonfigurasi. Anda dapat langsung menyalin seluruh struktur tahap dan butir kriteria dari tahun lain yang sudah ada (misal: Tahun 2026), lalu menyesuaikannya sesuai kebutuhan.
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                        <button type="button" onclick="openCopyCriteriaModal({{ $selectedYear }})" class="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-600/25 transition inline-flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                            </svg>
+                            <span>Salin Kriteria dari Tahun Lain (Rekomendasi)</span>
+                        </button>
+                    </div>
+                </div>
+            @endforelse
         </div>
 
     </div>
@@ -393,6 +463,69 @@
         </form>
     </div>
 </div>
+<!-- Modal Salin Kriteria Antar Tahun -->
+<div id="copyCriteriaModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold">
+                    📋
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Salin Kriteria Antar Tahun</h3>
+                    <p class="text-[11px] text-slate-500">Duplikasi seluruh tahap & butir kriteria</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeCopyCriteriaModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+        </div>
+
+        <form method="POST" action="{{ route('admin.criteria.copy') }}" class="space-y-4">
+            @csrf
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Dari Tahun Sumber (Yang Sudah Ada) <span class="text-rose-500">*</span>
+                </label>
+                <select name="from_year" id="copy_from_year" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold">
+                    @foreach($yearsWithCriteria as $ySrc)
+                        <option value="{{ $ySrc }}" {{ (int)$ySrc !== (int)$selectedYear ? 'selected' : '' }}>Tahun {{ $ySrc }}</option>
+                    @endforeach
+                </select>
+                <p class="text-[10px] text-slate-400 mt-1">Seluruh kategori tahap dan butir kriteria di tahun sumber akan disalin.</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Ke Tahun Target <span class="text-rose-500">*</span>
+                </label>
+                <select name="to_year" id="copy_to_year" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white font-semibold">
+                    @foreach($allYears as $yTgt)
+                        <option value="{{ $yTgt }}" {{ (int)$selectedYear === (int)$yTgt ? 'selected' : '' }}>Tahun {{ $yTgt }}</option>
+                    @endforeach
+                    <option value="{{ ((int)date('Y')) + 1 }}">Tahun {{ ((int)date('Y')) + 1 }} (Tahun Depan)</option>
+                </select>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-amber-50/80 border border-amber-200/80 space-y-2">
+                <label class="flex items-start gap-2.5 cursor-pointer">
+                    <input type="checkbox" name="overwrite" value="1" class="mt-0.5 rounded text-blue-600 focus:ring-blue-500">
+                    <span class="text-xs text-amber-900 leading-snug">
+                        <strong>Timpa kriteria yang sudah ada</strong> jika tahun target sudah memiliki data kriteria. <em>(Hanya berlaku jika belum ada penilaian juri)</em>
+                    </span>
+                </label>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeCopyCriteriaModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+                    Batal
+                </button>
+                <button type="submit" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/25 transition">
+                    Salin Sekarang
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -440,6 +573,19 @@
 
     function closeEditCriterionModal() {
         document.getElementById('editCriterionModal').classList.add('hidden');
+    }
+
+    function openCopyCriteriaModal(targetYear) {
+        if (targetYear) {
+            const toSelect = document.getElementById('copy_to_year');
+            if (toSelect) toSelect.value = targetYear;
+        }
+        const modal = document.getElementById('copyCriteriaModal');
+        modal.classList.remove('hidden');
+    }
+
+    function closeCopyCriteriaModal() {
+        document.getElementById('copyCriteriaModal').classList.add('hidden');
     }
 </script>
 @endpush

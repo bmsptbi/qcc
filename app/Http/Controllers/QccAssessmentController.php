@@ -139,7 +139,11 @@ class QccAssessmentController extends Controller
         $currentJudgeId = session('active_judge_id', User::role('judge')->first()?->id);
         $currentJudge = User::find($currentJudgeId) ?? User::role('judge')->first();
         $allJudges = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->get();
-        $criteriaStages = CriteriaCategory::orderBy('display_order', 'asc')->get();
+        $queryYear = $activeYear !== 'all' ? (int) $activeYear : 2026;
+        $criteriaStages = CriteriaCategory::where('year', $queryYear)->orderBy('display_order', 'asc')->get();
+        if ($criteriaStages->isEmpty()) {
+            $criteriaStages = CriteriaCategory::where('year', 2026)->orderBy('display_order', 'asc')->get();
+        }
 
         return view('qcc.index', compact(
             'activePeriod',
@@ -174,9 +178,15 @@ class QccAssessmentController extends Controller
         $currentJudge = User::find($currentJudgeId);
 
         $myAssessment = $circle->assessments->firstWhere('judge_id', $currentJudgeId);
-        $categories = CriteriaCategory::with(['criteria' => function ($q) {
+        $circleYear = (int) ($circle->year ?? 2026);
+        $categories = CriteriaCategory::where('year', $circleYear)->with(['criteria' => function ($q) {
             $q->where('is_active', true)->orderBy('display_order', 'asc');
         }])->orderBy('display_order', 'asc')->get();
+        if ($categories->isEmpty()) {
+            $categories = CriteriaCategory::where('year', 2026)->with(['criteria' => function ($q) {
+                $q->where('is_active', true)->orderBy('display_order', 'asc');
+            }])->orderBy('display_order', 'asc')->get();
+        }
         $criteriaStages = $categories;
         $allJudges = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->get();
 
@@ -206,9 +216,15 @@ class QccAssessmentController extends Controller
     /**
      * Mobile-Optimized Assessment Form for Judges
      */
-    public function assess(Request $request, Circle $circle): View
+    public function assess(Request $request, Circle $circle): View|RedirectResponse
     {
+        if (! in_array($circle->status, ['verified', 'evaluating', 'evaluated', 'awarded'])) {
+            return redirect()->route('qcc.circles.show', $circle)
+                ->with('error', 'Circle ini belum diverifikasi. Penilaian hanya dapat dilakukan setelah status Circle minimal "Verified".');
+        }
+
         $circle->load(['period', 'category', 'department', 'leader', 'facilitator', 'members']);
+        $circleYear = (int) ($circle->year ?? 2026);
 
         $allJudges = User::where(fn ($q) => $q->role('judge')->orWhere(fn ($sq) => $sq->role('admin')))->get();
         $allowedJudgeIds = [];
@@ -222,7 +238,9 @@ class QccAssessmentController extends Controller
         $activeCategoryId = $request->query('category_id') ?? $request->query('stage_id');
         if (! $activeCategoryId && $request->filled('stage')) {
             $stageName = $request->query('stage');
-            $matched = CriteriaCategory::where('stage', $stageName)->orWhere('name', 'like', "%{$stageName}%")->first();
+            $matched = CriteriaCategory::where('year', $circleYear)
+                ->where(fn ($q) => $q->where('stage', $stageName)->orWhere('name', 'like', "%{$stageName}%"))
+                ->first();
             if ($matched) {
                 $activeCategoryId = $matched->id;
             }
@@ -265,10 +283,16 @@ class QccAssessmentController extends Controller
             ? $allJudges->whereIn('id', $allowedJudgeIds)
             : $allJudges;
 
-        // Get all criteria grouped by category
-        $categoriesWithCriteria = CriteriaCategory::with(['criteria' => function ($q) {
+        // Get all criteria grouped by category for this circle's year
+        $categoriesWithCriteria = CriteriaCategory::where('year', $circleYear)->with(['criteria' => function ($q) {
             $q->where('is_active', true)->orderBy('display_order', 'asc');
         }])->orderBy('display_order', 'asc')->get();
+
+        if ($categoriesWithCriteria->isEmpty()) {
+            $categoriesWithCriteria = CriteriaCategory::where('year', 2026)->with(['criteria' => function ($q) {
+                $q->where('is_active', true)->orderBy('display_order', 'asc');
+            }])->orderBy('display_order', 'asc')->get();
+        }
 
         foreach ($categoriesWithCriteria as $cat) {
             foreach ($cat->criteria as $crit) {
@@ -343,6 +367,11 @@ class QccAssessmentController extends Controller
      */
     public function storeAssessment(Request $request, Circle $circle): RedirectResponse
     {
+        if (! in_array($circle->status, ['verified', 'evaluating', 'evaluated', 'awarded'])) {
+            return redirect()->route('qcc.circles.show', $circle)
+                ->with('error', 'Circle ini belum diverifikasi. Penilaian hanya dapat dilakukan setelah status Circle minimal "Verified".');
+        }
+
         $judgeId = $request->input('judge_id') ?? session('active_judge_id', Auth::id());
         $judge = User::find($judgeId) ?? User::role('judge')->first();
 
@@ -376,6 +405,13 @@ class QccAssessmentController extends Controller
             $targetCategoryId = $request->input('category_id');
             if ($targetCategoryId && $targetCategoryId !== 'all') {
                 $requiredCriteriaQuery->where('criteria_category_id', $targetCategoryId);
+            } else {
+                $circleYear = (int) ($circle->year ?? 2026);
+                $yearCatIds = CriteriaCategory::where('year', $circleYear)->pluck('id');
+                if ($yearCatIds->isEmpty()) {
+                    $yearCatIds = CriteriaCategory::where('year', 2026)->pluck('id');
+                }
+                $requiredCriteriaQuery->whereIn('criteria_category_id', $yearCatIds);
             }
             $requiredCriteria = $requiredCriteriaQuery->get();
             $missingCriteria = $requiredCriteria->filter(fn ($c) => ! array_key_exists($c->id, $validScores));
@@ -813,9 +849,16 @@ class QccAssessmentController extends Controller
             return redirect()->route('login')->with('error', 'Silakan masuk/login terlebih dahulu untuk mengunduh rekap penilaian.');
         }
 
-        $categories = CriteriaCategory::with(['criteria' => function ($q) {
+        $circleYear = (int) ($circle->year ?? 2026);
+        $categories = CriteriaCategory::where('year', $circleYear)->with(['criteria' => function ($q) {
             $q->where('is_active', true)->orderBy('display_order', 'asc');
         }])->orderBy('display_order', 'asc')->get();
+
+        if ($categories->isEmpty()) {
+            $categories = CriteriaCategory::where('year', 2026)->with(['criteria' => function ($q) {
+                $q->where('is_active', true)->orderBy('display_order', 'asc');
+            }])->orderBy('display_order', 'asc')->get();
+        }
 
         $matrixData = $this->buildAssessmentMatrix($circle, $categories);
         $stages = $matrixData['stages'];
@@ -1150,9 +1193,16 @@ class QccAssessmentController extends Controller
      */
     protected function recalculateCircleScoreAndStatus(Circle $circle): void
     {
-        $categories = CriteriaCategory::with(['criteria' => function ($q) {
+        $circleYear = (int) ($circle->year ?? 2026);
+        $categories = CriteriaCategory::where('year', $circleYear)->with(['criteria' => function ($q) {
             $q->where('is_active', true)->orderBy('display_order', 'asc');
         }])->orderBy('display_order', 'asc')->get();
+
+        if ($categories->isEmpty()) {
+            $categories = CriteriaCategory::where('year', 2026)->with(['criteria' => function ($q) {
+                $q->where('is_active', true)->orderBy('display_order', 'asc');
+            }])->orderBy('display_order', 'asc')->get();
+        }
 
         $matrixData = $this->buildAssessmentMatrix($circle, $categories);
         $finalScore = $matrixData['final_score'];

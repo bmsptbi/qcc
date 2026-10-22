@@ -57,6 +57,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     Route::put('/criteria/categories/{category}', [AdminController::class, 'updateCategory'])->name('criteria.categories.update');
     Route::delete('/criteria/categories/{category}', [AdminController::class, 'destroyCategory'])->name('criteria.categories.destroy');
     Route::post('/criteria', [AdminController::class, 'storeCriterion'])->name('criteria.store');
+    Route::post('/criteria/copy', [AdminController::class, 'copyCriteria'])->name('criteria.copy');
     Route::put('/criteria/{criterion}', [AdminController::class, 'updateCriterion'])->name('criteria.update');
     Route::delete('/criteria/{criterion}', [AdminController::class, 'destroyCriterion'])->name('criteria.destroy');
 

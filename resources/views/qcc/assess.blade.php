@@ -106,33 +106,6 @@
 
             </div>
 
-            <!-- Accordion Ringkasan Masalah & Target Perbaikan -->
-            <div class="mt-2 pt-1.5 border-t border-slate-100">
-                <details class="group cursor-pointer">
-                    <summary class="flex items-center justify-between text-[10px] font-semibold text-blue-600 hover:text-blue-800 select-none py-0.5">
-                        <span class="inline-flex items-center gap-1">
-                            <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Lihat Ringkasan Masalah & Target Perbaikan Circle
-                        </span>
-                        <svg class="w-3 h-3 transition group-open:rotate-180 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </summary>
-                    <div class="mt-1.5 p-2.5 bg-slate-50 rounded-xl text-xs space-y-1.5 border border-slate-200/60 leading-relaxed text-slate-700">
-                        <div>
-                            <strong class="text-slate-900 block font-bold mb-0.5">Latar Belakang Permasalahan:</strong>
-                            <p>{{ $circle->problem_statement ?? 'Belum ada uraian masalah.' }}</p>
-                        </div>
-                        <div>
-                            <strong class="text-slate-900 block font-bold mb-0.5">Sasaran & Target:</strong>
-                            <p>{{ $circle->target_statement ?? 'Belum ada target spesifik.' }}</p>
-                        </div>
-                    </div>
-                </details>
-            </div>
-
             <!-- Stage Filter Navigation Tabs (Hanya jika stage TIDAK dikunci) -->
             @if(! $isStageLocked)
             <div class="mt-2 pt-2 border-t border-slate-100">
@@ -409,7 +382,7 @@
         </div>
 
         <!-- Sticky Floating Bottom Bar (Nilai Tahap + Kelengkapan + Simpan Draft / Kirim Final) -->
-        <div class="fixed bottom-0 left-0 md:left-20 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl px-3 py-2.5 sm:px-4 sm:py-3 transition-[left] duration-300">
+        <div class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl px-3 py-2.5 sm:px-4 sm:py-3">
             <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4">
                 
                 <!-- Live Stage Score & Assessment Completeness Display -->

@@ -8,15 +8,25 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'stage', 'weight_percentage', 'display_order', 'description'])]
+#[Fillable(['year', 'name', 'stage', 'weight_percentage', 'display_order', 'description'])]
 class CriteriaCategory extends Model
 {
     /** @use HasFactory<CriteriaCategoryFactory> */
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::saving(function (CriteriaCategory $category) {
+            if (empty($category->year)) {
+                $category->year = 2026;
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
+            'year' => 'integer',
             'weight_percentage' => 'decimal:2',
             'display_order' => 'integer',
         ];

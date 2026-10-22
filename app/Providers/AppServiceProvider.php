@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\AssessmentPeriod;
 use App\Models\Circle;
+use App\Models\CriteriaCategory;
 use App\Models\User;
 use Database\Seeders\BekaertUsersSeeder;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,10 @@ class AppServiceProvider extends ServiceProvider
                 if (Schema::hasTable('circles') && Schema::hasTable('assessment_periods')) {
                     $circleYears = Circle::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray();
                     $periodYears = AssessmentPeriod::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray();
-                    $allYears = array_values(array_unique(array_merge($circleYears, $periodYears, [(int) date('Y'), 2026, 2025, 2024])));
+                    $criteriaYears = (Schema::hasTable('criteria_categories') && Schema::hasColumn('criteria_categories', 'year'))
+                        ? CriteriaCategory::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray()
+                        : [];
+                    $allYears = array_values(array_unique(array_merge($circleYears, $periodYears, $criteriaYears, [(int) date('Y'), 2026, 2025, 2024])));
                     rsort($allYears);
                 }
             } catch (\Throwable $e) {

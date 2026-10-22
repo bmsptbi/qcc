@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AppSetting;
 use App\Models\AssessmentCriterion;
 use App\Models\AssessmentPeriod;
+use App\Models\AssessmentScore;
 use App\Models\Circle;
 use App\Models\CircleCategory;
 use App\Models\CircleMember;
@@ -16,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -870,13 +872,39 @@ class AdminController extends Controller
     }
 
     /**
-     * Halaman kelola kategori & butir kriteria penilaian
+     * Halaman kelola kategori & butir kriteria penilaian (versioned per tahun)
      */
-    public function criteriaIndex(): View
+    public function criteriaIndex(Request $request): View
     {
-        $categories = CriteriaCategory::with(['criteria' => function ($q) {
-            $q->orderBy('display_order', 'asc');
-        }])->orderBy('display_order', 'asc')->get();
+        $allYears = [2027, 2026, 2025, 2024];
+        $criteriaYears = [];
+
+        try {
+            if (Schema::hasTable('criteria_categories') && Schema::hasColumn('criteria_categories', 'year')) {
+                $criteriaYears = CriteriaCategory::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray();
+            }
+            $periodYears = Schema::hasTable('assessment_periods')
+                ? AssessmentPeriod::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray()
+                : [];
+            $circleYears = Schema::hasTable('circles')
+                ? Circle::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray()
+                : [];
+            $allYears = array_values(array_unique(array_merge($criteriaYears, $periodYears, $circleYears, [(int) date('Y'), 2026, 2025, 2024])));
+            rsort($allYears);
+        } catch (\Throwable $e) {
+            // Ignore during edge cases
+        }
+
+        $selectedYear = $request->filled('year') ? (int) $request->query('year') : ((int) session('active_year', 2026));
+        if (! in_array($selectedYear, $allYears)) {
+            array_unshift($allYears, $selectedYear);
+            rsort($allYears);
+        }
+
+        $categories = CriteriaCategory::where('year', $selectedYear)
+            ->with(['criteria' => function ($q) {
+                $q->orderBy('display_order', 'asc');
+            }])->orderBy('display_order', 'asc')->get();
 
         foreach ($categories as $cat) {
             foreach ($cat->criteria as $crit) {
@@ -885,17 +913,32 @@ class AdminController extends Controller
         }
 
         $totalWeight = $categories->sum('weight_percentage');
-        $totalCriteria = AssessmentCriterion::count();
+        $totalCriteria = AssessmentCriterion::whereIn('criteria_category_id', $categories->pluck('id'))->count();
 
-        return view('admin.criteria.index', compact('categories', 'totalWeight', 'totalCriteria'));
+        // Tahun-tahun yang memiliki kriteria (untuk dropdown sumber salin kriteria)
+        $yearsWithCriteria = CriteriaCategory::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray();
+        if (empty($yearsWithCriteria)) {
+            $yearsWithCriteria = [2026];
+        }
+        rsort($yearsWithCriteria);
+
+        return view('admin.criteria.index', compact(
+            'categories',
+            'totalWeight',
+            'totalCriteria',
+            'selectedYear',
+            'allYears',
+            'yearsWithCriteria'
+        ));
     }
 
     /**
-     * Simpan kategori kriteria baru
+     * Simpan kategori kriteria baru (terikat pada tahun yang dipilih)
      */
     public function storeCategory(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'year' => ['nullable', 'integer'],
             'name' => ['required', 'string', 'max:150'],
             'stage' => ['required', 'string', 'max:50'],
             'weight_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
@@ -903,9 +946,14 @@ class AdminController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        CriteriaCategory::create($validated);
+        if (empty($validated['year'])) {
+            $validated['year'] = (int) $request->input('year', session('active_year', 2026));
+        }
 
-        return back()->with('success', "Kategori {$validated['name']} berhasil ditambahkan!");
+        $category = CriteriaCategory::create($validated);
+
+        return redirect()->route('admin.criteria.index', ['year' => $category->year])
+            ->with('success', "Kategori {$validated['name']} berhasil ditambahkan untuk tahun {$category->year}!");
     }
 
     /**
@@ -950,7 +998,84 @@ class AdminController extends Controller
 
         AssessmentCriterion::create($validated);
 
-        return back()->with('success', "Butir kriteria [{$validated['code']}] {$validated['title']} berhasil ditambahkan!");
+        return redirect()->route('admin.criteria.index', ['year' => $category->year])
+            ->with('success', "Butir kriteria [{$validated['code']}] {$validated['title']} berhasil ditambahkan!");
+    }
+
+    /**
+     * Salin seluruh tahap & butir kriteria dari tahun sumber ke tahun target
+     */
+    public function copyCriteria(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'from_year' => ['required', 'integer'],
+            'to_year' => ['required', 'integer', 'different:from_year'],
+            'overwrite' => ['nullable', 'boolean'],
+        ]);
+
+        $fromYear = (int) $validated['from_year'];
+        $toYear = (int) $validated['to_year'];
+        $overwrite = $request->boolean('overwrite');
+
+        $sourceCategories = CriteriaCategory::where('year', $fromYear)
+            ->with(['criteria' => fn ($q) => $q->orderBy('display_order', 'asc')])
+            ->orderBy('display_order', 'asc')
+            ->get();
+
+        if ($sourceCategories->isEmpty()) {
+            return back()->with('error', "Tidak ada tahap & kriteria di tahun sumber ({$fromYear}) untuk disalin.");
+        }
+
+        $existingTargetCount = CriteriaCategory::where('year', $toYear)->count();
+        if ($existingTargetCount > 0 && ! $overwrite) {
+            return back()->with('error', "Tahun {$toYear} sudah memiliki {$existingTargetCount} tahap kriteria. Centang opsi 'Timpa kriteria yang sudah ada' jika ingin mengganti.");
+        }
+
+        try {
+            DB::transaction(function () use ($toYear, $sourceCategories, $overwrite) {
+                if ($overwrite) {
+                    $targetCatIds = CriteriaCategory::where('year', $toYear)->pluck('id');
+                    $targetCritIds = AssessmentCriterion::whereIn('criteria_category_id', $targetCatIds)->pluck('id');
+                    $hasAssessments = AssessmentScore::whereIn('assessment_criterion_id', $targetCritIds)->exists();
+
+                    if ($hasAssessments) {
+                        throw new \Exception("Kriteria tahun {$toYear} tidak dapat ditimpa karena sudah terdapat penilaian juri yang menggunakannya.");
+                    }
+
+                    CriteriaCategory::where('year', $toYear)->delete();
+                }
+
+                foreach ($sourceCategories as $srcCat) {
+                    $newCat = CriteriaCategory::create([
+                        'year' => $toYear,
+                        'name' => $srcCat->name,
+                        'stage' => $srcCat->stage,
+                        'weight_percentage' => $srcCat->weight_percentage,
+                        'display_order' => $srcCat->display_order,
+                        'description' => $srcCat->description,
+                    ]);
+
+                    foreach ($srcCat->criteria as $srcCrit) {
+                        AssessmentCriterion::create([
+                            'criteria_category_id' => $newCat->id,
+                            'code' => $srcCrit->code,
+                            'title' => $srcCrit->title,
+                            'guidelines' => $srcCrit->guidelines,
+                            'min_score' => $srcCrit->min_score,
+                            'max_score' => $srcCrit->max_score,
+                            'weight' => $srcCrit->weight,
+                            'display_order' => $srcCrit->display_order,
+                            'is_active' => $srcCrit->is_active,
+                        ]);
+                    }
+                }
+            });
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal menyalin kriteria: '.$e->getMessage());
+        }
+
+        return redirect()->route('admin.criteria.index', ['year' => $toYear])
+            ->with('success', "Berhasil menyalin {$sourceCategories->count()} tahap beserta seluruh butir kriteria dari tahun {$fromYear} ke tahun {$toYear}!");
     }
 
     /**
@@ -967,7 +1092,8 @@ class AdminController extends Controller
 
         $category->update($validated);
 
-        return back()->with('success', "Tahap {$category->name} berhasil diperbarui!");
+        return redirect()->route('admin.criteria.index', ['year' => $category->year])
+            ->with('success', "Tahap {$category->name} berhasil diperbarui!");
     }
 
     /**
@@ -975,10 +1101,12 @@ class AdminController extends Controller
      */
     public function destroyCategory(CriteriaCategory $category): RedirectResponse
     {
+        $year = $category->year ?? 2026;
         $name = $category->name;
         $category->delete();
 
-        return back()->with('success', "Tahap '{$name}' beserta seluruh kriteria di dalamnya telah dihapus.");
+        return redirect()->route('admin.criteria.index', ['year' => $year])
+            ->with('success', "Tahap '{$name}' beserta seluruh kriteria di dalamnya telah dihapus.");
     }
 
     /**
@@ -1006,8 +1134,10 @@ class AdminController extends Controller
         }
 
         $criterion->update($validated);
+        $year = $criterion->category?->year ?? 2026;
 
-        return back()->with('success', "Butir kriteria [{$criterion->code}] {$criterion->title} berhasil diperbarui!");
+        return redirect()->route('admin.criteria.index', ['year' => $year])
+            ->with('success', "Butir kriteria [{$criterion->code}] {$criterion->title} berhasil diperbarui!");
     }
 
     /**
@@ -1015,10 +1145,12 @@ class AdminController extends Controller
      */
     public function destroyCriterion(AssessmentCriterion $criterion): RedirectResponse
     {
+        $year = $criterion->category?->year ?? 2026;
         $code = $criterion->code;
         $criterion->delete();
 
-        return back()->with('success', "Kriteria {$code} berhasil dihapus.");
+        return redirect()->route('admin.criteria.index', ['year' => $year])
+            ->with('success', "Kriteria {$code} berhasil dihapus.");
     }
 
     /**

@@ -132,6 +132,11 @@
 </head>
 <body class="h-full flex flex-col text-slate-800 antialiased selection:bg-blue-600 selection:text-white bg-slate-50">
 
+    @php
+        $isAssessmentPage = request()->routeIs('qcc.circles.assess*');
+    @endphp
+
+    @if(! $isAssessmentPage)
     <!-- DESKTOP EXPANDABLE SIDEBAR (Rail minimized w-20, expands to w-64 on cursor hover) -->
     <aside id="desktopSidebar"
         class="hidden md:flex fixed top-0 bottom-0 left-0 z-50 flex-col bg-white border-r border-slate-200/90 shadow-sm hover:shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] group/sidebar w-20 hover:w-64 overflow-x-hidden overflow-y-auto select-none"
@@ -505,10 +510,12 @@
         </div>
 
     </div>
+    @endif
 
-    <!-- MAIN CONTENT WRAPPER (Left offset by w-20 on desktop) -->
-    <div id="mainContentWrapper" class="flex-1 min-h-screen flex flex-col md:pl-20 transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+    <!-- MAIN CONTENT WRAPPER (Left offset by w-20 on desktop only when sidebar is active) -->
+    <div id="mainContentWrapper" class="flex-1 min-h-screen flex flex-col {{ $isAssessmentPage ? '' : 'md:pl-20' }} transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
         
+        @if(! $isAssessmentPage)
         <!-- Desktop Sticky Global Topbar -->
         <header class="hidden md:flex bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-6 lg:px-8 py-3 items-center justify-between shadow-2xs">
             <div class="flex items-center gap-3">
@@ -560,6 +567,7 @@
                 @endif
             </div>
         </header>
+        @endif
 
         <!-- Flash Alerts -->
         @if(session('error'))
@@ -615,6 +623,7 @@
 
     </div>
 
+    @if(! $isAssessmentPage)
     <!-- Mobile Bottom Navigation Bar (Fast 1-Thumb Reach) -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-1.5 flex justify-around items-center shadow-lg">
         <a href="{{ route('qcc.index') }}" class="flex flex-col items-center py-1 {{ request()->routeIs('qcc.index') ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
@@ -661,6 +670,7 @@
             </a>
         @endif
     </nav>
+    @endif
 
     <!-- Navigation Interactive Scripts -->
     <script>
@@ -668,6 +678,7 @@
         function openMobileSidebar() {
             const drawer = document.getElementById('mobileDrawerPanel');
             const backdrop = document.getElementById('mobileBackdrop');
+            if (!drawer || !backdrop) return;
             backdrop.classList.remove('hidden');
             setTimeout(() => {
                 backdrop.classList.remove('opacity-0');
@@ -679,6 +690,7 @@
         function closeMobileSidebar() {
             const drawer = document.getElementById('mobileDrawerPanel');
             const backdrop = document.getElementById('mobileBackdrop');
+            if (!drawer || !backdrop) return;
             drawer.classList.add('-translate-x-full');
             backdrop.classList.add('opacity-0');
             setTimeout(() => {
@@ -692,6 +704,7 @@
             const sidebar = document.getElementById('desktopSidebar');
             const wrapper = document.getElementById('mainContentWrapper');
             const pinIcon = document.getElementById('pinIcon');
+            if (!sidebar || !wrapper) return;
             const isCurrentlyPinned = sidebar.classList.contains('is-pinned');
 
             if (isCurrentlyPinned) {
