@@ -519,7 +519,33 @@ class QccAssessmentController extends Controller
     {
         $year = $request->input('year');
         if ($year === 'all' || is_numeric($year)) {
-            session(['active_year' => $year === 'all' ? 'all' : (int) $year]);
+            $yearVal = $year === 'all' ? 'all' : (int) $year;
+            session(['active_year' => $yearVal]);
+        }
+
+        $prevUrl = url()->previous();
+        if ($prevUrl) {
+            $parsed = parse_url($prevUrl);
+            $query = [];
+            if (! empty($parsed['query'])) {
+                parse_str($parsed['query'], $query);
+            }
+
+            $path = $parsed['path'] ?? '';
+
+            // Jika URL sebelumnya memiliki parameter ?year=... atau sedang di halaman criteria
+            if (isset($query['year']) || str_contains($path, '/admin/criteria')) {
+                if ($year === 'all') {
+                    unset($query['year']);
+                } else {
+                    $query['year'] = (int) $year;
+                }
+
+                $newQuery = http_build_query($query);
+                $newUrl = ($parsed['scheme'] ?? 'http').'://'.($parsed['host'] ?? '').(isset($parsed['port']) ? ':'.$parsed['port'] : '').$path.($newQuery ? '?'.$newQuery : '');
+
+                return redirect($newUrl)->with('info', 'Periode konvensi aktif diubah ke: '.($year === 'all' ? 'Semua Tahun' : 'Tahun '.$year));
+            }
         }
 
         return back()->with('info', 'Periode konvensi aktif diubah ke: '.($year === 'all' ? 'Semua Tahun' : 'Tahun '.$year));
