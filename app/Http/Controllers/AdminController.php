@@ -899,6 +899,11 @@ class AdminController extends Controller
         $fallbackYear = ($activeSession && $activeSession !== 'all') ? (int) $activeSession : ($allYears[0] ?? 2026);
         $selectedYear = $request->filled('year') ? (int) $request->query('year') : $fallbackYear;
 
+        // Pastikan active_year di session tidak bernilai 'all' saat membuka halaman kriteria
+        if (session('active_year') === 'all' || session('active_year') !== $selectedYear) {
+            session(['active_year' => $selectedYear]);
+        }
+
         if (! in_array($selectedYear, $allYears)) {
             array_unshift($allYears, $selectedYear);
             rsort($allYears);

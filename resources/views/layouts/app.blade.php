@@ -373,7 +373,9 @@
                                 {{ $yr }}
                             </option>
                         @endforeach
-                        <option value="all" {{ (string)$activeYear === 'all' ? 'selected' : '' }}>Semua</option>
+                        @if(! request()->routeIs('admin.criteria.*'))
+                            <option value="all" {{ (string)$activeYear === 'all' ? 'selected' : '' }}>Semua</option>
+                        @endif
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-slate-400">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -541,7 +543,9 @@
                                     Tahun {{ $yr }}
                                 </option>
                             @endforeach
-                            <option value="all" {{ (string)$activeYear === 'all' ? 'selected' : '' }}>Semua Tahun</option>
+                            @if(! request()->routeIs('admin.criteria.*'))
+                                <option value="all" {{ (string)$activeYear === 'all' ? 'selected' : '' }}>Semua Tahun</option>
+                            @endif
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
