@@ -3,34 +3,34 @@
 @section('title', 'Form Penilaian - ' . $circle->circle_name)
 
 @section('content')
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-36">
+<div class="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 pt-2 sm:pt-4 pb-36">
 
     <!-- Back Button & Breadcrumb -->
-    <div class="flex items-center justify-between mb-4">
-        <a href="{{ route('qcc.index') }}" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-600 transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="flex items-center justify-between mb-2 sm:mb-3">
+        <a href="{{ route('qcc.index') }}" class="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-blue-600 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
             </svg>
-            Kembali ke Daftar
+            <span>Kembali ke Daftar</span>
         </a>
 
         <!-- Status Penilaian Saat Ini -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
             @if($existingAssessment)
                 @if($existingAssessment->status === 'submitted')
-                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                         </svg>
-                        Sudah Disubmit Final
+                        Disubmit Final
                     </span>
                 @else
-                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                        Mode Draft Tersimpan
+                    <span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-amber-100 text-amber-800">
+                        Mode Draft
                     </span>
                 @endif
             @else
-                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                <span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-slate-100 text-slate-600">
                     Penilaian Baru
                 </span>
             @endif
@@ -45,91 +45,69 @@
         <input type="hidden" name="judge_id" value="{{ $currentJudge?->id }}">
         <input type="hidden" name="category_id" value="{{ $isStageLocked ? $lockedCategory?->id : '' }}">
 
-        <!-- Unified Header Card (Circle Info + Stage Focus + Judge Identity in 1 Compact Row) -->
-        <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-sm mb-6">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <!-- Unified Header Card (Ultra-Compact on Mobile & Desktop) -->
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-slate-200/90 shadow-xs mb-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
 
-                <!-- 1. Circle Identity Info -->
+                <!-- Left: Circle Identity Info & Stage Focus -->
                 <div class="min-w-0 flex-1">
-                    <div class="flex flex-wrap items-center gap-1.5 mb-1">
-                        <span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-800">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-800">
                             {{ $circle->circle_code }}
                         </span>
-                        <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700">
-                            {{ $circle->category->name ?? 'Manufacturing' }}
-                        </span>
-                        <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
+                        <strong class="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                            {{ $circle->circle_name }}
+                        </strong>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold bg-slate-100 text-slate-700">
                             {{ $circle->department->name ?? '-' }}
                         </span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-50 text-slate-600 border border-slate-200 hidden md:inline-block">
+                            {{ $circle->category->name ?? 'Manufacturing' }}
+                        </span>
+                        @if($isStageLocked)
+                            <span class="px-2 py-0.5 rounded-lg bg-blue-50 border border-blue-200/90 text-blue-700 text-[10px] sm:text-xs font-black inline-flex items-center gap-1">
+                                <span>🎯 {{ $lockedCategory?->name ?? 'Tahap Penilaian' }}</span>
+                                <span class="text-blue-600 font-extrabold">({{ number_format($lockedCategory?->weight_percentage ?? 0, 0) }}%)</span>
+                            </span>
+                        @endif
                     </div>
-                    <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
-                        {{ $circle->circle_name }}
-                    </h1>
-                    <p class="text-xs text-slate-600 font-medium truncate mt-0.5" title="{{ $circle->theme_title }}">
+                    <p class="text-[11px] sm:text-xs text-slate-600 font-medium truncate mt-0.5" title="{{ $circle->theme_title }}">
                         "{{ $circle->theme_title }}"
                     </p>
                 </div>
 
-                <!-- 2. Locked Stage Focus Indicator (Tampil compact 1 baris saat stage dikunci) -->
-                @if($isStageLocked)
-                <div class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50/70 border border-blue-200/90 flex-shrink-0">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-base shadow-xs flex-shrink-0">
-                        🎯
-                    </div>
-                    <div class="min-w-0">
-                        <span class="text-[9px] font-black uppercase tracking-wider text-blue-600 block leading-none">Fokus Penilaian</span>
-                        <div class="text-xs sm:text-sm font-black text-slate-900 leading-tight mt-0.5 truncate">
-                            {{ $lockedCategory?->name ?? 'Tahap Penilaian' }}
-                        </div>
-                        <span class="text-[10px] font-extrabold text-blue-700 leading-none">
-                            Bobot: {{ number_format($lockedCategory?->weight_percentage ?? 0, 0) }}%
-                        </span>
-                    </div>
-                </div>
-                @endif
-
-                <!-- 3. Judge Identity (Compact Dark Card) -->
-                <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5 border border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 shadow-xs">
-                    <div class="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white text-base font-bold flex-shrink-0 shadow-inner">
-                        ⚖️
-                    </div>
-                    <div class="min-w-0 pr-1">
-                        <div class="flex items-center gap-1.5">
-                            @if($currentJudge)
-                                <span class="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
-                                    Juri Aktif
+                <!-- Right: Judge Identity Compact Chip -->
+                <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl px-2.5 py-1.5 border border-slate-800 flex items-center justify-between sm:justify-start gap-2 flex-shrink-0 shadow-xs">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                        <span class="text-xs sm:text-sm">⚖️</span>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1">
+                                <span class="text-[8px] uppercase font-black tracking-wider px-1 py-0.2 rounded bg-emerald-400/20 text-emerald-300">
+                                    {{ $currentJudge ? 'Juri' : 'Wajib Pilih' }}
                                 </span>
-                                @if($currentJudge->nik)
-                                    <span class="text-[10px] text-slate-300 font-mono">NIK: {{ $currentJudge->nik }}</span>
+                                @if($currentJudge?->nik)
+                                    <span class="text-[9px] text-slate-400 font-mono hidden sm:inline">{{ $currentJudge->nik }}</span>
                                 @endif
-                            @else
-                                <span class="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 animate-pulse">
-                                    Wajib Pilih Juri
-                                </span>
-                            @endif
-                        </div>
-                        <div class="text-xs sm:text-sm font-black text-white truncate leading-tight mt-0.5">
-                            {{ $currentJudge?->name ?? 'Belum Memilih Juri' }}
-                        </div>
-                        <div class="text-[10px] text-slate-300 truncate leading-none mt-0.5">
-                            {{ $currentJudge?->department->name ?? 'Silakan pilih nama juri' }}
+                            </div>
+                            <div class="text-[11px] sm:text-xs font-black text-white truncate max-w-[120px] sm:max-w-[150px] leading-tight">
+                                {{ $currentJudge?->name ?? 'Pilih Juri' }}
+                            </div>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-1.5 flex-shrink-0">
-                        <button type="button" onclick="openJudgeModal()" class="px-2.5 py-1.5 rounded-xl {{ ! $currentJudge ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 font-black animate-pulse' : 'bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold' }} text-[11px] transition flex items-center gap-1 shadow-xs">
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                        <button type="button" onclick="openJudgeModal()" class="px-2 py-1 rounded-lg {{ ! $currentJudge ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 font-black animate-pulse' : 'bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold' }} text-[10px] transition flex items-center gap-0.5 shadow-xs">
                             <svg class="w-3 h-3 {{ ! $currentJudge ? 'text-slate-900' : 'text-amber-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                             </svg>
-                            <span>{{ $currentJudge ? 'Ganti Juri' : 'Pilih Juri' }}</span>
+                            <span>{{ $currentJudge ? 'Ganti' : 'Pilih' }}</span>
                         </button>
 
                         @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
-                            <button type="button" onclick="openShareModal()" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-[11px] transition flex items-center gap-1 shadow-xs" title="Buat Link & QR Code Penilaian">
+                            <button type="button" onclick="openShareModal()" class="p-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] transition shadow-xs" title="Buat Link & QR Code Penilaian">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
                                 </svg>
-                                <span class="hidden md:inline">Bagikan Link & QR</span>
                             </button>
                         @endif
                     </div>
@@ -138,20 +116,20 @@
             </div>
 
             <!-- Accordion Ringkasan Masalah & Target Perbaikan -->
-            <div class="mt-3 pt-2.5 border-t border-slate-100">
+            <div class="mt-2 pt-1.5 border-t border-slate-100">
                 <details class="group cursor-pointer">
-                    <summary class="flex items-center justify-between text-[11px] font-semibold text-blue-600 hover:text-blue-800 select-none py-0.5">
+                    <summary class="flex items-center justify-between text-[10px] font-semibold text-blue-600 hover:text-blue-800 select-none py-0.5">
                         <span class="inline-flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
-                            Lihat Ringkasan Masalah & Target Perbaikan
+                            Lihat Ringkasan Masalah & Target Perbaikan Circle
                         </span>
-                        <svg class="w-3.5 h-3.5 transition group-open:rotate-180 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3 h-3 transition group-open:rotate-180 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </summary>
-                    <div class="mt-2.5 p-3.5 bg-slate-50 rounded-2xl text-xs space-y-2 border border-slate-200/60 leading-relaxed text-slate-700">
+                    <div class="mt-1.5 p-2.5 bg-slate-50 rounded-xl text-xs space-y-1.5 border border-slate-200/60 leading-relaxed text-slate-700">
                         <div>
                             <strong class="text-slate-900 block font-bold mb-0.5">Latar Belakang Permasalahan:</strong>
                             <p>{{ $circle->problem_statement ?? 'Belum ada uraian masalah.' }}</p>
@@ -166,31 +144,30 @@
 
             <!-- Stage Filter Navigation Tabs (Hanya jika stage TIDAK dikunci) -->
             @if(! $isStageLocked)
-            <div class="mt-3 pt-3 border-t border-slate-100">
-                <div class="flex items-center justify-between gap-2 mb-2">
-                    <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="mt-2 pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between gap-2 mb-1.5">
+                    <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                        <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
                         </svg>
                         Pilihan Tahap Penilaian:
                     </span>
-                    <span class="text-[10px] text-slate-500 font-medium hidden sm:inline">Klik tahap di bawah untuk fokus menilai tahap tertentu</span>
                 </div>
 
-                <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
                     <button type="button" onclick="selectStageTab('all')" id="tab_btn_all" 
-                        class="stage-tab-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 {{ ($activeCategoryId == 'all' || !$activeCategoryId) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
-                        <span>Semua Tahap</span>
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($activeCategoryId == 'all' || !$activeCategoryId) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
+                        class="stage-tab-btn px-2.5 py-1 rounded-lg text-xs font-extrabold transition shadow-xs flex items-center gap-1 flex-shrink-0 {{ ($activeCategoryId == 'all' || !$activeCategoryId) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                        <span>Semua</span>
+                        <span class="px-1 py-0.2 rounded text-[9px] {{ ($activeCategoryId == 'all' || !$activeCategoryId) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
                             100%
                         </span>
                     </button>
 
                     @foreach($categoriesWithCriteria as $cat)
                         <button type="button" onclick="selectStageTab({{ $cat->id }})" id="tab_btn_{{ $cat->id }}" 
-                            class="stage-tab-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 {{ ($activeCategoryId == $cat->id) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                            class="stage-tab-btn px-2.5 py-1 rounded-lg text-xs font-extrabold transition shadow-xs flex items-center gap-1 flex-shrink-0 {{ ($activeCategoryId == $cat->id) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
                             <span>{{ $cat->name }}</span>
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($activeCategoryId == $cat->id) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
+                            <span class="px-1 py-0.2 rounded text-[9px] {{ ($activeCategoryId == $cat->id) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
                                 {{ number_format($cat->weight_percentage, 0) }}%
                             </span>
                         </button>
@@ -201,12 +178,12 @@
         </div>
 
         <!-- Edit Mode Active Notification Banner -->
-        <div id="editModeBanner" class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-3 {{ ($hasAlreadyAssessed && request()->has('edit_confirmed')) ? '' : 'hidden' }}">
-            <div class="flex items-center gap-2.5">
-                <span class="text-xl">✏️</span>
+        <div id="editModeBanner" class="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-2.5 {{ ($hasAlreadyAssessed && request()->has('edit_confirmed')) ? '' : 'hidden' }}">
+            <div class="flex items-center gap-2">
+                <span class="text-base">✏️</span>
                 <div>
-                    <strong class="font-bold block text-sm">Mode Edit Penilaian Aktif</strong>
-                    <span>Nilai yang telah tersimpan sebelumnya sudah dimuat ke form. Anda dapat melakukan perubahan penilaian dan menyimpan kembali.</span>
+                    <strong class="font-bold block text-xs">Mode Edit Penilaian Aktif</strong>
+                    <span class="text-[11px]">Nilai sebelumnya dimuat ke form. Anda dapat mengubah nilai dan menyimpan kembali.</span>
                 </div>
             </div>
             <button type="button" onclick="document.getElementById('editModeBanner').classList.add('hidden')" class="text-amber-600 hover:text-amber-800 font-bold text-base leading-none">
@@ -214,45 +191,26 @@
             </button>
         </div>
 
-        <!-- Progress Indicator -->
-        <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs mb-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-bold text-slate-700 mb-2">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <span>Kelengkapan Penilaian:</span>
-                    <button type="button" onclick="openIncompleteModal()" id="incompleteBadgeBtn" 
-                        class="hidden text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 px-2.5 py-0.5 rounded-lg border border-rose-200 transition items-center gap-1 shadow-2xs">
-                        <span>⚠️ Masih ada</span>
-                        <span id="incompleteCountText" class="underline font-black">0</span>
-                        <span>kriteria belum dinilai (Lihat &rarr;)</span>
-                    </button>
-                </div>
-                <span id="progressText" class="text-slate-600 font-mono">0 / 0 Kriteria Dinilai (0%)</span>
-            </div>
-            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                <div id="progressBar" class="bg-gradient-to-r from-blue-600 to-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
-            </div>
-        </div>
-
         <!-- Loop PDCA Categories -->
-        <div class="space-y-6">
+        <div class="space-y-3 sm:space-y-4">
             @foreach($categoriesWithCriteria as $categoryIndex => $cat)
                 @php
                     $isCategoryHidden = $isStageLocked ? ($cat->id !== $lockedCategory?->id) : ($activeCategoryId && $activeCategoryId !== 'all' && $activeCategoryId != $cat->id);
                 @endphp
                 <div id="stage_card_{{ $cat->id }}" data-category-id="{{ $cat->id }}" 
-                    class="category-stage-card bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden {{ $isCategoryHidden ? 'hidden' : '' }}">
+                    class="category-stage-card bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden {{ $isCategoryHidden ? 'hidden' : '' }}">
                     
                     <!-- Category Header -->
-                    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-800 text-white p-4 sm:p-5 flex items-center justify-between">
+                    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-800 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 flex items-center justify-between">
                         <div>
                             <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                                <h2 class="text-base sm:text-lg font-bold tracking-tight">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                <h2 class="text-sm sm:text-base font-bold tracking-tight">
                                     {{ $cat->name }}
                                 </h2>
                             </div>
                             @if($cat->description)
-                                <p class="text-[11px] sm:text-xs text-slate-300 mt-0.5 line-clamp-1">
+                                <p class="text-[10px] sm:text-xs text-slate-300 mt-0.5 line-clamp-1">
                                     {{ $cat->description }}
                                 </p>
                             @endif
@@ -459,46 +417,66 @@
             </div>
         </div>
 
-        <!-- Sticky Floating Bottom Bar -->
-        <div class="fixed bottom-0 left-0 md:left-20 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl px-4 py-3 sm:py-4 transition-[left] duration-300">
-            <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+        <!-- Sticky Floating Bottom Bar (Nilai Tahap + Kelengkapan + Simpan Draft / Kirim Final) -->
+        <div class="fixed bottom-0 left-0 md:left-20 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl px-3 py-2.5 sm:px-4 sm:py-3 transition-[left] duration-300">
+            <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4">
                 
-                <!-- Live Stage-Relative Score Display (Nilai Tertimbang Terhadap Parent Tahap) -->
-                <div class="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
+                <!-- Live Stage Score & Assessment Completeness Display -->
+                <div class="flex items-center justify-between sm:justify-start gap-3 sm:gap-5 w-full sm:w-auto">
+                    
+                    <!-- 1. Nilai Tahap -->
                     <div>
-                        <span class="text-[10px] uppercase font-extrabold text-slate-500 tracking-wider block" id="floatingScoreLabel">
+                        <span class="text-[9px] sm:text-[10px] uppercase font-extrabold text-slate-500 tracking-wider block leading-none" id="floatingScoreLabel">
                             @if($isStageLocked && $lockedCategory)
                                 Nilai Tahap ({{ $lockedCategory->name }})
                             @else
                                 Nilai Tertimbang Tahap
                             @endif
                         </span>
-                        <div class="flex items-baseline gap-1.5">
-                            <span id="floatingTotalScore" class="text-2xl sm:text-3xl font-black text-emerald-600 leading-none">0.00</span>
-                            <span class="text-xs font-bold text-slate-400">/ 10</span>
+                        <div class="flex items-baseline gap-1 mt-0.5">
+                            <span id="floatingTotalScore" class="text-xl sm:text-2xl font-black text-emerald-600 leading-none">0.00</span>
+                            <span class="text-[11px] font-bold text-slate-400">/ 10</span>
                         </div>
-                        <span id="floatingScoreSub" class="text-[10px] text-slate-500 font-medium block">
+                        <span id="floatingScoreSub" class="text-[9px] text-slate-500 font-medium block leading-none mt-0.5">
                             @if($isStageLocked && $lockedCategory)
-                                Bobot Tahap: {{ number_format($lockedCategory->weight_percentage, 0) }}% | Kontribusi: 0.00
+                                Bobot: {{ number_format($lockedCategory->weight_percentage, 0) }}% | Kontribusi: 0.00
                             @else
                                 Nilai tertimbang terhadap parent (tahap)
                             @endif
                         </span>
                     </div>
+
+                    <!-- 2. Kelengkapan Penilaian (Jumlah Dinilai dari Total Pertanyaan) -->
+                    <div class="text-right sm:text-left sm:pl-4 sm:border-l border-slate-200">
+                        <div class="flex items-center justify-end sm:justify-start gap-1">
+                            <span class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 tracking-wider block leading-none">Kelengkapan</span>
+                            <button type="button" onclick="openIncompleteModal()" id="incompleteBadgeBtn" 
+                                class="hidden text-[9px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 px-1.5 py-0.2 rounded border border-rose-200 transition items-center gap-0.5 shadow-2xs">
+                                <span>⚠️ <span id="incompleteCountText" class="underline font-black">0</span> belum dinilai</span>
+                            </button>
+                        </div>
+                        <div class="mt-0.5">
+                            <span id="progressText" class="text-xs sm:text-sm font-black text-slate-800 font-mono leading-none">0 / 0 Kriteria Dinilai (0%)</span>
+                        </div>
+                        <div class="w-24 sm:w-28 bg-slate-100 rounded-full h-1.5 overflow-hidden ml-auto sm:ml-0 mt-0.5">
+                            <div id="progressBar" class="bg-gradient-to-r from-blue-600 to-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Action Buttons: Save Draft vs Submit Final -->
-                <div class="grid grid-cols-2 sm:flex items-center gap-2.5 w-full sm:w-auto">
+                <div class="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
                     <!-- Save Draft Button -->
                     <button type="submit" name="action" value="draft" 
-                        class="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition touch-action-manipulation text-center">
+                        class="px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs transition touch-action-manipulation text-center">
                         Simpan Draft
                     </button>
 
                     <!-- Final Submit Button with Confirmation Trigger -->
                     <button type="button" onclick="confirmSubmit()"
-                        class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm shadow-lg shadow-emerald-600/25 transition touch-action-manipulation text-center flex items-center justify-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="px-4.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-md shadow-emerald-600/25 transition touch-action-manipulation text-center flex items-center justify-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                         </svg>
                         <span>Kirim Final</span>
