@@ -59,7 +59,7 @@
                     placeholder="Contoh: QCC THUNDER, KAIZEN MASTER, DELTA TEAM"
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                 <span class="text-[11px] text-slate-400 mt-1 block">
-                    ✨ Kode Circle (seperti QCC-{{ $activeYear }}-xxx) otomatis di-generate unik oleh sistem saat disimpan agar tidak terjadi bentrok nomor.
+                    ✨ Kode Circle (seperti QCC-{{ date('Y') }}-xxx) otomatis di-generate unik oleh sistem saat disimpan agar tidak terjadi bentrok nomor.
                 </span>
             </div>
 
@@ -70,16 +70,15 @@
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Status awal otomatis 'submitted' -->
+            <input type="hidden" name="status" value="submitted">
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tahun Periode <span class="text-rose-500">*</span></label>
-                    <select name="year" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
-                        @foreach($availableYears as $yr)
-                            <option value="{{ $yr }}" {{ (old('year', $activeYear) == $yr) ? 'selected' : '' }}>
-                                Tahun {{ $yr }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <input type="number" name="year" value="{{ old('year', (int)date('Y')) }}" min="2000" max="2099" required
+                        placeholder="Contoh: {{ date('Y') }}"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white">
                 </div>
 
                 <div>
@@ -103,16 +102,6 @@
                                 {{ $fac->name }} ({{ $fac->email }})
                             </option>
                         @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Status Awal Circle <span class="text-rose-500">*</span></label>
-                    <select name="status" required class="searchable-select w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white font-semibold">
-                        <option value="scheduled" {{ old('status', 'scheduled') == 'scheduled' ? 'selected' : '' }}>Terjadwal Siap Presentasi (Scheduled)</option>
-                        <option value="verified" {{ old('status') == 'verified' ? 'selected' : '' }}>Terverifikasi (Verified)</option>
-                        <option value="submitted" {{ old('status') == 'submitted' ? 'selected' : '' }}>Terkirim (Submitted)</option>
-                        <option value="draft" {{ old('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                     </select>
                 </div>
             </div>

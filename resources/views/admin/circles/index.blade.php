@@ -40,9 +40,9 @@
         <!-- Action Buttons in Compact Single Row -->
         <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <!-- Unduh Excel (CSV) Button -->
-            <a href="{{ route('admin.circles.export', request()->query()) }}" 
+            <a href="{{ route('admin.circles.export', array_merge(['year' => $selectedYear], request()->query())) }}" 
                 class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-95" 
-                title="Unduh Data Seluruh Circle ke Format Excel / CSV">
+                title="Unduh Data Circle Sesuai Filter ke Format Excel / CSV">
                 <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>

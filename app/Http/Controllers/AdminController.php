@@ -358,10 +358,20 @@ class AdminController extends Controller
      */
     public function exportCircles(Request $request): StreamedResponse
     {
+        // Sinkronisasi filter tahun dari query param atau fallback ke session active_year
+        if ($request->has('year')) {
+            $selectedYear = $request->query('year');
+        } else {
+            $selectedYear = session('active_year', date('Y'));
+        }
+
         $query = Circle::with(['department', 'facilitator', 'members'])->orderBy('year', 'desc')->orderBy('circle_code', 'asc');
 
-        if ($request->filled('year') && $request->year !== 'all') {
-            $query->where('year', $request->year);
+        if ($selectedYear !== 'all' && ! empty($selectedYear)) {
+            $query->where('year', (int) $selectedYear);
+        }
+        if ($request->filled('period_id')) {
+            $query->where('assessment_period_id', $request->period_id);
         }
         if ($request->filled('department_id')) {
             $query->where('department_id', $request->department_id);
@@ -379,7 +389,8 @@ class AdminController extends Controller
         }
 
         $circles = $query->get();
-        $filename = 'Data_Circle_QCC_'.date('Ymd_His').'.csv';
+        $yearSuffix = ($selectedYear && $selectedYear !== 'all') ? "_{$selectedYear}" : '_SemuaTahun';
+        $filename = 'Data_Circle_QCC'.$yearSuffix.'_'.date('Ymd_His').'.csv';
 
         return response()->stream(function () use ($circles) {
             $handle = fopen('php://output', 'w');
