@@ -57,7 +57,7 @@ class AppServiceProvider extends ServiceProvider
                 session(['active_year' => $sessionYear]);
             }
 
-            $allYears = [2027, 2026, 2025, 2024];
+            $allYears = [(int) date('Y'), 2026];
             try {
                 if (Schema::hasTable('circles') && Schema::hasTable('assessment_periods')) {
                     $circleYears = Circle::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray();
@@ -65,7 +65,7 @@ class AppServiceProvider extends ServiceProvider
                     $criteriaYears = (Schema::hasTable('criteria_categories') && Schema::hasColumn('criteria_categories', 'year'))
                         ? CriteriaCategory::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray()
                         : [];
-                    $allYears = array_values(array_unique(array_merge($circleYears, $periodYears, $criteriaYears, [(int) date('Y'), 2026, 2025, 2024])));
+                    $allYears = array_values(array_filter(array_unique(array_merge($circleYears, $periodYears, $criteriaYears, [(int) date('Y'), 2026]))));
                     rsort($allYears);
                 }
             } catch (\Throwable $e) {

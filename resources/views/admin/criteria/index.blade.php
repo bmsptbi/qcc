@@ -31,58 +31,34 @@
             </div>
         </div>
 
-        <!-- Total Weight Status Badge -->
-        <div class="flex flex-wrap items-center gap-3">
-            <div class="px-4 py-2 rounded-2xl bg-blue-50 border border-blue-200 text-right">
+        <!-- Total Weight Status Badge & Action -->
+        <div class="flex flex-wrap items-center gap-2.5">
+            <div class="px-3.5 py-2 rounded-2xl bg-blue-50 border border-blue-200 text-right">
                 <span class="text-[10px] font-bold uppercase text-blue-500 block">Tahun Aktif</span>
-                <span class="text-lg font-black text-blue-700">
+                <span class="text-base font-black text-blue-700">
                     {{ $selectedYear }}
                 </span>
             </div>
 
-            <div class="px-4 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-right">
-                <span class="text-[10px] font-bold uppercase text-slate-400 block">Total Bobot Tahap</span>
-                <span class="text-lg font-black {{ $totalWeight == 100 ? 'text-emerald-600' : 'text-amber-600' }}">
+            <div class="px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-right">
+                <span class="text-[10px] font-bold uppercase text-slate-400 block">Total Bobot</span>
+                <span class="text-base font-black {{ $totalWeight == 100 ? 'text-emerald-600' : 'text-amber-600' }}">
                     {{ number_format($totalWeight, 0) }}% / 100%
                 </span>
             </div>
 
-            <div class="px-4 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-right">
+            <div class="px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-right">
                 <span class="text-[10px] font-bold uppercase text-slate-400 block">Total Butir</span>
-                <span class="text-lg font-black text-slate-900">
+                <span class="text-base font-black text-slate-900">
                     {{ $totalCriteria }} Butir
                 </span>
             </div>
-        </div>
-    </div>
 
-    <!-- Year Filter & Copy Toolbar -->
-    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1 shrink-0">Pilih Tahun:</span>
-            @foreach($allYears as $yearOption)
-                @php
-                    $isYearActive = ((int)$selectedYear === (int)$yearOption);
-                    $hasData = in_array((int)$yearOption, $yearsWithCriteria);
-                @endphp
-                <a href="{{ route('admin.criteria.index', ['year' => $yearOption]) }}" 
-                   class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shrink-0 {{ $isYearActive ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/80' }}">
-                    <span>{{ $yearOption }}</span>
-                    @if($hasData)
-                        <span class="w-1.5 h-1.5 rounded-full {{ $isYearActive ? 'bg-emerald-300' : 'bg-emerald-500' }}" title="Memiliki kriteria"></span>
-                    @else
-                        <span class="text-[10px] font-medium opacity-60">(Kosong)</span>
-                    @endif
-                </a>
-            @endforeach
-        </div>
-
-        <div class="flex items-center gap-2 shrink-0">
-            <button type="button" onclick="openCopyCriteriaModal({{ $selectedYear }})" class="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm border border-indigo-200/80 transition inline-flex items-center gap-1.5 shadow-2xs">
+            <button type="button" onclick="openCopyCriteriaModal({{ $selectedYear }})" class="px-3.5 py-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm border border-indigo-200 transition inline-flex items-center gap-1.5 shadow-2xs" title="Salin tahap & kriteria dari tahun lain">
                 <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
                 </svg>
-                <span>Salin Kriteria dari Tahun Lain</span>
+                <span>Salin Kriteria</span>
             </button>
         </div>
     </div>

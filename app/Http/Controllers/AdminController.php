@@ -876,7 +876,7 @@ class AdminController extends Controller
      */
     public function criteriaIndex(Request $request): View
     {
-        $allYears = [2027, 2026, 2025, 2024];
+        $allYears = [(int) date('Y'), 2026];
         $criteriaYears = [];
 
         try {
@@ -889,13 +889,16 @@ class AdminController extends Controller
             $circleYears = Schema::hasTable('circles')
                 ? Circle::distinct()->pluck('year')->filter()->map(fn ($y) => (int) $y)->toArray()
                 : [];
-            $allYears = array_values(array_unique(array_merge($criteriaYears, $periodYears, $circleYears, [(int) date('Y'), 2026, 2025, 2024])));
+            $allYears = array_values(array_filter(array_unique(array_merge($criteriaYears, $periodYears, $circleYears, [(int) date('Y'), 2026]))));
             rsort($allYears);
         } catch (\Throwable $e) {
             // Ignore during edge cases
         }
 
-        $selectedYear = $request->filled('year') ? (int) $request->query('year') : ((int) session('active_year', 2026));
+        $activeSession = session('active_year');
+        $fallbackYear = ($activeSession && $activeSession !== 'all') ? (int) $activeSession : ($allYears[0] ?? 2026);
+        $selectedYear = $request->filled('year') ? (int) $request->query('year') : $fallbackYear;
+
         if (! in_array($selectedYear, $allYears)) {
             array_unshift($allYears, $selectedYear);
             rsort($allYears);
