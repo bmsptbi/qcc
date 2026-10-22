@@ -536,9 +536,12 @@ class QccAssessmentController extends Controller
             // Jika URL sebelumnya memiliki parameter ?year=... atau sedang di halaman criteria, circles, atau leaderboard
             $isCriteria = str_contains($path, '/admin/criteria');
             $isCircles = str_contains($path, '/admin/circles') || str_contains($path, '/circles');
+            $isLeaderboard = str_contains($path, '/leaderboard');
 
-            if (isset($query['year']) || $isCriteria || $isCircles) {
-                if ($year === 'all') {
+            if (isset($query['year']) || $isCriteria || $isCircles || $isLeaderboard) {
+                if ($isLeaderboard) {
+                    unset($query['year']);
+                } elseif ($year === 'all') {
                     if ($isCriteria) {
                         unset($query['year']);
                     } else {

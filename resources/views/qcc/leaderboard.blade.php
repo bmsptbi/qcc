@@ -19,23 +19,6 @@
         <p class="text-xs sm:text-sm text-slate-600 mt-2 font-medium">
             Perhitungan skor agregat rata-rata dari seluruh dewan juri penilai konvensi mutu.
         </p>
-
-
-
-        <!-- Year Period Quick Switcher Pills -->
-        <div class="flex flex-wrap items-center justify-center gap-2 mt-4 max-w-xl mx-auto">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Periode:</span>
-            @foreach($availableYears as $yr)
-                <a href="{{ route('qcc.leaderboard', ['year' => $yr]) }}"
-                    class="px-3 py-1 rounded-full text-xs font-bold transition {{ (string)$activeYear === (string)$yr ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                    Tahun {{ $yr }}
-                </a>
-            @endforeach
-            <a href="{{ route('qcc.leaderboard', ['year' => 'all']) }}"
-                class="px-3 py-1 rounded-full text-xs font-bold transition {{ (string)$activeYear === 'all' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                Semua Tahun
-            </a>
-        </div>
     </div>
 
     <!-- Live Standings Table / Card List -->
