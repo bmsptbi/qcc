@@ -37,166 +37,168 @@
         </div>
     </div>
 
-    <!-- Judge Identity Banner (Muncul saat buka form) -->
-    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-800 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 shadow-inner">
-                ⚖️
-            </div>
-            <div>
-                <div class="flex items-center gap-2">
-                    @if($currentJudge)
-                        <span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
-                            Juri Penilai Aktif
-                        </span>
-                        @if($currentJudge->nik)
-                            <span class="text-[11px] text-slate-300 font-mono">NIK: {{ $currentJudge->nik }}</span>
-                        @endif
-                    @else
-                        <span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 animate-pulse">
-                            Wajib Pilih Identitas Juri
-                        </span>
-                    @endif
-                </div>
-                <h2 class="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
-                    {{ $currentJudge?->name ?? 'Belum Memilih Juri' }}
-                </h2>
-                <p class="text-[11px] sm:text-xs text-slate-300">
-                    {{ $currentJudge?->department->name ?? 'Silakan pilih nama Anda untuk mengaktifkan lembar penilaian' }}
-                </p>
-            </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-            <!-- Button Ganti Juri -->
-            <button type="button" onclick="openJudgeModal()" class="px-3.5 py-2 rounded-xl {{ ! $currentJudge ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 font-black animate-pulse' : 'bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold' }} text-xs transition flex items-center gap-1.5 shadow-xs">
-                <svg class="w-3.5 h-3.5 {{ ! $currentJudge ? 'text-slate-900' : 'text-amber-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                </svg>
-                <span>{{ $currentJudge ? 'Ganti Juri' : 'Pilih Nama Juri' }}</span>
-            </button>
-
-            <!-- Button Share Link Penilaian (Hanya untuk Admin) -->
-            @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
-                <button type="button" onclick="openShareModal()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-950/20" title="Buat Link & QR Code Penilaian">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                    </svg>
-                    <span>Bagikan Link & QR</span>
-                </button>
-            @endif
-        </div>
-    </div>
-
-    <!-- Circle Summary Card -->
-    <div class="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm mb-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div>
-                <div class="flex flex-wrap items-center gap-2 mb-1">
-                    <span class="px-2.5 py-0.5 rounded-md text-xs font-extrabold uppercase tracking-wider bg-blue-100 text-blue-800">
-                        {{ $circle->circle_code }}
-                    </span>
-                    <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                        {{ $circle->category->name ?? 'Manufacturing' }}
-                    </span>
-                    <span class="px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200">
-                        {{ $circle->department->name ?? '-' }}
-                    </span>
-                </div>
-                <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                    {{ $circle->circle_name }}
-                </h1>
-                <p class="text-xs sm:text-sm text-slate-600 font-medium mt-1 leading-snug">
-                    "{{ $circle->theme_title }}"
-                </p>
-            </div>
-        </div>
-
-        <!-- Collapsible Problem & Target Statement (Accordion) -->
-        <div class="mt-4 pt-3 border-t border-slate-100">
-            <details class="group cursor-pointer">
-                <summary class="flex items-center justify-between text-xs font-semibold text-blue-600 hover:text-blue-800 select-none">
-                    <span>Lihat Ringkasan Masalah & Target Perbaikan</span>
-                    <svg class="w-4 h-4 transition group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </summary>
-                <div class="mt-3 p-3.5 bg-slate-50 rounded-2xl text-xs space-y-2 border border-slate-200/60 leading-relaxed text-slate-700">
-                    <div>
-                        <strong class="text-slate-900 block font-bold mb-0.5">Latar Belakang Permasalahan:</strong>
-                        <p>{{ $circle->problem_statement ?? 'Belum ada uraian masalah.' }}</p>
-                    </div>
-                    <div>
-                        <strong class="text-slate-900 block font-bold mb-0.5">Sasaran & Target:</strong>
-                        <p>{{ $circle->target_statement ?? 'Belum ada target spesifik.' }}</p>
-                    </div>
-                </div>
-            </details>
-        </div>
-    </div>
-
     <!-- Assessment Form Start -->
     <form id="assessmentForm" method="POST" action="{{ route('qcc.circles.assess.store', $circle) }}" onsubmit="return validateBeforeSubmit(event)">
         @csrf
 
-        <!-- Hidden input for active judge id -->
+        <!-- Hidden inputs for active judge id & category id -->
         <input type="hidden" name="judge_id" value="{{ $currentJudge?->id }}">
         <input type="hidden" name="category_id" value="{{ $isStageLocked ? $lockedCategory?->id : '' }}">
 
-        <!-- Stage Filter Navigation Tabs (Setup Tahap Yang Tampil) -->
-        @if(! $isStageLocked)
-        <div class="mb-6">
-            <div class="flex items-center justify-between gap-2 mb-2.5">
-                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                    </svg>
-                    Pilihan Tahap Penilaian:
-                </span>
-                <span class="text-[11px] text-slate-500 font-medium hidden sm:inline">Klik tahap di bawah untuk fokus menilai tahap tertentu</span>
+        <!-- Unified Header Card (Circle Info + Stage Focus + Judge Identity in 1 Compact Row) -->
+        <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-sm mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+
+                <!-- 1. Circle Identity Info -->
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-800">
+                            {{ $circle->circle_code }}
+                        </span>
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700">
+                            {{ $circle->category->name ?? 'Manufacturing' }}
+                        </span>
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
+                            {{ $circle->department->name ?? '-' }}
+                        </span>
+                    </div>
+                    <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
+                        {{ $circle->circle_name }}
+                    </h1>
+                    <p class="text-xs text-slate-600 font-medium truncate mt-0.5" title="{{ $circle->theme_title }}">
+                        "{{ $circle->theme_title }}"
+                    </p>
+                </div>
+
+                <!-- 2. Locked Stage Focus Indicator (Tampil compact 1 baris saat stage dikunci) -->
+                @if($isStageLocked)
+                <div class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50/70 border border-blue-200/90 flex-shrink-0">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-base shadow-xs flex-shrink-0">
+                        🎯
+                    </div>
+                    <div class="min-w-0">
+                        <span class="text-[9px] font-black uppercase tracking-wider text-blue-600 block leading-none">Fokus Penilaian</span>
+                        <div class="text-xs sm:text-sm font-black text-slate-900 leading-tight mt-0.5 truncate">
+                            {{ $lockedCategory?->name ?? 'Tahap Penilaian' }}
+                        </div>
+                        <span class="text-[10px] font-extrabold text-blue-700 leading-none">
+                            Bobot: {{ number_format($lockedCategory?->weight_percentage ?? 0, 0) }}%
+                        </span>
+                    </div>
+                </div>
+                @endif
+
+                <!-- 3. Judge Identity (Compact Dark Card) -->
+                <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5 border border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 shadow-xs">
+                    <div class="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white text-base font-bold flex-shrink-0 shadow-inner">
+                        ⚖️
+                    </div>
+                    <div class="min-w-0 pr-1">
+                        <div class="flex items-center gap-1.5">
+                            @if($currentJudge)
+                                <span class="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                                    Juri Aktif
+                                </span>
+                                @if($currentJudge->nik)
+                                    <span class="text-[10px] text-slate-300 font-mono">NIK: {{ $currentJudge->nik }}</span>
+                                @endif
+                            @else
+                                <span class="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 animate-pulse">
+                                    Wajib Pilih Juri
+                                </span>
+                            @endif
+                        </div>
+                        <div class="text-xs sm:text-sm font-black text-white truncate leading-tight mt-0.5">
+                            {{ $currentJudge?->name ?? 'Belum Memilih Juri' }}
+                        </div>
+                        <div class="text-[10px] text-slate-300 truncate leading-none mt-0.5">
+                            {{ $currentJudge?->department->name ?? 'Silakan pilih nama juri' }}
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <button type="button" onclick="openJudgeModal()" class="px-2.5 py-1.5 rounded-xl {{ ! $currentJudge ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 font-black animate-pulse' : 'bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold' }} text-[11px] transition flex items-center gap-1 shadow-xs">
+                            <svg class="w-3 h-3 {{ ! $currentJudge ? 'text-slate-900' : 'text-amber-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                            <span>{{ $currentJudge ? 'Ganti Juri' : 'Pilih Juri' }}</span>
+                        </button>
+
+                        @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->hasRole('admin')))
+                            <button type="button" onclick="openShareModal()" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-[11px] transition flex items-center gap-1 shadow-xs" title="Buat Link & QR Code Penilaian">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                                </svg>
+                                <span class="hidden md:inline">Bagikan Link & QR</span>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+
             </div>
 
-            <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                <button type="button" onclick="selectStageTab('all')" id="tab_btn_all" 
-                    class="stage-tab-btn px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 {{ ($activeCategoryId == 'all' || !$activeCategoryId) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
-                    <span>Semua Tahap</span>
-                    <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($activeCategoryId == 'all' || !$activeCategoryId) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
-                        100%
-                    </span>
-                </button>
+            <!-- Accordion Ringkasan Masalah & Target Perbaikan -->
+            <div class="mt-3 pt-2.5 border-t border-slate-100">
+                <details class="group cursor-pointer">
+                    <summary class="flex items-center justify-between text-[11px] font-semibold text-blue-600 hover:text-blue-800 select-none py-0.5">
+                        <span class="inline-flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Lihat Ringkasan Masalah & Target Perbaikan
+                        </span>
+                        <svg class="w-3.5 h-3.5 transition group-open:rotate-180 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="mt-2.5 p-3.5 bg-slate-50 rounded-2xl text-xs space-y-2 border border-slate-200/60 leading-relaxed text-slate-700">
+                        <div>
+                            <strong class="text-slate-900 block font-bold mb-0.5">Latar Belakang Permasalahan:</strong>
+                            <p>{{ $circle->problem_statement ?? 'Belum ada uraian masalah.' }}</p>
+                        </div>
+                        <div>
+                            <strong class="text-slate-900 block font-bold mb-0.5">Sasaran & Target:</strong>
+                            <p>{{ $circle->target_statement ?? 'Belum ada target spesifik.' }}</p>
+                        </div>
+                    </div>
+                </details>
+            </div>
 
-                @foreach($categoriesWithCriteria as $cat)
-                    <button type="button" onclick="selectStageTab({{ $cat->id }})" id="tab_btn_{{ $cat->id }}" 
-                        class="stage-tab-btn px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 {{ ($activeCategoryId == $cat->id) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
-                        <span>{{ $cat->name }}</span>
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($activeCategoryId == $cat->id) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
-                            {{ number_format($cat->weight_percentage, 0) }}%
+            <!-- Stage Filter Navigation Tabs (Hanya jika stage TIDAK dikunci) -->
+            @if(! $isStageLocked)
+            <div class="mt-3 pt-3 border-t border-slate-100">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                        </svg>
+                        Pilihan Tahap Penilaian:
+                    </span>
+                    <span class="text-[10px] text-slate-500 font-medium hidden sm:inline">Klik tahap di bawah untuk fokus menilai tahap tertentu</span>
+                </div>
+
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    <button type="button" onclick="selectStageTab('all')" id="tab_btn_all" 
+                        class="stage-tab-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 {{ ($activeCategoryId == 'all' || !$activeCategoryId) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                        <span>Semua Tahap</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($activeCategoryId == 'all' || !$activeCategoryId) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
+                            100%
                         </span>
                     </button>
-                @endforeach
-            </div>
-        </div>
-        @else
-        <!-- Locked Stage Banner (Tidak Menampilkan Pilihan Tahap Agar Tidak Bisa Pindah Tahap) -->
-        <div class="mb-6 p-4.5 rounded-3xl bg-gradient-to-r from-blue-50 via-indigo-50/60 to-slate-50 border border-blue-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-            <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-blue-500/20 flex-shrink-0">
-                    🎯
-                </div>
-                <div>
-                    <span class="text-[10px] font-black uppercase tracking-wider text-blue-600 block">Fokus Penilaian Tahap Tertentu</span>
-                    <h3 class="text-base sm:text-lg font-black text-slate-900 leading-tight">
-                        {{ $lockedCategory?->name ?? 'Tahap Penilaian Khusus' }}
-                    </h3>
+
+                    @foreach($categoriesWithCriteria as $cat)
+                        <button type="button" onclick="selectStageTab({{ $cat->id }})" id="tab_btn_{{ $cat->id }}" 
+                            class="stage-tab-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 {{ ($activeCategoryId == $cat->id) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                            <span>{{ $cat->name }}</span>
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($activeCategoryId == $cat->id) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
+                                {{ number_format($cat->weight_percentage, 0) }}%
+                            </span>
+                        </button>
+                    @endforeach
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <span class="px-3.5 py-1.5 rounded-xl bg-white text-blue-700 font-extrabold text-xs sm:text-sm shadow-2xs border border-blue-200">
-                    Bobot Tahap: {{ number_format($lockedCategory?->weight_percentage ?? 0, 0) }}%
-                </span>
-            </div>
+            @endif
         </div>
-        @endif
 
         <!-- Edit Mode Active Notification Banner -->
         <div id="editModeBanner" class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-3 {{ ($hasAlreadyAssessed && request()->has('edit_confirmed')) ? '' : 'hidden' }}">
@@ -906,14 +908,14 @@
         const tabBtns = document.querySelectorAll('.stage-tab-btn');
 
         tabBtns.forEach(btn => {
-            btn.className = 'stage-tab-btn px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50';
+            btn.className = 'stage-tab-btn px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50';
             const badge = btn.querySelector('span:last-child');
             if (badge) badge.className = 'px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-600';
         });
 
         const activeBtn = document.getElementById('tab_btn_' + stageId);
         if (activeBtn) {
-            activeBtn.className = 'stage-tab-btn px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20';
+            activeBtn.className = 'stage-tab-btn px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs flex items-center gap-1.5 flex-shrink-0 bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-2 ring-blue-600/20';
             const badge = activeBtn.querySelector('span:last-child');
             if (badge) badge.className = 'px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 text-white';
         }
