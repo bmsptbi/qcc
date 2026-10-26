@@ -448,6 +448,112 @@ class AdminController extends Controller
     }
 
     /**
+     * Export data anggota seluruh circle ke format CSV (1 baris per anggota)
+     */
+    public function exportCircleMembers(Request $request): StreamedResponse
+    {
+        // Sinkronisasi filter tahun dari query param atau fallback ke session active_year
+        if ($request->has('year')) {
+            $selectedYear = $request->query('year');
+        } else {
+            $selectedYear = session('active_year', date('Y'));
+        }
+
+        $query = Circle::with(['department', 'facilitator', 'members'])->orderBy('year', 'desc')->orderBy('circle_code', 'asc');
+
+        if ($selectedYear !== 'all' && ! empty($selectedYear)) {
+            $query->where('year', (int) $selectedYear);
+        }
+        if ($request->filled('period_id')) {
+            $query->where('assessment_period_id', $request->period_id);
+        }
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('circle_name', 'like', "%{$s}%")
+                    ->orWhere('circle_code', 'like', "%{$s}%")
+                    ->orWhere('theme_title', 'like', "%{$s}%");
+            });
+        }
+
+        $circles = $query->get();
+        $yearSuffix = ($selectedYear && $selectedYear !== 'all') ? "_{$selectedYear}" : '_SemuaTahun';
+        $filename = 'Data_Anggota_Circle_QCC'.$yearSuffix.'_'.date('Ymd_His').'.csv';
+
+        return response()->stream(function () use ($circles) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF"); // UTF-8 BOM agar terbaca sempurna di Excel
+
+            // Header kolom
+            fputcsv($handle, [
+                'Kode Circle',
+                'Nama Circle',
+                'Nama Anggota',
+                'NIK',
+                'Peran',
+                'Email',
+                'Departemen',
+                'Tahun',
+            ]);
+
+            $roleLabels = [
+                'leader' => 'Leader',
+                'secretary' => 'Secretary',
+                'facilitator' => 'Facilitator',
+                'member' => 'Member',
+            ];
+            $roleOrder = ['leader' => 1, 'secretary' => 2, 'facilitator' => 3, 'member' => 4];
+
+            foreach ($circles as $c) {
+                $sortedMembers = $c->members->sort(function ($a, $b) use ($roleOrder) {
+                    $orderA = $roleOrder[$a->role] ?? 5;
+                    $orderB = $roleOrder[$b->role] ?? 5;
+
+                    return $orderA <=> $orderB ?: $a->id <=> $b->id;
+                });
+
+                if ($sortedMembers->isEmpty()) {
+                    // Tulis 1 baris untuk circle ini meski belum ada anggota, agar circle tetap muncul
+                    fputcsv($handle, [
+                        $c->circle_code,
+                        $c->circle_name,
+                        '',
+                        '',
+                        '',
+                        '',
+                        $c->department?->name ?? '',
+                        $c->year,
+                    ]);
+                } else {
+                    foreach ($sortedMembers as $m) {
+                        fputcsv($handle, [
+                            $c->circle_code,
+                            $c->circle_name,
+                            $m->name,
+                            $m->nik,
+                            $roleLabels[$m->role] ?? ucfirst($m->role),
+                            $m->email ?? '',
+                            $c->department?->name ?? '',
+                            $c->year,
+                        ]);
+                    }
+                }
+            }
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
      * Unduh template contoh format Excel / CSV untuk import circle
      */
     public function downloadCircleTemplate(): StreamedResponse
@@ -495,6 +601,89 @@ class AdminController extends Controller
                 '',
                 'scheduled',
                 'Ahmad Dahlan*10004; Dewi Sartika*10005',
+            ]);
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
+     * Unduh template per anggota untuk import / update anggota circle
+     */
+    public function downloadMemberTemplate(): StreamedResponse
+    {
+        $filename = 'Template_Import_Anggota_Circle_QCC.csv';
+
+        return response()->stream(function () {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'Kode Circle',
+                'Nama Circle',
+                'Nama Anggota',
+                'NIK',
+                'Peran',
+                'Email',
+                'Departemen',
+                'Tahun',
+            ]);
+
+            // Contoh Data Circle 1: 3 anggota
+            fputcsv($handle, [
+                'QCC-2026-001',
+                'Captain WWD',
+                'Budi Santoso',
+                '10001',
+                'Leader',
+                'budi.santoso@bekaert.com',
+                'WWD',
+                '2026',
+            ]);
+            fputcsv($handle, [
+                'QCC-2026-001',
+                'Captain WWD',
+                'Siti Aminah',
+                '10002',
+                'Secretary',
+                'siti.aminah@bekaert.com',
+                'WWD',
+                '2026',
+            ]);
+            fputcsv($handle, [
+                'QCC-2026-001',
+                'Captain WWD',
+                'Joko Widodo',
+                '10003',
+                'Member',
+                'joko.widodo@bekaert.com',
+                'WWD',
+                '2026',
+            ]);
+
+            // Contoh Data Circle 2: 2 anggota
+            fputcsv($handle, [
+                'QCC-2026-002',
+                'Spider Web',
+                'Ahmad Dahlan',
+                '10004',
+                'Leader',
+                'ahmad.dahlan@bekaert.com',
+                'QORD',
+                '2026',
+            ]);
+            fputcsv($handle, [
+                'QCC-2026-002',
+                'Spider Web',
+                'Dewi Sartika',
+                '10005',
+                'Member',
+                'dewi.sartika@bekaert.com',
+                'QORD',
+                '2026',
             ]);
 
             fclose($handle);
@@ -560,6 +749,25 @@ class AdminController extends Controller
             fclose($handle);
 
             return back()->with('error', 'Gagal membaca baris header CSV.');
+        }
+
+        // Cek jika file yang diunggah sebenarnya adalah format Template Per Anggota
+        $hasMemberColumn = false;
+        $hasSusunanAnggota = false;
+        foreach ($header as $col) {
+            $colClean = strtolower(trim(preg_replace('/[^a-zA-Z0-9]/', '', $col)));
+            if (str_contains($colClean, 'namaanggota') || str_contains($colClean, 'namalengkap') || $colClean === 'membername') {
+                $hasMemberColumn = true;
+            }
+            if (str_contains($colClean, 'susunananggota')) {
+                $hasSusunanAnggota = true;
+            }
+        }
+
+        if ($hasMemberColumn && ! $hasSusunanAnggota) {
+            fclose($handle);
+
+            return $this->importCircleMembers($request);
         }
 
         // Petakan kolom
@@ -779,6 +987,304 @@ class AdminController extends Controller
             fclose($handle);
 
             return back()->with('error', 'Gagal memproses file import: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Import / bulk update anggota circle dari file CSV format per-anggota.
+     * Mengizinkan penambahan anggota baru (tambah baris) atau penghapusan anggota (hapus baris).
+     */
+    public function importCircleMembers(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'max:10240'],
+        ], [
+            'file.required' => 'Silakan pilih file CSV yang ingin diimpor.',
+            'file.max' => 'Ukuran file maksimal adalah 10 MB.',
+        ]);
+
+        $file = $request->file('file');
+        $filePath = $file->getRealPath();
+
+        $content = file_get_contents($filePath);
+        if ($content === false || trim($content) === '') {
+            return back()->with('error', 'File yang diunggah kosong.');
+        }
+
+        if (str_starts_with($content, "\xEF\xBB\xBF")) {
+            $content = substr($content, 3);
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', trim($content));
+        if (empty($lines)) {
+            return back()->with('error', 'File tidak memiliki baris data.');
+        }
+
+        $firstLine = $lines[0];
+        $semicolonCount = substr_count($firstLine, ';');
+        $commaCount = substr_count($firstLine, ',');
+        $tabCount = substr_count($firstLine, "\t");
+
+        $delimiter = ',';
+        if ($semicolonCount > $commaCount && $semicolonCount > $tabCount) {
+            $delimiter = ';';
+        } elseif ($tabCount > $commaCount && $tabCount > $semicolonCount) {
+            $delimiter = "\t";
+        }
+
+        $handle = fopen($filePath, 'r');
+        $bom = fread($handle, 3);
+        if ($bom !== "\xEF\xBB\xBF") {
+            rewind($handle);
+        }
+
+        $header = fgetcsv($handle, 0, $delimiter);
+        if (! $header) {
+            fclose($handle);
+
+            return back()->with('error', 'Gagal membaca baris header CSV.');
+        }
+
+        // Cek jika pengguna mengunggah template circle (1 baris per circle) ke form ini
+        $hasSusunanAnggota = false;
+        foreach ($header as $col) {
+            $cClean = strtolower(trim(preg_replace('/[^a-zA-Z0-9]/', '', $col)));
+            if (str_contains($cClean, 'susunananggota')) {
+                $hasSusunanAnggota = true;
+                break;
+            }
+        }
+        if ($hasSusunanAnggota) {
+            fclose($handle);
+
+            return $this->importCircles($request);
+        }
+
+        // Petakan kolom
+        $colMap = [
+            'circle_code' => null,
+            'circle_name' => null,
+            'member_name' => null,
+            'nik' => null,
+            'role' => null,
+            'email' => null,
+            'dept' => null,
+            'year' => null,
+        ];
+
+        foreach ($header as $idx => $col) {
+            $colClean = strtolower(trim(preg_replace('/[^a-zA-Z0-9]/', '', $col)));
+            if (str_contains($colClean, 'kodegugus') || str_contains($colClean, 'kodecircle') || $colClean === 'code' || $colClean === 'circlecode' || $colClean === 'kode') {
+                $colMap['circle_code'] = $idx;
+            } elseif (str_contains($colClean, 'namaanggota') || str_contains($colClean, 'namalengkap') || $colClean === 'membername' || str_contains($colClean, 'namamember')) {
+                $colMap['member_name'] = $idx;
+            } elseif (str_contains($colClean, 'namagugus') || str_contains($colClean, 'namacircle') || $colClean === 'circlename' || $colClean === 'circle') {
+                $colMap['circle_name'] = $idx;
+            } elseif ($colClean === 'nik' || str_contains($colClean, 'nomorinduk') || str_contains($colClean, 'idkaryawan')) {
+                $colMap['nik'] = $idx;
+            } elseif (str_contains($colClean, 'peran') || str_contains($colClean, 'role') || str_contains($colClean, 'jabatan') || str_contains($colClean, 'posisi')) {
+                $colMap['role'] = $idx;
+            } elseif (str_contains($colClean, 'email')) {
+                $colMap['email'] = $idx;
+            } elseif (str_contains($colClean, 'departemen') || str_contains($colClean, 'department') || $colClean === 'dept') {
+                $colMap['dept'] = $idx;
+            } elseif (str_contains($colClean, 'tahun') || str_contains($colClean, 'year') || str_contains($colClean, 'periode')) {
+                $colMap['year'] = $idx;
+            } elseif ($colClean === 'name' || $colClean === 'nama') {
+                if ($colMap['member_name'] === null) {
+                    $colMap['member_name'] = $idx;
+                } elseif ($colMap['circle_name'] === null) {
+                    $colMap['circle_name'] = $idx;
+                }
+            }
+        }
+
+        if ($colMap['circle_code'] === null && $colMap['circle_name'] === null) {
+            fclose($handle);
+
+            return back()->with('error', 'Format header CSV tidak sesuai. Minimal kolom "Kode Circle" atau "Nama Circle" harus tersedia.');
+        }
+
+        $activeYearDefault = (int) session('active_year', date('Y'));
+        $circlesData = [];
+
+        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            if (empty($row) || (count($row) === 1 && trim($row[0]) === '')) {
+                continue;
+            }
+
+            $circleCode = $colMap['circle_code'] !== null && isset($row[$colMap['circle_code']]) ? strtoupper(trim($row[$colMap['circle_code']])) : '';
+            $circleName = $colMap['circle_name'] !== null && isset($row[$colMap['circle_name']]) ? trim($row[$colMap['circle_name']]) : '';
+            $memberName = $colMap['member_name'] !== null && isset($row[$colMap['member_name']]) ? trim($row[$colMap['member_name']]) : '';
+            $memberNik = $colMap['nik'] !== null && isset($row[$colMap['nik']]) ? trim($row[$colMap['nik']]) : '';
+            $memberRole = $colMap['role'] !== null && isset($row[$colMap['role']]) ? trim($row[$colMap['role']]) : '';
+            $memberEmail = $colMap['email'] !== null && isset($row[$colMap['email']]) ? trim($row[$colMap['email']]) : '';
+            $deptVal = $colMap['dept'] !== null && isset($row[$colMap['dept']]) ? trim($row[$colMap['dept']]) : '';
+            $yearVal = $colMap['year'] !== null && isset($row[$colMap['year']]) && is_numeric(trim($row[$colMap['year']])) ? (int) trim($row[$colMap['year']]) : $activeYearDefault;
+
+            if (empty($circleCode) && empty($circleName)) {
+                continue;
+            }
+
+            $key = ! empty($circleCode) ? 'CODE:'.$circleCode : 'NAME:'.strtolower($circleName).':'.$yearVal;
+
+            if (! isset($circlesData[$key])) {
+                $circlesData[$key] = [
+                    'code' => $circleCode,
+                    'name' => $circleName,
+                    'year' => $yearVal,
+                    'dept' => $deptVal,
+                    'members' => [],
+                ];
+            }
+
+            if (! empty($memberName) || ! empty($memberNik)) {
+                $circlesData[$key]['members'][] = [
+                    'name' => $memberName,
+                    'nik' => $memberNik,
+                    'role' => $memberRole,
+                    'email' => $memberEmail,
+                ];
+            }
+        }
+        fclose($handle);
+
+        if (empty($circlesData)) {
+            return back()->with('error', 'Tidak ada data circle atau anggota yang ditemukan dalam file CSV.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $updatedCircleCount = 0;
+            $createdCircleCount = 0;
+            $totalMembersCount = 0;
+
+            foreach ($circlesData as $data) {
+                $circle = null;
+                if (! empty($data['code'])) {
+                    $circle = Circle::where('circle_code', $data['code'])->first();
+                }
+
+                if (! $circle && ! empty($data['name'])) {
+                    $circle = Circle::where('circle_name', $data['name'])
+                        ->where('year', $data['year'])
+                        ->first()
+                        ?? Circle::where('circle_name', $data['name'])->first();
+                }
+
+                if (! $circle) {
+                    if (! empty($data['name'])) {
+                        $department = null;
+                        if (! empty($data['dept'])) {
+                            $department = Department::where('name', 'like', "%{$data['dept']}%")->first();
+                        }
+                        if (! $department) {
+                            $department = Department::first();
+                        }
+
+                        $period = AssessmentPeriod::firstOrCreate(
+                            ['year' => $data['year']],
+                            [
+                                'name' => "Konvensi Mutu & QCC {$data['year']}",
+                                'theme' => "Continuous Improvement & Innovation {$data['year']}",
+                                'status' => 'active',
+                                'start_date' => "{$data['year']}-01-01",
+                                'end_date' => "{$data['year']}-12-31",
+                            ]
+                        );
+
+                        $codeVal = $data['code'];
+                        if (empty($codeVal)) {
+                            $count = Circle::where('year', $data['year'])->count();
+                            $seq = $count + 1;
+                            do {
+                                $candidate = sprintf('QCC-%d-%03d', $data['year'], $seq);
+                                if (! Circle::where('circle_code', $candidate)->exists()) {
+                                    $codeVal = $candidate;
+                                    break;
+                                }
+                                $seq++;
+                            } while (true);
+                        }
+
+                        $circle = Circle::create([
+                            'circle_code' => $codeVal,
+                            'circle_name' => $data['name'],
+                            'theme_title' => $data['name'],
+                            'department_id' => $department->id,
+                            'year' => $data['year'],
+                            'assessment_period_id' => $period->id,
+                            'circle_category_id' => CircleCategory::first()?->id,
+                            'status' => 'submitted',
+                        ]);
+                        $createdCircleCount++;
+                    } else {
+                        continue;
+                    }
+                } else {
+                    $updatedCircleCount++;
+                }
+
+                // Sinkronisasi Anggota Circle:
+                // Hapus anggota yang ada pada circle ini, lalu masukkan anggota yang ada pada file
+                $circle->members()->delete();
+
+                foreach ($data['members'] as $idx => $m) {
+                    $mRoleRaw = strtolower(trim($m['role']));
+                    if (in_array($mRoleRaw, ['leader', 'ketua', 'lead', 'pimpinan', 'ketua tim'])) {
+                        $role = 'leader';
+                    } elseif (in_array($mRoleRaw, ['secretary', 'sekretaris', 'sekre', 'notulen'])) {
+                        $role = 'secretary';
+                    } elseif (in_array($mRoleRaw, ['facilitator', 'fasilitator'])) {
+                        $role = 'facilitator';
+                    } elseif (in_array($mRoleRaw, ['member', 'anggota', 'anggota tim'])) {
+                        $role = 'member';
+                    } else {
+                        if ($idx === 0) {
+                            $role = 'leader';
+                        } elseif ($idx === 1) {
+                            $role = 'secretary';
+                        } else {
+                            $role = 'member';
+                        }
+                    }
+
+                    $mNik = trim($m['nik']);
+                    if (empty($mNik)) {
+                        $mNik = 'EMP-'.rand(1000, 9999);
+                    }
+
+                    $mName = trim($m['name']);
+                    if (empty($mName)) {
+                        $mName = 'Anggota '.$mNik;
+                    }
+
+                    CircleMember::create([
+                        'circle_id' => $circle->id,
+                        'name' => $mName,
+                        'nik' => $mNik,
+                        'role' => $role,
+                        'email' => ! empty($m['email']) ? trim($m['email']) : null,
+                        'department' => $circle->department?->name,
+                    ]);
+
+                    $totalMembersCount++;
+                }
+            }
+
+            DB::commit();
+
+            $summaryMessage = 'Proses import anggota berhasil! ';
+            if ($createdCircleCount > 0) {
+                $summaryMessage .= "{$createdCircleCount} circle baru ditambahkan. ";
+            }
+            $summaryMessage .= "{$updatedCircleCount} circle disinkronisasi dengan total {$totalMembersCount} data anggota tim diperbarui.";
+
+            return redirect()->route('admin.circles.index')->with('success', $summaryMessage);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return back()->with('error', 'Terjadi kesalahan saat memproses data anggota: '.$e->getMessage());
         }
     }
 

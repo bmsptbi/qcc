@@ -37,8 +37,11 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     // Circle Management Routes
     Route::get('/circles', [AdminController::class, 'circlesIndex'])->name('circles.index');
     Route::get('/circles/export', [AdminController::class, 'exportCircles'])->name('circles.export');
+    Route::get('/circles/export-members', [AdminController::class, 'exportCircleMembers'])->name('circles.export-members');
     Route::get('/circles/template', [AdminController::class, 'downloadCircleTemplate'])->name('circles.template');
+    Route::get('/circles/template-members', [AdminController::class, 'downloadMemberTemplate'])->name('circles.template-members');
     Route::post('/circles/import', [AdminController::class, 'importCircles'])->name('circles.import');
+    Route::post('/circles/import-members', [AdminController::class, 'importCircleMembers'])->name('circles.import-members');
     Route::get('/circles/create', [AdminController::class, 'createCircle'])->name('circles.create');
     Route::post('/circles', [AdminController::class, 'storeCircle'])->name('circles.store');
     Route::get('/circles/{circle}/edit', [AdminController::class, 'editCircle'])->name('circles.edit');

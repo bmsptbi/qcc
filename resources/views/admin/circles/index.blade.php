@@ -39,20 +39,67 @@
 
         <!-- Action Buttons in Compact Single Row -->
         <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            <!-- Unduh Excel (CSV) Button -->
-            <a href="{{ route('admin.circles.export', array_merge(['year' => $selectedYear], request()->query())) }}" 
-                class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-95" 
-                title="Unduh Data Circle Sesuai Filter ke Format Excel / CSV">
-                <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                <span class="text-xs">Unduh</span>
-            </a>
+            <!-- Unduh Excel (CSV) Dropdown Button -->
+            <div class="relative inline-block text-left" id="exportDropdownContainer">
+                <button type="button" onclick="toggleExportDropdown(event)" 
+                    class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-95" 
+                    title="Pilihan Unduh Data Excel / CSV">
+                    <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <span class="text-xs">Unduh</span>
+                    <svg class="w-3 h-3 text-slate-400 -mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div id="exportDropdownMenu" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2 z-50">
+                    <div class="px-3.5 py-1.5 border-b border-slate-100 flex items-center justify-between">
+                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Pilihan Unduh Data</span>
+                        <span class="text-[10px] font-bold text-slate-400">{{ $selectedYear !== 'all' ? 'Tahun '.$selectedYear : 'Semua Tahun' }}</span>
+                    </div>
+
+                    <!-- Opsi 1: Format Per Anggota (Rekomendasi untuk Update Tim) -->
+                    <a href="{{ route('admin.circles.export-members', array_merge(['year' => $selectedYear], request()->query())) }}" 
+                        class="flex items-start gap-3 px-3.5 py-2.5 hover:bg-emerald-50/70 transition group">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-emerald-600 group-hover:text-white transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-900 group-hover:text-emerald-700 flex items-center gap-1.5">
+                                <span>Format Per Anggota</span>
+                                <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Detail Tim</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 leading-tight mt-0.5">1 baris per anggota tim. Cocok untuk update, tambah, atau hapus anggota.</p>
+                        </div>
+                    </a>
+
+                    <!-- Opsi 2: Format Per Circle (Ringkasan Standar) -->
+                    <a href="{{ route('admin.circles.export', array_merge(['year' => $selectedYear], request()->query())) }}" 
+                        class="flex items-start gap-3 px-3.5 py-2.5 hover:bg-slate-50 transition group border-t border-slate-100">
+                        <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-blue-600 group-hover:text-white transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-900 group-hover:text-blue-600 flex items-center gap-1.5">
+                                <span>Format Ringkasan Circle</span>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">Per Circle</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 leading-tight mt-0.5">1 baris per circle (dengan kolom susunan anggota gabungan).</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
 
             <!-- Import Excel (CSV) Button -->
-            <button type="button" onclick="openImportModal()" 
+            <button type="button" onclick="openImportModal('members')" 
                 class="px-2.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-200 transition inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-95" 
-                title="Import / Bulk Update Data Circle dari Excel (CSV)">
+                title="Import / Update Data Circle & Anggota dari Excel (CSV)">
                 <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                 </svg>
@@ -421,7 +468,7 @@
 
 <!-- Modal Import Excel (CSV) -->
 <div id="importModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-slate-200/90 shadow-2xl space-y-5">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 border border-slate-200/90 shadow-2xl space-y-5">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-black">
@@ -430,8 +477,8 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Import / Bulk Update Circle</h3>
-                    <p class="text-xs text-slate-500 font-medium">Unggah file format Excel (.csv) untuk menambah atau mengedit banyak circle sekaligus.</p>
+                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Import Data Circle & Anggota</h3>
+                    <p class="text-xs text-slate-500 font-medium">Unggah file format Excel (.csv) untuk menambah, mengedit, atau sinkronisasi anggota.</p>
                 </div>
             </div>
             <button type="button" onclick="closeImportModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1">
@@ -439,60 +486,178 @@
             </button>
         </div>
 
-        <div class="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 text-xs text-blue-900 space-y-1.5">
-            <div class="font-bold flex items-center gap-1.5">
-                <span>💡 Petunjuk Penggunaan Import:</span>
-            </div>
-            <ul class="list-disc list-inside space-y-1 text-[11px] text-blue-800">
-                <li><strong>Tambah Circle Baru:</strong> Kosongkan kolom <em>Kode Circle</em> agar sistem membuat kode otomatis (contoh: QCC-2026-xxx).</li>
-                <li><strong>Edit Circle yang Ada:</strong> Isi kolom <em>Kode Circle</em> sesuai data di tabel untuk memperbarui circle tersebut.</li>
-                <li><strong>Fasilitator:</strong> Masukkan alamat <strong>Email</strong> fasilitator (contoh: <code>iman.sugih@bekaert.com</code>).</li>
-                <li><strong>Susunan Anggota:</strong> Format cukup <code>Nama*NIK</code> dipisahkan titik koma (contoh: <code>Budi Santoso*10001; Siti Aminah*10002; Joko Widodo*10003</code>). Urutan ke-1 = Leader, ke-2 = Secretary, ke-3 dst = Anggota.</li>
-            </ul>
-            <div class="pt-1.5">
-                <a href="{{ route('admin.circles.template') }}" class="inline-flex items-center gap-1.5 text-xs font-black text-blue-700 hover:text-blue-900 underline">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                    </svg>
-                    <span>Unduh Template Format Excel (CSV)</span>
-                </a>
-            </div>
+        <!-- Tab Selection (Per Anggota vs Per Circle) -->
+        <div class="flex p-1 bg-slate-100 rounded-2xl">
+            <button type="button" id="tabBtnMembers" onclick="switchImportTab('members')"
+                class="flex-1 py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 bg-white text-emerald-800 shadow-xs">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <span>Template Per Anggota</span>
+                <span class="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">Update Tim</span>
+            </button>
+            <button type="button" id="tabBtnCircles" onclick="switchImportTab('circles')"
+                class="flex-1 py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+                <span>Template Ringkasan Circle</span>
+            </button>
         </div>
 
-        <form method="POST" action="{{ route('admin.circles.import') }}" enctype="multipart/form-data" class="space-y-4">
-            @csrf
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
-                    Pilih File Excel / CSV <span class="text-rose-500">*</span>
-                </label>
-                <input type="file" name="file" accept=".csv,text/csv,text/plain" required
-                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500">
-                <span class="text-[10px] text-slate-400 mt-1 block">Format file: .csv (Comma / Semicolon separated, UTF-8 BOM kompatibel dengan Microsoft Excel).</span>
+        <!-- TAB 1: CONTENT IMPORT PER ANGGOTA -->
+        <div id="tabContentMembers" class="space-y-4">
+            <div class="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-xs text-emerald-950 space-y-2">
+                <div class="font-extrabold flex items-center gap-1.5 text-emerald-900">
+                    <span>💡 Cara Update Anggota Sekaligus (Tambah / Hapus):</span>
+                </div>
+                <ul class="space-y-1.5 text-[11px] text-emerald-900/90 pl-1">
+                    <li class="flex items-start gap-1.5">
+                        <span class="font-bold text-emerald-700">➕ Tambah Anggota:</span>
+                        <span>Cukup buat baris baru di file dengan <strong>Kode Circle</strong> yang sama, lalu isi nama, NIK, dan perannya.</span>
+                    </li>
+                    <li class="flex items-start gap-1.5">
+                        <span class="font-bold text-rose-700">➖ Hapus Anggota:</span>
+                        <span>Hapus baris anggota tersebut dari file CSV. Anggota yang barisnya dihapus akan otomatis dikeluarkan dari circle saat file diimpor.</span>
+                    </li>
+                    <li class="flex items-start gap-1.5">
+                        <span class="font-bold text-blue-700">✏️ Edit Data:</span>
+                        <span>Ubah Nama, NIK, Peran (<em>Leader, Secretary, Facilitator, Member</em>), atau Email langsung pada baris anggota.</span>
+                    </li>
+                    <li class="flex items-start gap-1.5 text-slate-600">
+                        <span class="font-bold">🛡️ Aman:</span>
+                        <span>Hanya circle yang tercantum di file yang susunan anggotanya akan disinkronisasi. Circle lain tetap aman dan tidak berubah.</span>
+                    </li>
+                </ul>
+                <div class="pt-2 border-t border-emerald-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <a href="{{ route('admin.circles.template-members') }}" class="inline-flex items-center gap-1.5 text-xs font-black text-emerald-800 hover:text-emerald-950 underline">
+                        <svg class="w-4 h-4 text-emerald-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        <span>Unduh Template Per Anggota (.csv)</span>
+                    </a>
+                    <a href="{{ route('admin.circles.export-members', array_merge(['year' => $selectedYear], request()->query())) }}" class="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 underline inline-flex items-center gap-1">
+                        <span>Unduh data saat ini</span> &rarr;
+                    </a>
+                </div>
             </div>
 
-            <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-                <button type="button" onclick="closeImportModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
-                    Batal
-                </button>
-                <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition inline-flex items-center gap-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-                    </svg>
-                    <span>Mulai Proses Import</span>
-                </button>
+            <form method="POST" action="{{ route('admin.circles.import-members') }}" enctype="multipart/form-data" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                        Pilih File CSV Per Anggota <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="file" name="file" accept=".csv,text/csv,text/plain" required
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500">
+                    <span class="text-[10px] text-slate-400 mt-1 block">Format file: .csv (Kolom: Kode Circle, Nama Circle, Nama Anggota, NIK, Peran, Email, Departemen, Tahun).</span>
+                </div>
+
+                <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeImportModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition inline-flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                        </svg>
+                        <span>Mulai Sinkronisasi Anggota</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- TAB 2: CONTENT IMPORT PER CIRCLE (FORMAT LAMA) -->
+        <div id="tabContentCircles" class="hidden space-y-4">
+            <div class="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 text-xs text-blue-900 space-y-1.5">
+                <div class="font-bold flex items-center gap-1.5">
+                    <span>💡 Petunjuk Template Per Circle (1 Baris per Circle):</span>
+                </div>
+                <ul class="list-disc list-inside space-y-1 text-[11px] text-blue-800">
+                    <li><strong>Tambah Circle Baru:</strong> Kosongkan kolom <em>Kode Circle</em> agar sistem membuat kode otomatis (contoh: QCC-2026-xxx).</li>
+                    <li><strong>Edit Circle yang Ada:</strong> Isi kolom <em>Kode Circle</em> sesuai data di tabel untuk memperbarui circle tersebut.</li>
+                    <li><strong>Fasilitator:</strong> Masukkan alamat <strong>Email</strong> fasilitator (contoh: <code>iman.sugih@bekaert.com</code>).</li>
+                    <li><strong>Susunan Anggota:</strong> Format <code>Nama*NIK</code> dipisahkan titik koma (contoh: <code>Budi Santoso*10001; Siti Aminah*10002</code>).</li>
+                </ul>
+                <div class="pt-1.5">
+                    <a href="{{ route('admin.circles.template') }}" class="inline-flex items-center gap-1.5 text-xs font-black text-blue-700 hover:text-blue-900 underline">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        <span>Unduh Template Ringkasan Circle (.csv)</span>
+                    </a>
+                </div>
             </div>
-        </form>
+
+            <form method="POST" action="{{ route('admin.circles.import') }}" enctype="multipart/form-data" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                        Pilih File CSV Circle <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="file" name="file" accept=".csv,text/csv,text/plain" required
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500">
+                    <span class="text-[10px] text-slate-400 mt-1 block">Format file: .csv (1 baris per circle dengan kolom Susunan Anggota gabungan).</span>
+                </div>
+
+                <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeImportModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-600/25 transition inline-flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                        </svg>
+                        <span>Mulai Import Circle</span>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 @push('scripts')
 <script>
-    function openImportModal() {
+    function toggleExportDropdown(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('exportDropdownMenu');
+        menu.classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('exportDropdownContainer');
+        const menu = document.getElementById('exportDropdownMenu');
+        if (dropdown && !dropdown.contains(event.target) && menu && !menu.classList.contains('hidden')) {
+            menu.classList.add('hidden');
+        }
+    });
+
+    function openImportModal(initialTab = 'members') {
+        switchImportTab(initialTab);
         document.getElementById('importModal').classList.remove('hidden');
     }
 
     function closeImportModal() {
         document.getElementById('importModal').classList.add('hidden');
+    }
+
+    function switchImportTab(tab) {
+        const tabBtnMembers = document.getElementById('tabBtnMembers');
+        const tabBtnCircles = document.getElementById('tabBtnCircles');
+        const tabContentMembers = document.getElementById('tabContentMembers');
+        const tabContentCircles = document.getElementById('tabContentCircles');
+
+        if (tab === 'members') {
+            tabBtnMembers.className = 'flex-1 py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 bg-white text-emerald-800 shadow-xs';
+            tabBtnCircles.className = 'flex-1 py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900';
+            tabContentMembers.classList.remove('hidden');
+            tabContentCircles.classList.add('hidden');
+        } else {
+            tabBtnCircles.className = 'flex-1 py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 bg-white text-blue-800 shadow-xs';
+            tabBtnMembers.className = 'flex-1 py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900';
+            tabContentCircles.classList.remove('hidden');
+            tabContentMembers.classList.add('hidden');
+        }
     }
 
     function updateCircleStatus(circleId, newStatus, selectEl) {
