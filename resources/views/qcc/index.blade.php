@@ -118,27 +118,18 @@
         </a>
     </div>
 
-    <!-- Toggle Visualisasi Grafik (Default Hide) -->
-    <div class="flex items-center justify-center -mt-2 mb-6">
-        <button type="button" onclick="toggleCharts()" id="toggleChartsBtn"
-            class="px-4 py-2 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all duration-200 inline-flex items-center gap-2 group active:scale-95 cursor-pointer">
-            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-            <svg class="w-4 h-4 text-blue-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
-            </svg>
-            <span id="chartToggleText">Tampilkan Grafik Statistik Circle Mutu</span>
-            <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60">
-                Donut & Bar
-            </span>
-            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-300" id="chartChevronIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- Toggle Visualisasi Grafik (Default Tampil) -->
+    <div class="flex items-center justify-center -mt-3 mb-3">
+        <button type="button" onclick="toggleCharts()" id="toggleChartsBtn" title="Sembunyikan / Tampilkan Grafik"
+            class="h-6 w-11 rounded-full bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-700 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all duration-200 inline-flex items-center justify-center group active:scale-95 cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-transform duration-300" id="chartChevronIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
             </svg>
         </button>
     </div>
 
-    <!-- Visualisasi Grafik Container (Default Selalu Hide) -->
-    <div id="chartsContainer" class="hidden mb-6 transition-all duration-300">
+    <!-- Visualisasi Grafik Container (Default Tampil) -->
+    <div id="chartsContainer" class="mb-6 transition-all duration-300">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
             <!-- 1. Donut Chart by Status -->
             <div class="lg:col-span-5 bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col justify-between">
@@ -214,18 +205,24 @@
                                 <p class="text-[11px] text-slate-400 font-medium">Partisipasi circle inovasi pada masing-masing departemen</p>
                             </div>
                         </div>
-                        @php
-                            $activeDeptsWithCircles = $departmentStats->filter(fn($d) => $d['count'] > 0)->count();
-                        @endphp
                         <span class="text-xs font-black text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200/50">
-                            {{ $activeDeptsWithCircles }} Departemen Aktif
+                            {{ $departmentStats->count() }} Departemen
                         </span>
                     </div>
 
-                    <!-- Bar Chart Canvas -->
-                    <div class="relative my-4" style="height: 250px;">
-                        <canvas id="deptBarChart"></canvas>
-                    </div>
+                    @if($departmentStats->isEmpty())
+                        <div class="h-60 flex flex-col items-center justify-center text-slate-400">
+                            <svg class="w-10 h-10 mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            <span class="text-xs font-semibold">Tidak ada circle yang terdaftar pada periode ini</span>
+                        </div>
+                    @else
+                        <!-- Bar Chart Canvas -->
+                        <div class="relative my-4" style="height: 250px;">
+                            <canvas id="deptBarChart"></canvas>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
@@ -828,8 +825,6 @@
 
     function toggleCharts() {
         const container = document.getElementById('chartsContainer');
-        const btn = document.getElementById('toggleChartsBtn');
-        const text = document.getElementById('chartToggleText');
         const chevron = document.getElementById('chartChevronIcon');
 
         if (!container) return;
@@ -838,9 +833,7 @@
 
         if (isHidden) {
             container.classList.remove('hidden');
-            text.innerText = 'Sembunyikan Grafik Statistik';
             if (chevron) chevron.style.transform = 'rotate(180deg)';
-            btn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-300');
 
             if (!chartsInitialized) {
                 initCharts();
@@ -853,9 +846,7 @@
             }
         } else {
             container.classList.add('hidden');
-            text.innerText = 'Tampilkan Grafik Statistik Circle Mutu';
             if (chevron) chevron.style.transform = 'rotate(0deg)';
-            btn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-300');
         }
     }
 
@@ -934,17 +925,11 @@
                     datasets: [{
                         label: 'Jumlah Circle',
                         data: deptCounts,
-                        backgroundColor: function(context) {
-                            const val = context.raw || 0;
-                            return val > 0 ? '#0055b8' : '#e2e8f0';
-                        },
-                        hoverBackgroundColor: function(context) {
-                            const val = context.raw || 0;
-                            return val > 0 ? '#004399' : '#cbd5e1';
-                        },
-                        borderRadius: 6,
+                        backgroundColor: '#0055b8',
+                        hoverBackgroundColor: '#004399',
+                        borderRadius: 8,
                         borderSkipped: false,
-                        maxBarThickness: 38
+                        maxBarThickness: 48
                     }]
                 },
                 options: {
@@ -956,12 +941,14 @@
                                 display: false
                             },
                             ticks: {
+                                maxRotation: 0,
+                                minRotation: 0,
                                 font: {
-                                    size: 11,
-                                    weight: '600',
+                                    size: 12,
+                                    weight: '700',
                                     family: "'Plus Jakarta Sans', sans-serif"
                                 },
-                                color: '#64748b'
+                                color: '#334155'
                             }
                         },
                         y: {
@@ -1003,6 +990,18 @@
                 }
             });
         }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!chartsInitialized) {
+                initCharts();
+                chartsInitialized = true;
+            }
+        });
+    } else {
+        initCharts();
+        chartsInitialized = true;
     }
 </script>
 @endpush

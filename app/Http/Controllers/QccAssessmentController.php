@@ -170,8 +170,8 @@ class QccAssessmentController extends Controller
             ]);
         }
 
-        // Urutkan departemen dengan partisipasi circle terbanyak di awal
-        $departmentStats = $departmentStats->sortByDesc('count')->values();
+        // Filter hanya departemen yang memiliki circle (> 0) dan urutkan terbanyak di awal
+        $departmentStats = $departmentStats->filter(fn ($d) => $d['count'] > 0)->sortByDesc('count')->values();
 
         // Active judge in session or default to Judge 1 for convenient testing
         $currentJudgeId = session('active_judge_id', User::role('judge')->first()?->id);

@@ -161,7 +161,8 @@ class AdminController extends Controller
             ]);
         }
 
-        $departmentStats = $departmentStats->sortByDesc('count')->values();
+        // Filter hanya departemen yang memiliki circle (> 0) dan urutkan terbanyak di awal
+        $departmentStats = $departmentStats->filter(fn ($d) => $d['count'] > 0)->sortByDesc('count')->values();
 
         return view('admin.circles.index', compact('circles', 'periods', 'categories', 'departments', 'stats', 'departmentStats', 'selectedYear'));
     }
