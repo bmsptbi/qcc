@@ -129,7 +129,41 @@ class AdminController extends Controller
             'evaluated' => (clone $statsQuery)->whereIn('status', ['evaluated', 'awarded'])->count(),
         ];
 
-        return view('admin.circles.index', compact('circles', 'periods', 'categories', 'departments', 'stats', 'selectedYear'));
+        // Statistik circle per departemen untuk visualisasi bar chart
+        $departmentStats = Department::where('is_active', true)
+            ->withCount(['circles' => function ($q) use ($selectedYear) {
+                if ($selectedYear !== 'all' && ! empty($selectedYear)) {
+                    $q->where('year', (int) $selectedYear);
+                }
+            }])
+            ->orderBy('display_order', 'asc')
+            ->get()
+            ->map(function ($d) {
+                return [
+                    'id' => $d->id,
+                    'name' => $d->name,
+                    'code' => $d->code ?? $d->name,
+                    'count' => (int) $d->circles_count,
+                ];
+            });
+
+        $noDeptCount = (clone $statsQuery)->where(function ($q) {
+            $q->whereNull('department_id')
+                ->orWhereNotIn('department_id', Department::where('is_active', true)->select('id'));
+        })->count();
+
+        if ($noDeptCount > 0) {
+            $departmentStats->push([
+                'id' => 0,
+                'name' => 'Lainnya',
+                'code' => 'OTHER',
+                'count' => (int) $noDeptCount,
+            ]);
+        }
+
+        $departmentStats = $departmentStats->sortByDesc('count')->values();
+
+        return view('admin.circles.index', compact('circles', 'periods', 'categories', 'departments', 'stats', 'departmentStats', 'selectedYear'));
     }
 
     /**

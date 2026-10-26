@@ -118,6 +118,127 @@
         </a>
     </div>
 
+    <!-- Toggle Visualisasi Grafik (Default Hide) -->
+    <div class="flex items-center justify-center -mt-2 mb-6">
+        <button type="button" onclick="toggleCharts()" id="toggleChartsBtn"
+            class="px-4 py-2 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all duration-200 inline-flex items-center gap-2 group active:scale-95 cursor-pointer">
+            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+            <svg class="w-4 h-4 text-blue-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
+            </svg>
+            <span id="chartToggleText">Tampilkan Grafik Statistik Circle Mutu</span>
+            <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60">
+                Donut & Bar
+            </span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-300" id="chartChevronIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Visualisasi Grafik Container (Default Selalu Hide) -->
+    <div id="chartsContainer" class="hidden mb-6 transition-all duration-300">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
+            <!-- 1. Donut Chart by Status -->
+            <div class="lg:col-span-5 bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white flex items-center justify-center font-bold text-sm shadow-xs shadow-amber-500/20">
+                                🍩
+                            </div>
+                            <div>
+                                <h3 class="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">Status Circle Mutu</h3>
+                                <p class="text-[11px] text-slate-400 font-medium">Distribusi status {{ $activeYear !== 'all' ? 'Tahun '.$activeYear : 'Semua Periode' }}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-black text-slate-800 bg-slate-100 px-2.5 py-1 rounded-full">
+                            Total: {{ $stats['total'] }}
+                        </span>
+                    </div>
+
+                    <!-- Donut Canvas with Center Counter -->
+                    <div class="relative my-4 flex items-center justify-center" style="height: 220px;">
+                        <canvas id="statusDonutChart"></canvas>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span class="text-3xl font-black text-slate-900 leading-none">{{ $stats['total'] }}</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Circle</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Donut Legend Grid -->
+                <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100">
+                    <div class="p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/60 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+                            <span class="text-xs font-bold text-slate-700">Submitted</span>
+                        </div>
+                        <span class="text-xs font-black text-amber-700">{{ $stats['submitted'] }} <span class="text-[10px] font-semibold text-slate-400">({{ $stats['total'] > 0 ? round(($stats['submitted'] / $stats['total']) * 100) : 0 }}%)</span></span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-sky-50/60 border border-sky-200/60 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-sky-500 flex-shrink-0"></span>
+                            <span class="text-xs font-bold text-slate-700">Verified</span>
+                        </div>
+                        <span class="text-xs font-black text-sky-700">{{ $stats['verified'] }} <span class="text-[10px] font-semibold text-slate-400">({{ $stats['total'] > 0 ? round(($stats['verified'] / $stats['total']) * 100) : 0 }}%)</span></span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-blue-50/60 border border-blue-200/60 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-600 flex-shrink-0"></span>
+                            <span class="text-xs font-bold text-slate-700">Evaluating</span>
+                        </div>
+                        <span class="text-xs font-black text-blue-700">{{ $stats['evaluating'] }} <span class="text-[10px] font-semibold text-slate-400">({{ $stats['total'] > 0 ? round(($stats['evaluating'] / $stats['total']) * 100) : 0 }}%)</span></span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-200/60 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 flex-shrink-0"></span>
+                            <span class="text-xs font-bold text-slate-700">Evaluated</span>
+                        </div>
+                        <span class="text-xs font-black text-emerald-700">{{ $stats['evaluated'] }} <span class="text-[10px] font-semibold text-slate-400">({{ $stats['total'] > 0 ? round(($stats['evaluated'] / $stats['total']) * 100) : 0 }}%)</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Bar Chart by Department -->
+            <div class="lg:col-span-7 bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shadow-blue-500/20">
+                                📊
+                            </div>
+                            <div>
+                                <h3 class="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">Circle per Departemen</h3>
+                                <p class="text-[11px] text-slate-400 font-medium">Partisipasi circle inovasi pada masing-masing departemen</p>
+                            </div>
+                        </div>
+                        @php
+                            $activeDeptsWithCircles = $departmentStats->filter(fn($d) => $d['count'] > 0)->count();
+                        @endphp
+                        <span class="text-xs font-black text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200/50">
+                            {{ $activeDeptsWithCircles }} Departemen Aktif
+                        </span>
+                    </div>
+
+                    <!-- Bar Chart Canvas -->
+                    <div class="relative my-4" style="height: 250px;">
+                        <canvas id="deptBarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                    <span>💡 Arahkan kursor pada batang grafik untuk melihat detail departemen.</span>
+                    <button type="button" onclick="toggleCharts()" class="text-blue-600 hover:text-blue-800 font-bold inline-flex items-center gap-1 cursor-pointer">
+                        <span>Tutup Grafik</span>
+                        <span>▲</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Filter & Search Bar -->
     <div id="daftar-circle" class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs mb-6">
         <form method="GET" action="{{ route('qcc.index') }}" class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
@@ -697,6 +818,192 @@
         window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
     }
 </script>
-@endpush
 @endif
+
+@push('scripts')
+<script>
+    let chartsInitialized = false;
+    let statusDonutChart = null;
+    let deptBarChart = null;
+
+    function toggleCharts() {
+        const container = document.getElementById('chartsContainer');
+        const btn = document.getElementById('toggleChartsBtn');
+        const text = document.getElementById('chartToggleText');
+        const chevron = document.getElementById('chartChevronIcon');
+
+        if (!container) return;
+
+        const isHidden = container.classList.contains('hidden');
+
+        if (isHidden) {
+            container.classList.remove('hidden');
+            text.innerText = 'Sembunyikan Grafik Statistik';
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+            btn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-300');
+
+            if (!chartsInitialized) {
+                initCharts();
+                chartsInitialized = true;
+            } else {
+                setTimeout(() => {
+                    if (statusDonutChart) statusDonutChart.resize();
+                    if (deptBarChart) deptBarChart.resize();
+                }, 50);
+            }
+        } else {
+            container.classList.add('hidden');
+            text.innerText = 'Tampilkan Grafik Statistik Circle Mutu';
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
+            btn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-300');
+        }
+    }
+
+    function initCharts() {
+        const donutCtx = document.getElementById('statusDonutChart');
+        const barCtx = document.getElementById('deptBarChart');
+
+        if (donutCtx && typeof Chart !== 'undefined') {
+            const statusData = [
+                {{ $stats['submitted'] }},
+                {{ $stats['verified'] }},
+                {{ $stats['evaluating'] }},
+                {{ $stats['evaluated'] }}
+            ];
+
+            statusDonutChart = new Chart(donutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Submitted', 'Verified', 'Evaluating', 'Evaluated'],
+                    datasets: [{
+                        data: statusData,
+                        backgroundColor: [
+                            '#f59e0b',
+                            '#0284c7',
+                            '#2563eb',
+                            '#10b981'
+                        ],
+                        hoverBackgroundColor: [
+                            '#d97706',
+                            '#0369a1',
+                            '#1d4ed8',
+                            '#059669'
+                        ],
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleFont: { size: 12, weight: 'bold', family: "'Plus Jakarta Sans', sans-serif" },
+                            bodyFont: { size: 12, family: "'Plus Jakarta Sans', sans-serif" },
+                            padding: 10,
+                            cornerRadius: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    const total = {{ $stats['total'] }};
+                                    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                                    return ' ' + context.label + ': ' + val + ' Circle (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        if (barCtx && typeof Chart !== 'undefined') {
+            const deptLabels = {!! json_encode($departmentStats->pluck('name')) !!};
+            const deptCodes = {!! json_encode($departmentStats->pluck('code')) !!};
+            const deptCounts = {!! json_encode($departmentStats->pluck('count')) !!};
+
+            deptBarChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: deptCodes,
+                    datasets: [{
+                        label: 'Jumlah Circle',
+                        data: deptCounts,
+                        backgroundColor: function(context) {
+                            const val = context.raw || 0;
+                            return val > 0 ? '#0055b8' : '#e2e8f0';
+                        },
+                        hoverBackgroundColor: function(context) {
+                            const val = context.raw || 0;
+                            return val > 0 ? '#004399' : '#cbd5e1';
+                        },
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        maxBarThickness: 38
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11,
+                                    weight: '600',
+                                    family: "'Plus Jakarta Sans', sans-serif"
+                                },
+                                color: '#64748b'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                font: {
+                                    size: 11,
+                                    family: "'Plus Jakarta Sans', sans-serif"
+                                },
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: '#f1f5f9'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleFont: { size: 12, weight: 'bold', family: "'Plus Jakarta Sans', sans-serif" },
+                            bodyFont: { size: 12, family: "'Plus Jakarta Sans', sans-serif" },
+                            padding: 10,
+                            cornerRadius: 10,
+                            callbacks: {
+                                title: function(items) {
+                                    const idx = items[0].dataIndex;
+                                    return deptLabels[idx] + ' (' + deptCodes[idx] + ')';
+                                },
+                                label: function(context) {
+                                    return ' ' + context.raw + ' Circle Mutu Terdaftar';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+</script>
+@endpush
 @endsection

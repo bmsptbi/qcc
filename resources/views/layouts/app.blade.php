@@ -13,6 +13,8 @@
     
     <!-- Tailwind CSS (CDN fallback + modern styling) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Donut & Bar Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script>
         tailwind.config = {
             theme: {

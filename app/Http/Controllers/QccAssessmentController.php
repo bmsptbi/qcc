@@ -138,6 +138,41 @@ class QccAssessmentController extends Controller
             'evaluated' => (clone $statsQuery)->whereIn('status', ['evaluated', 'awarded'])->count(),
         ];
 
+        // Statistik circle per departemen untuk visualisasi bar chart
+        $departmentStats = Department::where('is_active', true)
+            ->withCount(['circles' => function ($q) use ($activeYear) {
+                if ($activeYear !== 'all') {
+                    $q->where('year', $activeYear);
+                }
+            }])
+            ->orderBy('display_order', 'asc')
+            ->get()
+            ->map(function ($d) {
+                return [
+                    'id' => $d->id,
+                    'name' => $d->name,
+                    'code' => $d->code ?? $d->name,
+                    'count' => (int) $d->circles_count,
+                ];
+            });
+
+        $noDeptCount = (clone $statsQuery)->where(function ($q) {
+            $q->whereNull('department_id')
+                ->orWhereNotIn('department_id', Department::where('is_active', true)->select('id'));
+        })->count();
+
+        if ($noDeptCount > 0) {
+            $departmentStats->push([
+                'id' => 0,
+                'name' => 'Lainnya',
+                'code' => 'OTHER',
+                'count' => (int) $noDeptCount,
+            ]);
+        }
+
+        // Urutkan departemen dengan partisipasi circle terbanyak di awal
+        $departmentStats = $departmentStats->sortByDesc('count')->values();
+
         // Active judge in session or default to Judge 1 for convenient testing
         $currentJudgeId = session('active_judge_id', User::role('judge')->first()?->id);
         $currentJudge = User::find($currentJudgeId) ?? User::role('judge')->first();
@@ -154,6 +189,7 @@ class QccAssessmentController extends Controller
             'departments',
             'circles',
             'stats',
+            'departmentStats',
             'currentJudge',
             'allJudges',
             'criteriaStages',
