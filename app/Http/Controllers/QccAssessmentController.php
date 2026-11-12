@@ -429,10 +429,10 @@ class QccAssessmentController extends Controller
         foreach ($scoresInput as $criterionId => $scoreVal) {
             if ($scoreVal !== null && $scoreVal !== '' && is_numeric($scoreVal)) {
                 $scoreNum = (float) $scoreVal;
-                if ($scoreNum > 10 || $scoreNum < 0) {
+                if ($scoreNum > 100 || $scoreNum < 0) {
                     return back()
                         ->withInput()
-                        ->with('error', 'Nilai butir penilaian tidak boleh lebih dari 10 atau kurang dari 0 (Skala 0 - 10).');
+                        ->with('error', 'Nilai butir penilaian tidak boleh lebih dari 100 atau kurang dari 0 (Skala 0 - 100).');
                 }
                 $validScores[$criterionId] = $scoreNum;
             }
@@ -682,7 +682,7 @@ class QccAssessmentController extends Controller
 
             $stageJudges = $stageAssessments->map(fn ($a) => $a->judge)->filter()->unique('id')->values();
 
-            // 3. Hitung skor tahap (skala 0 - 10) untuk masing-masing juri pada tahap ini
+            // 3. Hitung skor tahap (skala 0 - 100) untuk masing-masing juri pada tahap ini
             $judgeStageScores = [];
             $judgeFeedback = [];
 
@@ -1286,13 +1286,13 @@ class QccAssessmentController extends Controller
         $finalScore = $matrixData['final_score'];
         $circle->final_score = $finalScore;
 
-        if ($finalScore >= 9.0) {
+        if ($finalScore >= 90.0) {
             $circle->award_level = 'Diamond';
-        } elseif ($finalScore >= 8.5) {
+        } elseif ($finalScore >= 85.0) {
             $circle->award_level = 'Platinum';
-        } elseif ($finalScore >= 8.0) {
+        } elseif ($finalScore >= 80.0) {
             $circle->award_level = 'Gold';
-        } elseif ($finalScore >= 7.5) {
+        } elseif ($finalScore >= 75.0) {
             $circle->award_level = 'Silver';
         } else {
             $circle->award_level = null;

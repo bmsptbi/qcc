@@ -110,7 +110,7 @@
                                         <span class="text-[10px] font-semibold text-slate-500 uppercase block leading-tight">Rata-rata Tahap</span>
                                         <span class="text-sm font-black text-blue-700">
                                             {{ number_format($stageData['stage_stats']['average'], 2) }}
-                                            <span class="text-[10px] font-medium text-slate-400">/ 10</span>
+                                            <span class="text-[10px] font-medium text-slate-400">/ 100</span>
                                         </span>
                                     </div>
                                     <div class="text-right pl-3 border-l border-slate-200">
@@ -405,7 +405,7 @@
 
                                 <!-- Box Skor Tertimbang & Nilai Sesuai Bobot (Font Lebih Kecil) -->
                                 <div class="flex flex-col items-center justify-center">
-                                    <span class="px-3 py-1 bg-yellow-300 border border-yellow-400 font-mono font-black text-slate-950 text-base sm:text-lg rounded-md shadow-2xs tracking-wide leading-tight" title="Nilai Rata-rata Tertimbang Tahap Ini (Skala 0 - 10)">
+                                    <span class="px-3 py-1 bg-yellow-300 border border-yellow-400 font-mono font-black text-slate-950 text-base sm:text-lg rounded-md shadow-2xs tracking-wide leading-tight" title="Nilai Rata-rata Tertimbang Tahap Ini (Skala 0 - 100)">
                                         {{ $stageData['stage_stats']['average'] !== null ? number_format($stageData['stage_stats']['average'], 2) : '-' }}
                                     </span>
                                     <span class="text-[10px] font-bold text-slate-500 font-mono mt-0.5 leading-none" title="Nilai Sesuai Bobot Tahap ({{ number_format($stageData['weight'], 0) }}%) = {{ number_format($stageData['stage_stats']['average'], 2) }} × {{ number_format($stageData['weight'], 0) }}%">
@@ -569,7 +569,7 @@
                                                     $sc = $row['scores_by_judge'][$judge->id] ?? null;
                                                 @endphp
                                                 <td class="p-3 text-center font-bold text-slate-800 border-r border-slate-100">
-                                                    {{ $sc !== null ? number_format($sc, 0) : '-' }}
+                                                    {{ $sc !== null ? rtrim(rtrim(number_format($sc, 2, '.', ''), '0'), '.') : '-' }}
                                                 </td>
                                             @endforeach
                                             <td class="p-3 text-center text-slate-600 font-medium bg-slate-50/50 border-r border-slate-100">

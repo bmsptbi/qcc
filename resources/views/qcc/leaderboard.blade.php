@@ -87,19 +87,19 @@
                         @if($score)
                             <!-- Award Level Pill -->
                             <div>
-                                @if($score >= 9.0 || $score >= 90)
+                                @if($score >= 90)
                                     <span class="px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-xs block text-center">
                                         ★ DIAMOND
                                     </span>
-                                @elseif($score >= 8.5 || $score >= 85)
+                                @elseif($score >= 85)
                                     <span class="px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-slate-400 to-slate-600 text-white shadow-xs block text-center">
                                         ★ PLATINUM
                                     </span>
-                                @elseif($score >= 8.0 || $score >= 80)
+                                @elseif($score >= 80)
                                     <span class="px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-xs block text-center">
                                         ★ GOLD
                                     </span>
-                                @elseif($score >= 7.5 || $score >= 75)
+                                @elseif($score >= 75)
                                     <span class="px-3 py-1 rounded-full text-xs font-black bg-slate-200 text-slate-800 block text-center">
                                         ★ SILVER
                                     </span>
@@ -112,7 +112,7 @@
                                 <span class="text-2xl font-black text-slate-900 leading-none block">
                                     {{ number_format($score, 2) }}
                                 </span>
-                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Poin (/ 10)</span>
+                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Poin (/ 100)</span>
                             </div>
                         @else
                             <span class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-500">
