@@ -106,7 +106,13 @@
                         </button>
 
                         <!-- Tombol Edit Tahap -->
-                        <button type="button" onclick="openEditCategoryModal({{ $category->id }}, '{{ addslashes($category->name) }}', '{{ $category->stage }}', {{ $category->weight_percentage }}, '{{ addslashes($category->description ?? '') }}')" 
+                        <button type="button" 
+                            onclick="openEditCategoryModal(this)" 
+                            data-id="{{ $category->id }}"
+                            data-name="{{ $category->name }}"
+                            data-stage="{{ $category->stage }}"
+                            data-weight="{{ $category->weight_percentage }}"
+                            data-description="{{ $category->description ?? '' }}"
                             class="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold transition" title="Ubah Tahap">
                             Edit
                         </button>
@@ -155,7 +161,14 @@
 
                             <!-- Action Buttons: Edit & Delete Criterion -->
                             <div class="flex items-center gap-1.5 flex-shrink-0">
-                                <button type="button" onclick="openEditCriterionModal({{ $crit->id }}, {{ $category->id }}, '{{ addslashes($crit->code) }}', '{{ addslashes($crit->title) }}', {{ $crit->weight !== null ? $crit->weight : 'null' }}, '{{ addslashes($crit->guidelines ?? '') }}')" 
+                                <button type="button" 
+                                    onclick="openEditCriterionModal(this)" 
+                                    data-id="{{ $crit->id }}"
+                                    data-category-id="{{ $category->id }}"
+                                    data-code="{{ $crit->code }}"
+                                    data-title="{{ $crit->title }}"
+                                    data-weight="{{ $crit->weight !== null ? $crit->weight : '' }}"
+                                    data-guidelines="{{ $crit->guidelines ?? '' }}"
                                     class="p-1.5 text-slate-400 hover:text-blue-600 transition" title="Ubah Kriteria">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -610,10 +623,19 @@
         document.getElementById('createCriterionModal').classList.add('hidden');
     }
 
-    function openEditCategoryModal(id, name, stage, weight, desc) {
-        document.getElementById('edit_cat_name').value = name;
-        document.getElementById('edit_cat_weight').value = weight;
-        document.getElementById('edit_cat_desc').value = desc;
+    function openEditCategoryModal(btnOrId, name, stage, weight, desc) {
+        let id = btnOrId;
+        if (typeof btnOrId === 'object' && btnOrId !== null && btnOrId.dataset) {
+            id = btnOrId.dataset.id;
+            name = btnOrId.dataset.name;
+            stage = btnOrId.dataset.stage;
+            weight = btnOrId.dataset.weight;
+            desc = btnOrId.dataset.description;
+        }
+
+        document.getElementById('edit_cat_name').value = name || '';
+        document.getElementById('edit_cat_weight').value = weight || '';
+        document.getElementById('edit_cat_desc').value = desc || '';
         document.getElementById('editCategoryForm').action = '/admin/criteria/categories/' + id;
         
         const modal = document.getElementById('editCategoryModal');
@@ -632,10 +654,20 @@
         document.getElementById('editCategoryModal').classList.add('hidden');
     }
 
-    function openEditCriterionModal(id, categoryId, code, title, weight, guidelines) {
+    function openEditCriterionModal(btnOrId, categoryId, code, title, weight, guidelines) {
+        let id = btnOrId;
+        if (typeof btnOrId === 'object' && btnOrId !== null && btnOrId.dataset) {
+            id = btnOrId.dataset.id;
+            categoryId = btnOrId.dataset.categoryId;
+            code = btnOrId.dataset.code;
+            title = btnOrId.dataset.title;
+            weight = btnOrId.dataset.weight;
+            guidelines = btnOrId.dataset.guidelines;
+        }
+
         document.getElementById('edit_crit_code').value = code || '';
-        document.getElementById('edit_crit_title').value = title;
-        document.getElementById('edit_crit_weight').value = (weight !== null && weight !== 'null' && weight !== undefined) ? weight : '';
+        document.getElementById('edit_crit_title').value = title || '';
+        document.getElementById('edit_crit_weight').value = (weight !== null && weight !== 'null' && weight !== undefined && weight !== '') ? weight : '';
         document.getElementById('edit_crit_guidelines').value = guidelines || '';
         document.getElementById('editCriterionForm').action = '/admin/criteria/' + id;
         

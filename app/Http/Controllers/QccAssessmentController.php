@@ -200,8 +200,11 @@ class QccAssessmentController extends Controller
     /**
      * Circle Detail Page
      */
-    public function show(Circle $circle): View
+    public function show(Circle $circle): View|RedirectResponse
     {
+        if (! Auth::check()) {
+            return redirect()->guest(route('login'))->with('error', 'Silakan masuk/login terlebih dahulu untuk melihat detail circle.');
+        }
         $circle->load([
             'period',
             'category',
@@ -603,8 +606,11 @@ class QccAssessmentController extends Controller
     /**
      * Live Leaderboard & Awarding
      */
-    public function leaderboard(Request $request): View
+    public function leaderboard(Request $request): View|RedirectResponse
     {
+        if (! Auth::check()) {
+            return redirect()->guest(route('login'))->with('error', 'Silakan masuk/login terlebih dahulu untuk melihat Leaderboard.');
+        }
         $currentYear = (int) date('Y');
         if ($request->filled('year')) {
             $activeYear = $request->query('year') === 'all' ? 'all' : (int) $request->query('year');

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Sign In Administrator')
+@section('title', 'Sign In')
 
 @section('content')
 <div class="min-h-[75vh] flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-10">
@@ -12,10 +12,10 @@
                 QC
             </div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">
-                Sign In Administrator
+                Sign In
             </h1>
             <p class="text-xs sm:text-sm text-slate-500 font-medium">
-                Masuk untuk mengakses pengaturan Circle, Juri, dan Kriteria Penilaian QCC.
+                Masuk untuk melihat Leaderboard, Detail Risalah Circle, dan Panel Penilaian QCC.
             </p>
         </div>
 
@@ -87,7 +87,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                     </svg>
-                    <span>Masuk sebagai Admin</span>
+                    <span>Masuk ke Sistem</span>
                 </button>
             </form>
 

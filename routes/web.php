@@ -5,21 +5,27 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\QccAssessmentController;
 use Illuminate\Support\Facades\Route;
 
-// Public Judging & Convention Routes
+// Public Convention Dashboard (Hanya 1 halaman ini yang dapat diakses publik tanpa login)
 Route::get('/', [QccAssessmentController::class, 'index'])->name('qcc.index');
-Route::get('/circles/{circle}', [QccAssessmentController::class, 'show'])->name('qcc.circles.show');
+Route::post('/switch-year', [QccAssessmentController::class, 'switchYear'])->name('qcc.switch-year');
+
+// Mobile QR/Link Judging Assessment Routes (Penilaian Lapangan oleh Juri)
 Route::get('/circles/{circle}/assess', [QccAssessmentController::class, 'assess'])->name('qcc.circles.assess');
 Route::post('/circles/{circle}/assess', [QccAssessmentController::class, 'storeAssessment'])->name('qcc.circles.assess.store');
-Route::get('/circles/{circle}/export-assessment', [QccAssessmentController::class, 'exportAssessmentCsv'])->name('qcc.circles.export');
-Route::get('/leaderboard', [QccAssessmentController::class, 'leaderboard'])->name('qcc.leaderboard');
 Route::post('/switch-judge', [QccAssessmentController::class, 'switchJudge'])->name('qcc.switch-judge');
-Route::post('/switch-year', [QccAssessmentController::class, 'switchYear'])->name('qcc.switch-year');
 Route::post('/verify-admin-password', [QccAssessmentController::class, 'verifyAdminPassword'])->name('qcc.circles.verify-admin-password');
-Route::post('/hide-judges', [QccAssessmentController::class, 'hideJudgeNames'])->name('qcc.circles.hide-judges');
-Route::post('/circles/{circle}/delete-assessments', [QccAssessmentController::class, 'deleteAssessments'])->name('qcc.circles.delete-assessments');
-Route::post('/circles/{circle}/update-status', [QccAssessmentController::class, 'updateQuickStatus'])->name('qcc.circles.update-status');
 
-// Authentication Routes (Admin Sign In / Out)
+// Authenticated Routes (Hanya dapat diakses setelah login: Detail Circle & Leaderboard)
+Route::middleware('auth')->group(function () {
+    Route::get('/circles/{circle}', [QccAssessmentController::class, 'show'])->name('qcc.circles.show');
+    Route::get('/circles/{circle}/export-assessment', [QccAssessmentController::class, 'exportAssessmentCsv'])->name('qcc.circles.export');
+    Route::get('/leaderboard', [QccAssessmentController::class, 'leaderboard'])->name('qcc.leaderboard');
+    Route::post('/hide-judges', [QccAssessmentController::class, 'hideJudgeNames'])->name('qcc.circles.hide-judges');
+    Route::post('/circles/{circle}/delete-assessments', [QccAssessmentController::class, 'deleteAssessments'])->name('qcc.circles.delete-assessments');
+    Route::post('/circles/{circle}/update-status', [QccAssessmentController::class, 'updateQuickStatus'])->name('qcc.circles.update-status');
+});
+
+// Authentication Routes (Sign In / Out)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

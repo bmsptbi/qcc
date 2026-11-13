@@ -14,15 +14,19 @@ class AuthController extends Controller
      */
     public function showLoginForm(): View|RedirectResponse
     {
-        if (Auth::check() && Auth::user()->role === 'admin') {
-            return redirect()->route('admin.circles.index');
+        if (Auth::check()) {
+            if (Auth::user()->isAdmin()) {
+                return redirect()->route('admin.circles.index');
+            }
+
+            return redirect()->route('qcc.index');
         }
 
         return view('auth.login');
     }
 
     /**
-     * Proses autentikasi login Admin
+     * Proses autentikasi login (Admin, Juri, & Pengguna Sistem)
      */
     public function login(Request $request): RedirectResponse
     {
@@ -44,24 +48,20 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $user = Auth::user();
 
-            if ($user->role !== 'admin') {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                return back()->withInput($request->only('login'))->with('error', 'Akses dibatasi. Hanya akun dengan hak akses Administrator yang dapat masuk ke panel ini.');
-            }
-
             $request->session()->regenerate();
 
-            return redirect()->intended(route('admin.circles.index'))->with('success', "Selamat datang kembali, {$user->name}!");
+            if ($user->isAdmin()) {
+                return redirect()->intended(route('admin.circles.index'))->with('success', "Selamat datang kembali, {$user->name}!");
+            }
+
+            return redirect()->intended(route('qcc.index'))->with('success', "Selamat datang kembali, {$user->name}!");
         }
 
         return back()->withInput($request->only('login'))->with('error', 'Kombinasi Email/NIK dan Password tidak cocok.');
     }
 
     /**
-     * Keluar dari sesi Administrator (Sign Out)
+     * Keluar dari sesi (Sign Out)
      */
     public function logout(Request $request): RedirectResponse
     {
@@ -70,6 +70,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('qcc.index')->with('info', 'Anda telah berhasil keluar dari sesi Administrator.');
+        return redirect()->route('qcc.index')->with('success', 'Anda telah berhasil keluar (Sign Out).');
     }
 }

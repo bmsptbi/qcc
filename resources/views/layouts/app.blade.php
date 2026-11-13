@@ -197,7 +197,8 @@
                 </div>
             </a>
 
-            <!-- Item 2: Leaderboard & Hasil -->
+            <!-- Item 2: Leaderboard & Hasil (Hanya untuk pengguna yang login) -->
+            @auth
             <a href="{{ route('qcc.leaderboard') }}" 
                 class="flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition duration-150 {{ request()->routeIs('qcc.leaderboard') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold' }}"
                 title="Leaderboard & Hasil">
@@ -211,6 +212,7 @@
                     <span class="text-[10px] opacity-75 block font-normal">Peringkat & Medali</span>
                 </div>
             </a>
+            @endauth
 
             <!-- Section: Panel Admin (Only for Admin) -->
             @if(Auth::check() && Auth::user()->role === 'admin')
@@ -302,7 +304,7 @@
 
         <!-- Sidebar Bottom Footer: Profile & Authentication -->
         <div class="p-3 border-t border-slate-200/80 bg-slate-50/80 flex-shrink-0">
-            @if(Auth::check() && Auth::user()->role === 'admin')
+            @if(Auth::check())
                 <div class="flex items-center justify-between gap-2 overflow-hidden">
                     <div class="flex items-center gap-2.5 min-w-0">
                         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-700 to-blue-600 text-white font-black text-sm flex items-center justify-center shadow-xs flex-shrink-0 relative">
@@ -311,13 +313,13 @@
                         </div>
                         <div class="sidebar-text min-w-0">
                             <span class="text-xs font-bold text-slate-800 block truncate leading-tight">{{ Auth::user()->name }}</span>
-                            <span class="text-[9px] uppercase font-black px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-700 inline-block mt-0.5">Admin</span>
+                            <span class="text-[9px] uppercase font-black px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-700 inline-block mt-0.5">{{ Auth::user()->isAdmin() ? 'Admin' : (Auth::user()->role ?? 'User') }}</span>
                         </div>
                     </div>
 
                     <form method="POST" action="{{ route('logout') }}" class="sidebar-text flex-shrink-0">
                         @csrf
-                        <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Sign Out Administrator">
+                        <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Sign Out">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                             </svg>
@@ -327,13 +329,13 @@
             @else
                 <a href="{{ route('login') }}" 
                     class="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-gradient-to-r from-blue-700 to-indigo-600 hover:from-blue-600 hover:to-indigo-500 text-white font-bold text-xs shadow-sm transition"
-                    title="Sign In Administrator">
+                    title="Sign In">
                     <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                         </svg>
                     </div>
-                    <span class="sidebar-text">Sign In Admin</span>
+                    <span class="sidebar-text">Sign In</span>
                 </a>
             @endif
         </div>
@@ -387,7 +389,7 @@
                 </div>
             </form>
 
-            @if(Auth::check() && Auth::user()->role === 'admin')
+            @if(Auth::check())
                 <div class="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold">
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                     <span class="max-w-[70px] truncate text-[11px]">{{ Auth::user()->name }}</span>
@@ -435,6 +437,7 @@
                 <span>Dashboard Circle</span>
             </a>
 
+            @auth
             <a href="{{ route('qcc.leaderboard') }}" onclick="closeMobileSidebar()" 
                 class="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition {{ request()->routeIs('qcc.leaderboard') ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50' }}">
                 <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -442,6 +445,7 @@
                 </svg>
                 <span>Leaderboard & Hasil</span>
             </a>
+            @endauth
 
             @if(Auth::check() && Auth::user()->role === 'admin')
                 <div class="pt-4 border-t border-slate-100 my-2">
@@ -493,11 +497,11 @@
 
         <!-- Mobile Drawer Footer -->
         <div class="p-4 border-t border-slate-100 bg-slate-50/80">
-            @if(Auth::check() && Auth::user()->role === 'admin')
+            @if(Auth::check())
                 <div class="flex items-center justify-between">
                     <div>
                         <span class="text-xs font-bold text-slate-800 block">{{ Auth::user()->name }}</span>
-                        <span class="text-[10px] text-indigo-600 font-semibold block">Administrator QCC</span>
+                        <span class="text-[10px] text-indigo-600 font-semibold block">{{ Auth::user()->isAdmin() ? 'Administrator QCC' : 'Pengguna QCC' }}</span>
                     </div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -508,7 +512,7 @@
                 </div>
             @else
                 <a href="{{ route('login') }}" class="w-full py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs">
-                    Sign In Admin
+                    Sign In
                 </a>
             @endif
         </div>
@@ -557,17 +561,23 @@
                     </div>
                 </form>
 
-                @if(Auth::check() && Auth::user()->role === 'admin')
+                @if(Auth::check())
                     <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
                         <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-extrabold">
-                            A
+                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                         </div>
                         <span class="text-xs font-bold text-slate-700">{{ Auth::user()->name }}</span>
+                        <form method="POST" action="{{ route('logout') }}" class="inline ml-1">
+                            @csrf
+                            <button type="submit" class="text-[11px] text-slate-400 hover:text-rose-600 font-semibold transition" title="Sign Out">
+                                (Keluar)
+                            </button>
+                        </form>
                     </div>
                 @else
                     <div class="pl-3 border-l border-slate-200">
                         <a href="{{ route('login') }}" class="text-xs font-bold text-blue-600 hover:text-blue-700 transition">
-                            Sign In Admin &rarr;
+                            Sign In &rarr;
                         </a>
                     </div>
                 @endif
@@ -639,12 +649,14 @@
             <span class="text-[10px] mt-0.5">Beranda</span>
         </a>
 
+        @auth
         <a href="{{ route('qcc.leaderboard') }}" class="flex flex-col items-center py-1 {{ request()->routeIs('qcc.leaderboard') ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
             </svg>
             <span class="text-[10px] mt-0.5">Ranking</span>
         </a>
+        @endauth
 
         @if(Auth::check() && Auth::user()->role === 'admin')
             <a href="{{ route('admin.circles.create') }}" class="flex flex-col items-center py-1 {{ request()->routeIs('admin.circles.*') ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
